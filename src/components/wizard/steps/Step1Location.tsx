@@ -1,23 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Script from 'next/script';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
+import { loadGoogleMaps, reverseGeocode } from '@/lib/google/maps-service';
 
 // Malta center coordinates
 const MALTA_CENTER = { lat: 35.9375, lng: 14.3754 };
-const INITIAL_ZOOM = 11; // Shows all of Malta and Gozo
+const INITIAL_ZOOM = 11;
 const MAX_ZOOM = 20;
-
-// Hardcoded temporarily - env var not being inlined properly by Turbopack
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBrFY-fUgljav3Mtc_scNjNh8Vq63MJRXU';
-
-declare global {
-  interface Window {
-    google?: typeof google;
-  }
-}
 
 export default function Step1Location() {
   const { state, dispatch } = useWizard();
@@ -26,35 +17,11 @@ export default function Step1Location() {
   const [mapsLoaded, setMapsLoaded] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(state.address || '');
   const [mapZoom, setMapZoom] = useState(INITIAL_ZOOM);
-  const [scriptError, setScriptError] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
-
-  // Check if Google Maps is already loaded
-  useEffect(() => {
-    if (window.google?.maps) {
-      setMapsLoaded(true);
-    }
-  }, []);
-
-  // Reverse geocode to get address from coordinates
-  const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
-    if (!window.google?.maps) return '';
-
-    const geocoder = new window.google.maps.Geocoder();
-
-    return new Promise((resolve) => {
-      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-        if (status === 'OK' && results && results[0]) {
-          resolve(results[0].formatted_address);
-        } else {
-          resolve(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-        }
-      });
-    });
-  }, []);
 
   // Handle map click
   const handleMapClick = useCallback(async (e: google.maps.MapMouseEvent) => {
@@ -67,13 +34,13 @@ export default function Step1Location() {
     if (markerRef.current) {
       markerRef.current.setPosition(e.latLng);
     } else {
-      markerRef.current = new window.google!.maps.Marker({
+      markerRef.current = new google.maps.Marker({
         position: e.latLng,
         map: googleMapRef.current,
         draggable: true,
-        animation: window.google!.maps.Animation.DROP,
+        animation: google.maps.Animation.DROP,
         icon: {
-          path: window.google!.maps.SymbolPath.CIRCLE,
+          path: google.maps.SymbolPath.CIRCLE,
           scale: 12,
           fillColor: '#f59e0b',
           fillOpacity: 1,
@@ -116,79 +83,91 @@ export default function Step1Location() {
       googleMapRef.current.setZoom(18);
       googleMapRef.current.panTo(e.latLng);
     }
-  }, [dispatch, reverseGeocode]);
+  }, [dispatch]);
 
-  // Initialize map when loaded
+  // Initialize map
   useEffect(() => {
-    if (!mapsLoaded || !mapRef.current || googleMapRef.current) return;
+    const initMap = async () => {
+      if (!mapRef.current || googleMapRef.current) return;
 
-    const map = new window.google!.maps.Map(mapRef.current, {
-      center: state.coordinates || MALTA_CENTER,
-      zoom: state.coordinates ? 18 : INITIAL_ZOOM,
-      mapTypeId: 'hybrid', // Satellite with labels - best for seeing roofs
-      mapTypeControl: true,
-      mapTypeControlOptions: {
-        style: window.google!.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-        position: window.google!.maps.ControlPosition.TOP_RIGHT,
-        mapTypeIds: ['roadmap', 'hybrid'],
-      },
-      streetViewControl: false,
-      fullscreenControl: true,
-      zoomControl: true,
-      gestureHandling: 'greedy',
-      restriction: {
-        latLngBounds: {
-          north: 36.1,
-          south: 35.7,
-          east: 14.7,
-          west: 14.1,
-        },
-        strictBounds: true,
-      },
-    });
+      try {
+        const google = await loadGoogleMaps();
+        setMapsLoaded(true);
 
-    googleMapRef.current = map;
+        const map = new google.maps.Map(mapRef.current, {
+          center: state.coordinates || MALTA_CENTER,
+          zoom: state.coordinates ? 18 : INITIAL_ZOOM,
+          mapTypeId: 'hybrid',
+          mapTypeControl: true,
+          mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: google.maps.ControlPosition.TOP_RIGHT,
+            mapTypeIds: ['roadmap', 'hybrid'],
+          },
+          streetViewControl: false,
+          fullscreenControl: true,
+          zoomControl: true,
+          gestureHandling: 'greedy',
+          restriction: {
+            latLngBounds: {
+              north: 36.1,
+              south: 35.7,
+              east: 14.7,
+              west: 14.1,
+            },
+            strictBounds: true,
+          },
+        });
 
-    // Add click listener
-    map.addListener('click', handleMapClick);
+        googleMapRef.current = map;
 
-    // Track zoom level
-    map.addListener('zoom_changed', () => {
-      setMapZoom(map.getZoom() || INITIAL_ZOOM);
-    });
+        // Add click listener
+        map.addListener('click', handleMapClick);
 
-    // If we already have coordinates, place marker
-    if (state.coordinates) {
-      markerRef.current = new window.google!.maps.Marker({
-        position: state.coordinates,
-        map,
-        draggable: true,
-        icon: {
-          path: window.google!.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: '#f59e0b',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 3,
-        },
-      });
+        // Track zoom level
+        map.addListener('zoom_changed', () => {
+          setMapZoom(map.getZoom() || INITIAL_ZOOM);
+        });
 
-      markerRef.current.addListener('dragend', async () => {
-        const pos = markerRef.current?.getPosition();
-        if (pos) {
-          const address = await reverseGeocode(pos.lat(), pos.lng());
-          setSelectedAddress(address);
-          dispatch({
-            type: 'SET_ADDRESS',
-            payload: {
-              address,
-              coordinates: { lat: pos.lat(), lng: pos.lng() },
+        // If we already have coordinates, place marker
+        if (state.coordinates) {
+          markerRef.current = new google.maps.Marker({
+            position: state.coordinates,
+            map,
+            draggable: true,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 12,
+              fillColor: '#f59e0b',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 3,
             },
           });
+
+          markerRef.current.addListener('dragend', async () => {
+            const pos = markerRef.current?.getPosition();
+            if (pos) {
+              const address = await reverseGeocode(pos.lat(), pos.lng());
+              setSelectedAddress(address);
+              dispatch({
+                type: 'SET_ADDRESS',
+                payload: {
+                  address,
+                  coordinates: { lat: pos.lat(), lng: pos.lng() },
+                },
+              });
+            }
+          });
         }
-      });
-    }
-  }, [mapsLoaded, state.coordinates, handleMapClick, dispatch, reverseGeocode]);
+      } catch (err) {
+        console.error('Failed to load Google Maps:', err);
+        setLoadError('Failed to load Google Maps. Please refresh the page.');
+      }
+    };
+
+    initMap();
+  }, [state.coordinates, handleMapClick, dispatch]);
 
   const handleNext = async () => {
     if (!state.coordinates) {
@@ -200,7 +179,6 @@ export default function Step1Location() {
     setError('');
 
     try {
-      // Fetch solar data from Google Solar API
       const response = await fetch('/api/solar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -229,7 +207,6 @@ export default function Step1Location() {
       trackWizardStep(1, 'Location');
       dispatch({ type: 'NEXT_STEP' });
     } catch (err) {
-      // If Solar API fails, use defaults and continue
       console.warn('Solar API error, using defaults:', err);
       dispatch({
         type: 'SET_SOLAR_DATA',
@@ -265,20 +242,6 @@ export default function Step1Location() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Load Google Maps Script */}
-      <Script
-        src={`https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`}
-        strategy="afterInteractive"
-        onLoad={() => {
-          console.log('Google Maps loaded successfully');
-          setMapsLoaded(true);
-        }}
-        onError={(e) => {
-          console.error('Google Maps failed to load:', e);
-          setScriptError('Failed to load Google Maps. Please refresh the page.');
-        }}
-      />
-
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-white mb-3">
           Where is your property?
@@ -288,15 +251,12 @@ export default function Step1Location() {
         </p>
       </div>
 
-      {/* Script Error */}
-      {scriptError && (
+      {loadError && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
-          <p className="text-red-400 text-sm">{scriptError}</p>
-          <p className="text-gray-400 text-xs mt-2">API Key: {GOOGLE_MAPS_API_KEY ? 'Set' : 'Missing'}</p>
+          <p className="text-red-400 text-sm">{loadError}</p>
         </div>
       )}
 
-      {/* Instructions */}
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
         <div className="flex gap-3">
           <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -314,24 +274,21 @@ export default function Step1Location() {
         </div>
       </div>
 
-      {/* Map Container */}
       <div className="relative rounded-2xl overflow-hidden border border-white/10 mb-4">
         <div
           ref={mapRef}
           className="w-full h-[400px] md:h-[500px] bg-gray-900"
         />
 
-        {/* Zoom indicator */}
         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2">
           <div className="text-white text-sm">
             Zoom: {mapZoom}/{MAX_ZOOM}
             {mapZoom < 16 && (
-              <span className="text-amber-400 ml-2">← Zoom in more</span>
+              <span className="text-amber-400 ml-2">Zoom in more</span>
             )}
           </div>
         </div>
 
-        {/* Loading overlay */}
         {!mapsLoaded && (
           <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
             <div className="text-center">
@@ -345,7 +302,6 @@ export default function Step1Location() {
         )}
       </div>
 
-      {/* Selected Location */}
       {selectedAddress && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
           <div className="flex items-start justify-between gap-4">
@@ -384,7 +340,6 @@ export default function Step1Location() {
         </div>
       )}
 
-      {/* Continue Button */}
       <button
         onClick={handleNext}
         disabled={isLoading || !state.coordinates}
