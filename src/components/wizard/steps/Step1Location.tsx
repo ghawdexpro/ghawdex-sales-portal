@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Script from 'next/script';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
 
@@ -9,10 +10,11 @@ const MALTA_CENTER = { lat: 35.9375, lng: 14.3754 };
 const INITIAL_ZOOM = 11; // Shows all of Malta and Gozo
 const MAX_ZOOM = 20;
 
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
 declare global {
   interface Window {
     google?: typeof google;
-    initGoogleMaps?: () => void;
   }
 }
 
@@ -23,31 +25,17 @@ export default function Step1Location() {
   const [mapsLoaded, setMapsLoaded] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(state.address || '');
   const [mapZoom, setMapZoom] = useState(INITIAL_ZOOM);
+  const [scriptError, setScriptError] = useState('');
 
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
 
-  // Load Google Maps script
+  // Check if Google Maps is already loaded
   useEffect(() => {
     if (window.google?.maps) {
       setMapsLoaded(true);
-      return;
     }
-
-    window.initGoogleMaps = () => {
-      setMapsLoaded(true);
-    };
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-
-    return () => {
-      window.initGoogleMaps = undefined;
-    };
   }, []);
 
   // Reverse geocode to get address from coordinates
@@ -276,6 +264,20 @@ export default function Step1Location() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Load Google Maps Script */}
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log('Google Maps loaded successfully');
+          setMapsLoaded(true);
+        }}
+        onError={(e) => {
+          console.error('Google Maps failed to load:', e);
+          setScriptError('Failed to load Google Maps. Please refresh the page.');
+        }}
+      />
+
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-white mb-3">
           Where is your property?
@@ -284,6 +286,14 @@ export default function Step1Location() {
           Click on the map to select your exact property location. Zoom in to see your roof clearly.
         </p>
       </div>
+
+      {/* Script Error */}
+      {scriptError && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
+          <p className="text-red-400 text-sm">{scriptError}</p>
+          <p className="text-gray-400 text-xs mt-2">API Key: {GOOGLE_MAPS_API_KEY ? 'Set' : 'Missing'}</p>
+        </div>
+      )}
 
       {/* Instructions */}
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
