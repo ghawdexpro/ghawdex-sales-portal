@@ -10,7 +10,8 @@ const MALTA_CENTER = { lat: 35.9375, lng: 14.3754 };
 const INITIAL_ZOOM = 11; // Shows all of Malta and Gozo
 const MAX_ZOOM = 20;
 
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+// Hardcoded temporarily - env var not being inlined properly by Turbopack
+const GOOGLE_MAPS_API_KEY = 'AIzaSyBrFY-fUgljav3Mtc_scNjNh8Vq63MJRXU';
 
 declare global {
   interface Window {
