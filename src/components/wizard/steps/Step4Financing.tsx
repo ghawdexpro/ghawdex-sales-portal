@@ -1,0 +1,225 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useWizard } from '../WizardContext';
+import { trackWizardStep } from '@/lib/analytics';
+import { BATTERY_OPTIONS } from '@/lib/types';
+import {
+  getFinancingOptions,
+  calculateTotalPrice,
+  calculateAnnualSavings,
+  calculatePaybackYears,
+  calculate25YearSavings,
+  formatCurrency,
+} from '@/lib/calculations';
+
+export default function Step4Financing() {
+  const { state, dispatch } = useWizard();
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'loan'>(state.paymentMethod || 'cash');
+  const [selectedTerm, setSelectedTerm] = useState<number>(state.loanTerm || 60);
+
+  const battery = state.batterySize
+    ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null
+    : null;
+
+  const totalPrice = state.selectedSystem
+    ? calculateTotalPrice(state.selectedSystem, battery, state.grantPath)
+    : 0;
+
+  const financingOptions = getFinancingOptions(totalPrice);
+  const selectedOption = financingOptions.find(f => f.term === selectedTerm);
+
+  const annualSavings = state.selectedSystem
+    ? calculateAnnualSavings(state.selectedSystem.annualProductionKwh, state.grantPath)
+    : 0;
+
+  const paybackYears = calculatePaybackYears(totalPrice, annualSavings);
+  const lifetimeSavings = calculate25YearSavings(annualSavings);
+
+  const handleNext = () => {
+    const monthlyPayment = paymentMethod === 'loan' && selectedOption
+      ? selectedOption.monthlyPayment
+      : null;
+
+    dispatch({
+      type: 'SET_FINANCING',
+      payload: {
+        paymentMethod,
+        loanTerm: paymentMethod === 'loan' ? selectedTerm : null,
+      },
+    });
+
+    dispatch({
+      type: 'SET_CALCULATIONS',
+      payload: {
+        totalPrice,
+        monthlyPayment,
+        annualSavings,
+        paybackYears,
+      },
+    });
+
+    trackWizardStep(4, 'Financing');
+    dispatch({ type: 'NEXT_STEP' });
+  };
+
+  const handleBack = () => {
+    dispatch({ type: 'PREV_STEP' });
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-white mb-3">
+          How would you like to pay?
+        </h1>
+        <p className="text-gray-400">
+          Choose between paying upfront or spreading the cost with BOV financing
+        </p>
+      </div>
+
+      {/* Payment Method Selection */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <button
+          onClick={() => setPaymentMethod('cash')}
+          className={`p-6 rounded-xl border text-left transition-all ${
+            paymentMethod === 'cash'
+              ? 'bg-amber-500/20 border-amber-500'
+              : 'bg-white/5 border-white/10 hover:border-white/30'
+          }`}
+        >
+          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mb-3">
+            <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div className="text-white font-semibold text-lg mb-1">Pay in Full</div>
+          <div className="text-gray-400 text-sm">One-time payment</div>
+          <div className="text-white font-bold text-2xl mt-3">{formatCurrency(totalPrice)}</div>
+        </button>
+
+        <button
+          onClick={() => setPaymentMethod('loan')}
+          className={`p-6 rounded-xl border text-left transition-all ${
+            paymentMethod === 'loan'
+              ? 'bg-amber-500/20 border-amber-500'
+              : 'bg-white/5 border-white/10 hover:border-white/30'
+          }`}
+        >
+          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mb-3">
+            <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          </div>
+          <div className="text-white font-semibold text-lg mb-1">BOV Financing</div>
+          <div className="text-gray-400 text-sm">Monthly payments</div>
+          <div className="text-white font-bold text-2xl mt-3">
+            {formatCurrency(selectedOption?.monthlyPayment || 0)}/mo
+          </div>
+        </button>
+      </div>
+
+      {/* Loan Terms */}
+      {paymentMethod === 'loan' && (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
+          <h3 className="text-white font-medium mb-4">Select Loan Term</h3>
+          <div className="grid grid-cols-4 gap-3">
+            {financingOptions.map((option) => (
+              <button
+                key={option.term}
+                onClick={() => setSelectedTerm(option.term)}
+                className={`p-3 rounded-lg border text-center transition-all ${
+                  selectedTerm === option.term
+                    ? 'bg-amber-500/20 border-amber-500'
+                    : 'bg-white/5 border-white/10 hover:border-white/30'
+                }`}
+              >
+                <div className="text-white font-medium">{option.term / 12} years</div>
+                <div className="text-amber-400 font-semibold">{formatCurrency(option.monthlyPayment)}/mo</div>
+                <div className="text-gray-500 text-xs">Total: {formatCurrency(option.totalCost)}</div>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-400 text-sm">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>BOV Green Loan at 4.75% APR • No deposit required</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Financial Summary */}
+      <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-6">
+        <h3 className="text-white font-semibold mb-4">Your Financial Benefits</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <div className="text-gray-400 text-sm">Annual Savings</div>
+            <div className="text-green-400 font-bold text-2xl">{formatCurrency(annualSavings)}</div>
+          </div>
+          <div>
+            <div className="text-gray-400 text-sm">Payback Period</div>
+            <div className="text-white font-bold text-2xl">{paybackYears} years</div>
+          </div>
+          <div>
+            <div className="text-gray-400 text-sm">25-Year Savings</div>
+            <div className="text-green-400 font-bold text-2xl">{formatCurrency(lifetimeSavings)}</div>
+          </div>
+          <div>
+            <div className="text-gray-400 text-sm">Return on Investment</div>
+            <div className="text-white font-bold text-2xl">
+              {Math.round((lifetimeSavings / totalPrice - 1) * 100)}%
+            </div>
+          </div>
+        </div>
+
+        {paymentMethod === 'loan' && selectedOption && (
+          <div className="mt-4 pt-4 border-t border-green-500/20">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">Monthly loan payment</span>
+              <span className="text-white font-medium">{formatCurrency(selectedOption.monthlyPayment)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm mt-1">
+              <span className="text-gray-400">Monthly savings from solar</span>
+              <span className="text-green-400 font-medium">~{formatCurrency(Math.round(annualSavings / 12))}</span>
+            </div>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-green-500/20">
+              <span className="text-white font-medium">Net monthly cost</span>
+              <span className={`font-bold ${
+                selectedOption.monthlyPayment - annualSavings / 12 > 0
+                  ? 'text-amber-400'
+                  : 'text-green-400'
+              }`}>
+                {formatCurrency(Math.round(selectedOption.monthlyPayment - annualSavings / 12))}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex gap-4">
+        <button
+          onClick={handleBack}
+          className="flex-1 bg-white/5 border border-white/10 text-white font-semibold py-4 rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+          </svg>
+          <span>Back</span>
+        </button>
+        <button
+          onClick={handleNext}
+          className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-4 rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 flex items-center justify-center gap-2"
+        >
+          <span>Continue</span>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}

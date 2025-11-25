@@ -2,15 +2,63 @@
 
 import { useState } from 'react';
 import { trackWizardStart } from '@/lib/analytics';
+import { WizardProvider } from '@/components/wizard/WizardContext';
+import WizardLayout from '@/components/wizard/WizardLayout';
+import Step1Location from '@/components/wizard/steps/Step1Location';
+import Step2Consumption from '@/components/wizard/steps/Step2Consumption';
+import Step3System from '@/components/wizard/steps/Step3System';
+import Step4Financing from '@/components/wizard/steps/Step4Financing';
+import Step5Contact from '@/components/wizard/steps/Step5Contact';
+import Step6Summary from '@/components/wizard/steps/Step6Summary';
+import { useWizard } from '@/components/wizard/WizardContext';
+
+function WizardSteps() {
+  const { state } = useWizard();
+
+  switch (state.step) {
+    case 1:
+      return <Step1Location />;
+    case 2:
+      return <Step2Consumption />;
+    case 3:
+      return <Step3System />;
+    case 4:
+      return <Step4Financing />;
+    case 5:
+      return <Step5Contact />;
+    case 6:
+      return <Step6Summary />;
+    default:
+      return <Step1Location />;
+  }
+}
+
+function Wizard({ onClose }: { onClose: () => void }) {
+  return (
+    <WizardProvider>
+      <WizardLayout onClose={onClose}>
+        <WizardSteps />
+      </WizardLayout>
+    </WizardProvider>
+  );
+}
 
 export default function Home() {
-  const [started, setStarted] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
   const handleStart = () => {
     trackWizardStart();
-    setStarted(true);
-    // TODO: Navigate to wizard or show wizard component
+    setShowWizard(true);
   };
+
+  const handleClose = () => {
+    setShowWizard(false);
+  };
+
+  // Show wizard if started
+  if (showWizard) {
+    return <Wizard onClose={handleClose} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e]">
@@ -71,7 +119,7 @@ export default function Home() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 max-w-3xl mx-auto mt-20">
             <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-1">500+</div>
+              <div className="text-3xl font-bold text-white mb-1">2,000+</div>
               <div className="text-gray-500 text-sm">Installations</div>
             </div>
             <div className="text-center">
