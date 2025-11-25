@@ -41,6 +41,18 @@ export const trackEvent = (
 // ============================================
 
 // Wizard Step Events
+export const trackWizardStart = () => {
+  trackEvent('wizard_start', {
+    event_category: 'funnel',
+    event_label: 'Started Quote Wizard',
+    value: 1,
+  });
+  // Track as FB InitiateCheckout event
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', 'InitiateCheckout');
+  }
+};
+
 export const trackWizardStep = (step: number, stepName: string) => {
   trackEvent('wizard_step', {
     event_category: 'funnel',
