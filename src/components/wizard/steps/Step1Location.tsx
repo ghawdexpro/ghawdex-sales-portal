@@ -82,9 +82,10 @@ export default function Step1Location() {
     const currentZoom = googleMapRef.current.getZoom() || INITIAL_ZOOM;
 
     if (currentZoom < 18) {
-      // Zoom in gradually: +3 levels per click, max 21
-      const nextZoom = Math.min(currentZoom + 3, 21);
-      googleMapRef.current.panTo(e.latLng);
+      // Zoom in gradually: +1 level per click, max 21
+      const nextZoom = Math.min(currentZoom + 1, 21);
+      // Set center first, then zoom to avoid drift
+      googleMapRef.current.setCenter(e.latLng);
       googleMapRef.current.setZoom(nextZoom);
 
       // Remove marker if not zoomed in enough - user needs to click again when closer
@@ -126,15 +127,6 @@ export default function Step1Location() {
           fullscreenControl: true,
           zoomControl: true,
           gestureHandling: 'greedy',
-          restriction: {
-            latLngBounds: {
-              north: 36.1,
-              south: 35.7,
-              east: 14.7,
-              west: 14.1,
-            },
-            strictBounds: true,
-          },
         });
 
         googleMapRef.current = map;
