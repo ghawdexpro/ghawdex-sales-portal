@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
 import { loadGoogleMaps, reverseGeocode } from '@/lib/google/maps-service';
+import { detectLocation } from '@/lib/types';
 
 // Malta center coordinates
 const MALTA_CENTER = { lat: 35.9375, lng: 14.3754 };
@@ -60,6 +61,7 @@ export default function Step1Location() {
             payload: {
               address,
               coordinates: { lat: pos.lat(), lng: pos.lng() },
+              location: detectLocation(pos.lat()),
             },
           });
         }
@@ -75,6 +77,7 @@ export default function Step1Location() {
       payload: {
         address,
         coordinates: { lat, lng },
+        location: detectLocation(lat),
       },
     });
 
@@ -96,7 +99,7 @@ export default function Step1Location() {
       setSelectedAddress('');
       dispatch({
         type: 'SET_ADDRESS',
-        payload: { address: '', coordinates: null },
+        payload: { address: '', coordinates: null, location: 'malta' },
       });
       return;
     }
@@ -163,6 +166,7 @@ export default function Step1Location() {
                 payload: {
                   address,
                   coordinates: { lat: pos.lat(), lng: pos.lng() },
+                  location: detectLocation(pos.lat()),
                 },
               });
             }
@@ -240,7 +244,7 @@ export default function Step1Location() {
     setSelectedAddress('');
     dispatch({
       type: 'SET_ADDRESS',
-      payload: { address: '', coordinates: null },
+      payload: { address: '', coordinates: null, location: 'malta' },
     });
     if (googleMapRef.current) {
       googleMapRef.current.setCenter(MALTA_CENTER);

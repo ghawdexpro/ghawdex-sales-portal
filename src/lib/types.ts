@@ -1,10 +1,14 @@
 // Types for GhawdeX Sales Portal
 
+export type Location = 'malta' | 'gozo';
+export type GrantType = 'none' | 'pv_only' | 'pv_battery';
+
 export interface WizardState {
   step: number;
   // Step 1: Address
   address: string;
   coordinates: { lat: number; lng: number } | null;
+  location: Location;
 
   // Step 2: Roof Analysis
   roofArea: number | null;
@@ -21,7 +25,8 @@ export interface WizardState {
   selectedSystem: SystemPackage | null;
   withBattery: boolean;
   batterySize: number | null;
-  grantPath: boolean;
+  grantType: GrantType;
+  grantPath: boolean; // Legacy - kept for compatibility
 
   // Step 5: Financing
   paymentMethod: 'cash' | 'loan' | null;
@@ -142,7 +147,7 @@ export const MALTA_CONSTANTS = {
   // Feed-in tariff
   FEED_IN_TARIFF: 0.055, // €/kWh
 
-  // Grant limits
+  // Grant limits (legacy)
   MAX_GRANT_AMOUNT: 2400, // €
   GRANT_PER_KWP: 300, // € per kWp (up to 8 kWp)
 
@@ -159,6 +164,111 @@ export const MALTA_CONSTANTS = {
   BOV_INTEREST_RATE: 0.0475, // 4.75% APR
   BOV_MAX_TERM_MONTHS: 120, // 10 years
 };
+
+// Grant Scheme 2025 - Official REWS rates
+export const GRANT_SCHEME_2025 = {
+  // Feed-in Tariff rates
+  FIT_WITH_GRANT: 0.105, // €/kWh for 20 years
+  FIT_WITHOUT_GRANT: 0.15, // €/kWh for 20 years
+
+  // PV System Grants
+  PV_STANDARD_INVERTER: {
+    percentage: 0.5, // 50% of eligible costs
+    maxTotal: 2500, // € max per system
+    perKwp: 625, // € per kWp
+  },
+  PV_HYBRID_INVERTER: {
+    percentage: 0.5, // 50% of eligible costs
+    maxTotal: 3000, // € max per system
+    perKwp: 750, // € per kWp
+  },
+
+  // Battery Storage Grants
+  BATTERY: {
+    malta: {
+      percentage: 0.8, // 80% of battery costs
+      maxTotal: 7200, // € max
+      perKwh: 720, // € per kWh
+    },
+    gozo: {
+      percentage: 0.95, // 95% of battery costs (Gozo bonus)
+      maxTotal: 7200, // € max
+      perKwh: 720, // € per kWh
+    },
+  },
+
+  // Hybrid Inverter for Battery
+  HYBRID_INVERTER_FOR_BATTERY: {
+    percentage: 0.8, // 80% of hybrid inverter costs
+    maxTotal: 1800, // € max
+    perKwp: 450, // € per kWp
+  },
+
+  // Maximum Total Grants
+  MAX_TOTAL: {
+    malta: 10200, // € maximum total grant
+    gozo: 11550, // € maximum total grant (Gozo gets more)
+  },
+};
+
+// Helper function to detect location from coordinates
+export function detectLocation(lat: number): Location {
+  // Gozo is north of Malta, roughly above latitude 36.0
+  // Gozo: approximately 36.04 - 36.08
+  // Malta: approximately 35.80 - 35.99
+  return lat >= 36.0 ? 'gozo' : 'malta';
+}
+
+// Helper function to calculate grant amount
+export function calculateGrantAmount(
+  systemSizeKw: number,
+  batteryKwh: number | null,
+  grantType: GrantType,
+  location: Location
+): number {
+  if (grantType === 'none') return 0;
+
+  let totalGrant = 0;
+  const maxTotal = GRANT_SCHEME_2025.MAX_TOTAL[location];
+
+  if (grantType === 'pv_only') {
+    // PV with hybrid inverter (most common)
+    const pvGrant = Math.min(
+      systemSizeKw * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.perKwp,
+      GRANT_SCHEME_2025.PV_HYBRID_INVERTER.maxTotal
+    );
+    totalGrant = pvGrant;
+  } else if (grantType === 'pv_battery') {
+    // PV + Battery grant
+    const pvGrant = Math.min(
+      systemSizeKw * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.perKwp,
+      GRANT_SCHEME_2025.PV_HYBRID_INVERTER.maxTotal
+    );
+
+    const batteryGrant = batteryKwh
+      ? Math.min(
+          batteryKwh * GRANT_SCHEME_2025.BATTERY[location].perKwh,
+          GRANT_SCHEME_2025.BATTERY[location].maxTotal
+        )
+      : 0;
+
+    const inverterGrant = Math.min(
+      systemSizeKw * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp,
+      GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
+    );
+
+    totalGrant = pvGrant + batteryGrant + inverterGrant;
+  }
+
+  return Math.min(totalGrant, maxTotal);
+}
+
+// Helper function to get FIT rate based on grant type
+export function getFitRate(grantType: GrantType): number {
+  return grantType === 'none'
+    ? GRANT_SCHEME_2025.FIT_WITHOUT_GRANT
+    : GRANT_SCHEME_2025.FIT_WITH_GRANT;
+}
 
 // System packages based on GhawdeX products
 export const SYSTEM_PACKAGES: SystemPackage[] = [

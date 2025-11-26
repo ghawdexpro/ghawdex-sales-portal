@@ -6,8 +6,8 @@ import { trackWizardStep } from '@/lib/analytics';
 import { BATTERY_OPTIONS } from '@/lib/types';
 import {
   getFinancingOptions,
-  calculateTotalPrice,
-  calculateAnnualSavings,
+  calculateTotalPriceWithGrant,
+  calculateAnnualSavingsWithGrant,
   calculatePaybackYears,
   calculate25YearSavings,
   formatCurrency,
@@ -22,15 +22,17 @@ export default function Step4Financing() {
     ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null
     : null;
 
-  const totalPrice = state.selectedSystem
-    ? calculateTotalPrice(state.selectedSystem, battery, state.grantPath)
-    : 0;
+  const priceDetails = state.selectedSystem
+    ? calculateTotalPriceWithGrant(state.selectedSystem, battery, state.grantType, state.location)
+    : { totalPrice: 0, grantAmount: 0, grossPrice: 0 };
+
+  const totalPrice = priceDetails.totalPrice;
 
   const financingOptions = getFinancingOptions(totalPrice);
   const selectedOption = financingOptions.find(f => f.term === selectedTerm);
 
   const annualSavings = state.selectedSystem
-    ? calculateAnnualSavings(state.selectedSystem.annualProductionKwh, state.grantPath)
+    ? calculateAnnualSavingsWithGrant(state.selectedSystem.annualProductionKwh, state.grantType)
     : 0;
 
   const paybackYears = calculatePaybackYears(totalPrice, annualSavings);

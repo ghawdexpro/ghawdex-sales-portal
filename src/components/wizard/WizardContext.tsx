@@ -1,12 +1,13 @@
 'use client';
 
 import { createContext, useContext, useReducer, ReactNode } from 'react';
-import { WizardState, SystemPackage, SolarPotential } from '@/lib/types';
+import { WizardState, SystemPackage, SolarPotential, Location, GrantType } from '@/lib/types';
 
 const initialState: WizardState = {
   step: 1,
   address: '',
   coordinates: null,
+  location: 'malta',
   roofArea: null,
   maxPanels: null,
   annualSunshine: null,
@@ -17,7 +18,8 @@ const initialState: WizardState = {
   selectedSystem: null,
   withBattery: false,
   batterySize: null,
-  grantPath: true,
+  grantType: 'pv_only',
+  grantPath: true, // Legacy
   paymentMethod: null,
   loanTerm: null,
   fullName: '',
@@ -34,10 +36,10 @@ type WizardAction =
   | { type: 'SET_STEP'; payload: number }
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
-  | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null } }
+  | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null; location: Location } }
   | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null } }
   | { type: 'SET_CONSUMPTION'; payload: { householdSize: number; monthlyBill: number; consumptionKwh: number } }
-  | { type: 'SET_SYSTEM'; payload: { system: SystemPackage; withBattery: boolean; batterySize: number | null; grantPath: boolean } }
+  | { type: 'SET_SYSTEM'; payload: { system: SystemPackage; withBattery: boolean; batterySize: number | null; grantType: GrantType } }
   | { type: 'SET_FINANCING'; payload: { paymentMethod: 'cash' | 'loan'; loanTerm: number | null } }
   | { type: 'SET_CONTACT'; payload: { fullName: string; email: string; phone: string; notes: string } }
   | { type: 'SET_CALCULATIONS'; payload: { totalPrice: number; monthlyPayment: number | null; annualSavings: number; paybackYears: number } }
@@ -63,7 +65,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         selectedSystem: action.payload.system,
         withBattery: action.payload.withBattery,
         batterySize: action.payload.batterySize,
-        grantPath: action.payload.grantPath,
+        grantType: action.payload.grantType,
+        grantPath: action.payload.grantType !== 'none', // Legacy compatibility
       };
     case 'SET_FINANCING':
       return { ...state, ...action.payload };

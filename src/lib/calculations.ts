@@ -3,9 +3,14 @@ import {
   RESIDENTIAL_TARIFF_BANDS,
   ECO_REDUCTION,
   FIXED_CHARGES,
+  GRANT_SCHEME_2025,
   SystemPackage,
   BatteryOption,
-  FinancingOption
+  FinancingOption,
+  GrantType,
+  Location,
+  calculateGrantAmount,
+  getFitRate,
 } from './types';
 
 /**
@@ -135,7 +140,7 @@ export function getEffectiveRate(annualKwh: number, householdSize: number): numb
   return annualKwh > 0 ? energyCost / annualKwh : RESIDENTIAL_TARIFF_BANDS[0].rate;
 }
 
-// Calculate annual savings
+// Calculate annual savings (legacy - kept for compatibility)
 export function calculateAnnualSavings(
   annualProductionKwh: number,
   hasGrant: boolean
@@ -148,6 +153,22 @@ export function calculateAnnualSavings(
   const exported = annualProductionKwh * (1 - MALTA_CONSTANTS.SELF_CONSUMPTION_RATIO);
 
   const savingsFromSelfConsumption = selfConsumed * rate;
+  const feedInRevenue = exported * MALTA_CONSTANTS.FEED_IN_TARIFF;
+
+  return Math.round(savingsFromSelfConsumption + feedInRevenue);
+}
+
+// Calculate annual savings with new grant types
+export function calculateAnnualSavingsWithGrant(
+  annualProductionKwh: number,
+  grantType: GrantType
+): number {
+  const fitRate = getFitRate(grantType);
+
+  const selfConsumed = annualProductionKwh * MALTA_CONSTANTS.SELF_CONSUMPTION_RATIO;
+  const exported = annualProductionKwh * (1 - MALTA_CONSTANTS.SELF_CONSUMPTION_RATIO);
+
+  const savingsFromSelfConsumption = selfConsumed * fitRate;
   const feedInRevenue = exported * MALTA_CONSTANTS.FEED_IN_TARIFF;
 
   return Math.round(savingsFromSelfConsumption + feedInRevenue);
@@ -250,7 +271,7 @@ export function recommendSystem(
   return sortedSystems[sortedSystems.length - 1];
 }
 
-// Calculate total system price
+// Calculate total system price (legacy - kept for compatibility)
 export function calculateTotalPrice(
   system: SystemPackage,
   battery: BatteryOption | null,
@@ -260,6 +281,31 @@ export function calculateTotalPrice(
   const batteryPrice = battery?.price || 0;
 
   return systemPrice + batteryPrice;
+}
+
+// Calculate total price with new grant types
+export function calculateTotalPriceWithGrant(
+  system: SystemPackage,
+  battery: BatteryOption | null,
+  grantType: GrantType,
+  location: Location
+): { totalPrice: number; grantAmount: number; grossPrice: number } {
+  // Base system price (without any grant)
+  const systemGrossPrice = system.priceWithoutGrant;
+  const batteryGrossPrice = battery?.price || 0;
+  const grossPrice = systemGrossPrice + batteryGrossPrice;
+
+  // Calculate grant based on type and location
+  const grantAmount = calculateGrantAmount(
+    system.systemSizeKw,
+    battery?.capacityKwh || null,
+    grantType,
+    location
+  );
+
+  const totalPrice = Math.max(0, grossPrice - grantAmount);
+
+  return { totalPrice, grantAmount, grossPrice };
 }
 
 // Calculate CO2 offset

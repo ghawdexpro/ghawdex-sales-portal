@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackSystemSelected } from '@/lib/analytics';
-import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption } from '@/lib/types';
-import { recommendSystem, calculateAnnualSavings, formatCurrency, formatNumber } from '@/lib/calculations';
+import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType } from '@/lib/types';
+import { recommendSystem, calculateAnnualSavingsWithGrant, calculateTotalPriceWithGrant, formatCurrency, formatNumber } from '@/lib/calculations';
 
 export default function Step3System() {
   const { state, dispatch } = useWizard();
@@ -13,7 +13,7 @@ export default function Step3System() {
   const [selectedBattery, setSelectedBattery] = useState<BatteryOption | null>(
     state.batterySize ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null : null
   );
-  const [grantPath, setGrantPath] = useState(state.grantPath);
+  const [grantType, setGrantType] = useState<GrantType>(state.grantType || 'pv_only');
 
   // Get recommended system based on consumption
   useEffect(() => {
@@ -32,11 +32,11 @@ export default function Step3System() {
         system: selectedSystem,
         withBattery,
         batterySize: selectedBattery?.capacityKwh || null,
-        grantPath,
+        grantType,
       },
     });
 
-    trackSystemSelected(selectedSystem.systemSizeKw, withBattery, grantPath);
+    trackSystemSelected(selectedSystem.systemSizeKw, withBattery, grantType !== 'none');
     trackWizardStep(3, 'System');
     dispatch({ type: 'NEXT_STEP' });
   };
@@ -45,19 +45,18 @@ export default function Step3System() {
     dispatch({ type: 'PREV_STEP' });
   };
 
-  const getSystemPrice = (system: SystemPackage) => {
-    return grantPath ? system.priceWithGrant : system.priceWithoutGrant;
-  };
-
-  const getTotalPrice = () => {
-    if (!selectedSystem) return 0;
-    const systemPrice = getSystemPrice(selectedSystem);
-    const batteryPrice = withBattery && selectedBattery ? selectedBattery.price : 0;
-    return systemPrice + batteryPrice;
-  };
+  // Calculate pricing with new grant system
+  const priceDetails = selectedSystem
+    ? calculateTotalPriceWithGrant(
+        selectedSystem,
+        withBattery ? selectedBattery : null,
+        grantType,
+        state.location
+      )
+    : { totalPrice: 0, grantAmount: 0, grossPrice: 0 };
 
   const annualSavings = selectedSystem
-    ? calculateAnnualSavings(selectedSystem.annualProductionKwh, grantPath)
+    ? calculateAnnualSavingsWithGrant(selectedSystem.annualProductionKwh, grantType)
     : 0;
 
   return (
@@ -71,23 +70,90 @@ export default function Step3System() {
         </p>
       </div>
 
-      {/* Grant Path Toggle */}
+      {/* Location & Grant Selection */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-white font-medium">Government Grant</div>
-            <div className="text-gray-400 text-sm">Save up to €2,400 with the solar grant scheme</div>
+            <div className="text-white font-medium">Your Location</div>
+            <div className="text-gray-400 text-sm">
+              Detected from your property address
+            </div>
           </div>
-          <button
-            onClick={() => setGrantPath(!grantPath)}
-            className={`relative w-14 h-7 rounded-full transition-colors ${
-              grantPath ? 'bg-green-500' : 'bg-white/20'
-            }`}
-          >
-            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
-              grantPath ? 'left-8' : 'left-1'
-            }`} />
-          </button>
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+            state.location === 'gozo'
+              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+              : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+          }`}>
+            {state.location === 'gozo' ? 'Gozo' : 'Malta'}
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 pt-4">
+          <div className="text-white font-medium mb-3">Government Grant Scheme</div>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => setGrantType('none')}
+              className={`p-3 rounded-lg border text-center transition-all ${
+                grantType === 'none'
+                  ? 'bg-gray-500/20 border-gray-400'
+                  : 'bg-white/5 border-white/10 hover:border-white/30'
+              }`}
+            >
+              <div className="text-white font-medium text-sm">No Grant</div>
+              <div className="text-gray-400 text-xs mt-1">Higher FIT rate</div>
+              <div className="text-amber-400 text-xs mt-1">€0.15/kWh</div>
+            </button>
+
+            <button
+              onClick={() => setGrantType('pv_only')}
+              className={`p-3 rounded-lg border text-center transition-all ${
+                grantType === 'pv_only'
+                  ? 'bg-green-500/20 border-green-500'
+                  : 'bg-white/5 border-white/10 hover:border-white/30'
+              }`}
+            >
+              <div className="text-white font-medium text-sm">Solar Only</div>
+              <div className="text-gray-400 text-xs mt-1">Up to €3,000</div>
+              <div className="text-green-400 text-xs mt-1">€0.105/kWh FIT</div>
+            </button>
+
+            <button
+              onClick={() => {
+                setGrantType('pv_battery');
+                if (!withBattery) {
+                  setWithBattery(true);
+                  if (!selectedBattery) {
+                    setSelectedBattery(BATTERY_OPTIONS[0]);
+                  }
+                }
+              }}
+              className={`p-3 rounded-lg border text-center transition-all ${
+                grantType === 'pv_battery'
+                  ? 'bg-green-500/20 border-green-500'
+                  : 'bg-white/5 border-white/10 hover:border-white/30'
+              }`}
+            >
+              <div className="text-white font-medium text-sm">Solar + Battery</div>
+              <div className="text-gray-400 text-xs mt-1">
+                Up to €{state.location === 'gozo' ? '11,550' : '10,200'}
+              </div>
+              <div className="text-green-400 text-xs mt-1">€0.105/kWh FIT</div>
+            </button>
+          </div>
+
+          {grantType !== 'none' && priceDetails.grantAmount > 0 && (
+            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-green-400 text-sm">Estimated Grant</span>
+                <span className="text-green-400 font-semibold">{formatCurrency(priceDetails.grantAmount)}</span>
+              </div>
+              {state.location === 'gozo' && grantType === 'pv_battery' && (
+                <div className="text-purple-400 text-xs mt-1">
+                  Gozo bonus: 95% battery subsidy (vs 80% Malta)
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -96,6 +162,13 @@ export default function Step3System() {
         {SYSTEM_PACKAGES.map((system) => {
           const isRecommended = state.consumptionKwh &&
             system.id === recommendSystem(state.consumptionKwh, state.maxPanels, SYSTEM_PACKAGES).id;
+
+          const systemPricing = calculateTotalPriceWithGrant(
+            system,
+            null, // Don't include battery in per-system pricing
+            grantType,
+            state.location
+          );
 
           return (
             <button
@@ -124,11 +197,11 @@ export default function Step3System() {
                 </div>
                 <div className="text-right">
                   <div className="text-white font-bold text-xl">
-                    {formatCurrency(getSystemPrice(system))}
+                    {formatCurrency(systemPricing.totalPrice)}
                   </div>
-                  {grantPath && (
+                  {grantType !== 'none' && systemPricing.grantAmount > 0 && (
                     <div className="text-green-400 text-sm">
-                      Save {formatCurrency(system.grantAmount)}
+                      Grant: {formatCurrency(systemPricing.grantAmount)}
                     </div>
                   )}
                 </div>
@@ -188,7 +261,12 @@ export default function Step3System() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-gray-400 text-sm">Total System Price</div>
-              <div className="text-white font-bold text-2xl">{formatCurrency(getTotalPrice())}</div>
+              <div className="text-white font-bold text-2xl">{formatCurrency(priceDetails.totalPrice)}</div>
+              {priceDetails.grantAmount > 0 && (
+                <div className="text-green-400 text-xs">
+                  After {formatCurrency(priceDetails.grantAmount)} grant
+                </div>
+              )}
             </div>
             <div>
               <div className="text-gray-400 text-sm">Est. Annual Savings</div>
