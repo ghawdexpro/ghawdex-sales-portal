@@ -192,7 +192,7 @@ export const GRANT_SCHEME_2025 = {
     },
     gozo: {
       percentage: 0.95, // 95% of battery costs (Gozo bonus)
-      maxTotal: 7200, // € max
+      maxTotal: 8550, // € max (higher cap for Gozo)
       perKwh: 720, // € per kWh
     },
   },
