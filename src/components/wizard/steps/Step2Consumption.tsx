@@ -14,16 +14,16 @@ const BILL_PRESETS = [
 ];
 
 const HOUSEHOLD_SIZES = [
-  { value: 1, label: '1 person', icon: '👤' },
-  { value: 2, label: '2 people', icon: '👥' },
-  { value: 3, label: '3 people', icon: '👨‍👩‍👦' },
-  { value: 4, label: '4 people', icon: '👨‍👩‍👧‍👦' },
-  { value: 5, label: '5+ people', icon: '👨‍👩‍👧‍👦' },
+  { value: 1, label: '1', icon: '👤' },
+  { value: 2, label: '2', icon: '👥' },
+  { value: 3, label: '3', icon: '👨‍👩‍👦' },
+  { value: 4, label: '4+', icon: '👨‍👩‍👧‍👦' },
 ];
 
 export default function Step2Consumption() {
   const { state, dispatch } = useWizard();
   const [householdSize, setHouseholdSize] = useState<number | null>(state.householdSize || 2);
+  const [isBusiness, setIsBusiness] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState<number | null>(state.monthlyBill);
   const [customBill, setCustomBill] = useState('');
   const [useCustom, setUseCustom] = useState(false);
@@ -42,14 +42,16 @@ export default function Step2Consumption() {
   };
 
   const handleNext = () => {
-    if (!selectedBill || !householdSize) return;
+    if (!selectedBill || (!householdSize && !isBusiness)) return;
 
-    const consumptionKwh = estimateConsumption(selectedBill, householdSize);
+    // For business customers, use householdSize=0 to skip eco-reduction
+    const effectiveHouseholdSize = isBusiness ? 0 : (householdSize || 2);
+    const consumptionKwh = estimateConsumption(selectedBill, effectiveHouseholdSize);
 
     dispatch({
       type: 'SET_CONSUMPTION',
       payload: {
-        householdSize,
+        householdSize: effectiveHouseholdSize,
         monthlyBill: selectedBill,
         consumptionKwh,
       },
@@ -63,7 +65,9 @@ export default function Step2Consumption() {
     dispatch({ type: 'PREV_STEP' });
   };
 
-  const estimatedConsumption = selectedBill && householdSize ? estimateConsumption(selectedBill, householdSize) : null;
+  const estimatedConsumption = selectedBill && (householdSize || isBusiness)
+    ? estimateConsumption(selectedBill, isBusiness ? 0 : (householdSize || 2))
+    : null;
 
   return (
     <div className="max-w-xl mx-auto pb-24">
@@ -95,18 +99,21 @@ export default function Step2Consumption() {
         </div>
       )}
 
-      {/* Household Size */}
+      {/* Household Size / Business */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
         <label className="block text-sm font-medium text-gray-300 mb-4">
-          How many people live in your household?
+          {isBusiness ? 'Business Customer' : 'How many people live in your household?'}
         </label>
         <div className="grid grid-cols-5 gap-2">
           {HOUSEHOLD_SIZES.map((size) => (
             <button
               key={size.value}
-              onClick={() => setHouseholdSize(size.value)}
+              onClick={() => {
+                setHouseholdSize(size.value);
+                setIsBusiness(false);
+              }}
               className={`p-3 rounded-xl border text-center transition-all ${
-                householdSize === size.value
+                !isBusiness && householdSize === size.value
                   ? 'bg-amber-500/20 border-amber-500 text-white'
                   : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/30'
               }`}
@@ -115,9 +122,27 @@ export default function Step2Consumption() {
               <div className="text-xs">{size.label}</div>
             </button>
           ))}
+          {/* Business Button - stands out with blue/purple color */}
+          <button
+            onClick={() => {
+              setIsBusiness(true);
+              setHouseholdSize(null);
+            }}
+            className={`p-3 rounded-xl border text-center transition-all ${
+              isBusiness
+                ? 'bg-blue-500/30 border-blue-400 text-white ring-2 ring-blue-400/50'
+                : 'bg-blue-500/10 border-blue-500/30 text-blue-300 hover:border-blue-400/50 hover:bg-blue-500/20'
+            }`}
+          >
+            <div className="text-xl mb-1">🏢</div>
+            <div className="text-xs font-medium">Business</div>
+          </button>
         </div>
         <p className="text-xs text-gray-500 mt-3">
-          This affects your eco-reduction rebate on electricity bills
+          {isBusiness
+            ? 'Commercial rates apply - no eco-reduction rebate'
+            : 'This affects your eco-reduction rebate on electricity bills'
+          }
         </p>
       </div>
 
@@ -191,7 +216,7 @@ export default function Step2Consumption() {
           </button>
           <button
             onClick={handleNext}
-            disabled={!selectedBill}
+            disabled={!selectedBill || (!householdSize && !isBusiness)}
             className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-4 rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <span>Continue</span>
