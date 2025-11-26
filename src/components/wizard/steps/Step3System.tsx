@@ -188,6 +188,9 @@ export default function Step3System() {
                 </div>
                 <div className="text-gray-400 text-xs mb-3">
                   {system.panels} panels • {formatNumber(system.annualProductionKwh)} kWh/year
+                  {system.id === 'essential-5kw' && (
+                    <span className="text-blue-400 ml-2">• Max for single phase</span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-white/10">
                   <div>
@@ -218,6 +221,9 @@ export default function Step3System() {
                   </div>
                   <div className="text-gray-400 text-sm mt-1">
                     {system.panels} panels • {formatNumber(system.annualProductionKwh)} kWh/year
+                    {system.id === 'essential-5kw' && (
+                      <span className="text-blue-400 ml-2">• Max for single phase</span>
+                    )}
                   </div>
                 </div>
                 <div className="text-center px-4 border-l border-r border-white/10">
