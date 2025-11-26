@@ -62,7 +62,7 @@ export default function Step3System() {
     : 0;
 
   return (
-    <div className="max-w-3xl mx-auto pb-36">
+    <div className="max-w-3xl mx-auto pb-52">
       <div className="text-center mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
           Choose your solar system
@@ -266,36 +266,34 @@ export default function Step3System() {
         </div>
       )}
 
-      {/* Summary */}
-      {selectedSystem && (
-        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-gray-400 text-sm">Total System Price</div>
-              <div className="text-white font-bold text-2xl">{formatCurrency(priceDetails.totalPrice)}</div>
-              {priceDetails.grantAmount > 0 && (
-                <div className="text-green-400 text-xs">
-                  After {formatCurrency(priceDetails.grantAmount)} grant
-                </div>
-              )}
-            </div>
-            <div>
-              <div className="text-gray-400 text-sm">Est. Annual Income</div>
-              <div className="text-green-400 font-bold text-2xl">{formatCurrency(annualIncome)}</div>
-              <div className="text-gray-500 text-xs">@ €{fitRate.toFixed(3)}/kWh FIT</div>
-              {grantType !== 'none' && selectedSystem && (
-                <div className="text-amber-400/70 text-xs mt-1">
-                  Without grant: {formatCurrency(Math.round(selectedSystem.annualProductionKwh * 0.15))}/yr @ €0.15
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Fixed bottom section with Grant Selector + Navigation */}
+      {/* Fixed bottom section with Summary + Grant Selector + Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-md border-t border-white/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
+          {/* Price Summary */}
+          {selectedSystem && (
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
+              <div>
+                <div className="text-gray-400 text-xs">Total Price</div>
+                <div className="text-white font-bold text-lg">{formatCurrency(priceDetails.totalPrice)}</div>
+                {priceDetails.grantAmount > 0 && (
+                  <div className="text-green-400 text-[10px]">After {formatCurrency(priceDetails.grantAmount)} grant</div>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-gray-400 text-xs">Annual Income</div>
+                <div className="text-green-400 font-bold text-lg">{formatCurrency(annualIncome)}/yr</div>
+                <div className="text-gray-500 text-[10px]">
+                  @ €{fitRate.toFixed(3)}/kWh
+                  {grantType !== 'none' && (
+                    <span className="text-amber-400/70 ml-1">
+                      (€{formatCurrency(Math.round(selectedSystem.annualProductionKwh * 0.15))} without grant)
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Compact Grant Selector */}
           <div className="flex items-center gap-2 mb-3">
             <span className="text-gray-400 text-xs whitespace-nowrap">Grant:</span>
