@@ -62,7 +62,7 @@ export default function Step3System() {
     : 0;
 
   return (
-    <div className="max-w-3xl mx-auto pb-24">
+    <div className="max-w-3xl mx-auto pb-36">
       <div className="text-center mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
           Choose your solar system
@@ -90,60 +90,6 @@ export default function Step3System() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-4">
-          <div className="text-white font-medium mb-3">Government Grant Scheme</div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-            <button
-              onClick={() => setGrantType('none')}
-              className={`p-3 rounded-lg border text-center transition-all ${
-                grantType === 'none'
-                  ? 'bg-gray-500/20 border-gray-400'
-                  : 'bg-white/5 border-white/10 hover:border-white/30'
-              }`}
-            >
-              <div className="text-white font-medium text-sm">No Grant</div>
-              <div className="text-gray-400 text-xs mt-1">Higher FIT rate</div>
-              <div className="text-amber-400 text-xs mt-1">€0.15/kWh</div>
-            </button>
-
-            <button
-              onClick={() => setGrantType('pv_only')}
-              className={`p-3 rounded-lg border text-center transition-all ${
-                grantType === 'pv_only'
-                  ? 'bg-green-500/20 border-green-500'
-                  : 'bg-white/5 border-white/10 hover:border-white/30'
-              }`}
-            >
-              <div className="text-white font-medium text-sm">Solar Only</div>
-              <div className="text-gray-400 text-xs mt-1">Up to €3,000</div>
-              <div className="text-green-400 text-xs mt-1">€0.105/kWh FIT</div>
-            </button>
-
-            <button
-              onClick={() => {
-                setGrantType('pv_battery');
-                if (!withBattery) {
-                  setWithBattery(true);
-                  if (!selectedBattery) {
-                    setSelectedBattery(BATTERY_OPTIONS[0]);
-                  }
-                }
-              }}
-              className={`p-3 rounded-lg border text-center transition-all ${
-                grantType === 'pv_battery'
-                  ? 'bg-green-500/20 border-green-500'
-                  : 'bg-white/5 border-white/10 hover:border-white/30'
-              }`}
-            >
-              <div className="text-white font-medium text-sm">Solar + Battery</div>
-              <div className="text-gray-400 text-xs mt-1">
-                Up to €{state.location === 'gozo' ? '11,550' : '10,200'}
-              </div>
-              <div className="text-green-400 text-xs mt-1">€0.105/kWh FIT</div>
-            </button>
-          </div>
-
-        </div>
       </div>
 
       {/* System Packages */}
@@ -347,28 +293,81 @@ export default function Step3System() {
         </div>
       )}
 
-      {/* Navigation - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-8">
-        <div className="max-w-3xl mx-auto flex gap-4">
-          <button
-            onClick={handleBack}
-            className="flex-1 bg-white/5 border border-white/10 text-white font-semibold py-4 rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-            </svg>
-            <span>Back</span>
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={!selectedSystem}
-            className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-4 rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <span>Continue</span>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
+      {/* Fixed bottom section with Grant Selector + Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-md border-t border-white/10">
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          {/* Compact Grant Selector */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-gray-400 text-xs whitespace-nowrap">Grant:</span>
+            <div className="flex gap-1.5 flex-1">
+              <button
+                onClick={() => setGrantType('none')}
+                className={`flex-1 px-2 py-1.5 rounded-lg border text-center transition-all ${
+                  grantType === 'none'
+                    ? 'bg-gray-500/30 border-gray-400 text-white'
+                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
+                }`}
+              >
+                <div className="text-xs font-medium">No Grant</div>
+                <div className="text-[10px] text-amber-400">€0.15/kWh</div>
+              </button>
+
+              <button
+                onClick={() => setGrantType('pv_only')}
+                className={`flex-1 px-2 py-1.5 rounded-lg border text-center transition-all ${
+                  grantType === 'pv_only'
+                    ? 'bg-green-500/30 border-green-500 text-white'
+                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
+                }`}
+              >
+                <div className="text-xs font-medium">Solar Only</div>
+                <div className="text-[10px] text-green-400">€0.105/kWh</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setGrantType('pv_battery');
+                  if (!withBattery) {
+                    setWithBattery(true);
+                    if (!selectedBattery) {
+                      setSelectedBattery(BATTERY_OPTIONS[0]);
+                    }
+                  }
+                }}
+                className={`flex-1 px-2 py-1.5 rounded-lg border text-center transition-all ${
+                  grantType === 'pv_battery'
+                    ? 'bg-green-500/30 border-green-500 text-white'
+                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
+                }`}
+              >
+                <div className="text-xs font-medium">+ Battery</div>
+                <div className="text-[10px] text-green-400">€0.105/kWh</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleBack}
+              className="flex-1 bg-white/5 border border-white/10 text-white font-semibold py-3 rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+              </svg>
+              <span>Back</span>
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={!selectedSystem}
+              className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span>Continue</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
