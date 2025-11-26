@@ -78,10 +78,28 @@ export default function Step1Location() {
       },
     });
 
-    // Zoom in if not already zoomed
-    if (googleMapRef.current.getZoom()! < 18) {
-      googleMapRef.current.setZoom(18);
+    // Gradual zoom - don't place marker until zoomed in enough
+    const currentZoom = googleMapRef.current.getZoom() || INITIAL_ZOOM;
+
+    if (currentZoom < 18) {
+      // Zoom in gradually: +3 levels per click, max 21
+      const nextZoom = Math.min(currentZoom + 3, 21);
       googleMapRef.current.panTo(e.latLng);
+      googleMapRef.current.setZoom(nextZoom);
+
+      // Remove marker if not zoomed in enough - user needs to click again when closer
+      if (currentZoom < 15) {
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+          markerRef.current = null;
+        }
+        setSelectedAddress('');
+        dispatch({
+          type: 'SET_ADDRESS',
+          payload: { address: '', coordinates: null },
+        });
+      }
+      return;
     }
   }, [dispatch]);
 
