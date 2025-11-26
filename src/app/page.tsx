@@ -114,6 +114,16 @@ export default function Home() {
             <p className="text-gray-500 text-xs sm:text-sm mt-4">
               No commitment required • Takes less than 2 minutes
             </p>
+
+            <a
+              href="/products"
+              className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 mt-4 text-sm"
+            >
+              <span>Browse all products</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
           </div>
 
           {/* Stats */}
