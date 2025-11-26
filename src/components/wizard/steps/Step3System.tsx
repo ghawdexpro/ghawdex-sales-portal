@@ -72,26 +72,6 @@ export default function Step3System() {
         </p>
       </div>
 
-      {/* Location & Grant Selection */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-white font-medium">Your Location</div>
-            <div className="text-gray-400 text-sm">
-              Detected from your property address
-            </div>
-          </div>
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-            state.location === 'gozo'
-              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-              : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-          }`}>
-            {state.location === 'gozo' ? 'Gozo' : 'Malta'}
-          </div>
-        </div>
-
-      </div>
-
       {/* System Packages */}
       <div className="space-y-4 mb-6">
         {SYSTEM_PACKAGES.map((system) => {
