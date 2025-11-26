@@ -12,7 +12,8 @@ export interface WizardState {
   annualSunshine: number | null;
   solarPotential: SolarPotential | null;
 
-  // Step 3: Consumption
+  // Step 2: Consumption
+  householdSize: number | null;
   monthlyBill: number | null;
   consumptionKwh: number | null;
 
@@ -85,6 +86,7 @@ export interface Lead {
   phone: string;
   address: string;
   coordinates: { lat: number; lng: number } | null;
+  household_size: number | null;
   monthly_bill: number | null;
   consumption_kwh: number | null;
   roof_area: number | null;
@@ -103,11 +105,39 @@ export interface Lead {
   source: string;
 }
 
+// Malta Electricity Tariff Bands (Residential) - Annual kWh thresholds
+// Source: Enemalta/ARMS 2024
+export const RESIDENTIAL_TARIFF_BANDS = [
+  { maxKwh: 2000, rate: 0.1047 },   // Band 1: 0-2,000 kWh
+  { maxKwh: 6000, rate: 0.1298 },   // Band 2: 2,001-6,000 kWh
+  { maxKwh: 10000, rate: 0.1607 },  // Band 3: 6,001-10,000 kWh
+  { maxKwh: 20000, rate: 0.3420 },  // Band 4: 10,001-20,000 kWh
+  { maxKwh: Infinity, rate: 0.6076 }, // Band 5: 20,001+ kWh
+];
+
+// Eco-reduction allowances per person per year
+export const ECO_REDUCTION = {
+  ALLOWANCE_PER_PERSON: 1750, // kWh per person per year
+  FIRST_TIER_KWH: 1000, // First 1,000 kWh per person
+  FIRST_TIER_DISCOUNT: 0.25, // 25% discount
+  SECOND_TIER_KWH: 750, // Next 750 kWh per person
+  SECOND_TIER_DISCOUNT: 0.15, // 15% discount
+  SINGLE_PERSON_THRESHOLD: 2000, // Single person gets 25% if under 2,000 kWh
+  SINGLE_PERSON_DISCOUNT: 0.25, // 25% discount for single person
+};
+
+// Fixed charges
+export const FIXED_CHARGES = {
+  SERVICE_CHARGE_SINGLE_PHASE: 65, // € per year
+  SERVICE_CHARGE_THREE_PHASE: 195, // € per year
+  MONTHLY_SERVICE_ESTIMATE: 5.42, // €65/12 for single phase
+};
+
 // Malta-specific constants
 export const MALTA_CONSTANTS = {
-  // Electricity rates
-  ELECTRICITY_RATE_WITH_GRANT: 0.105, // €/kWh with government grant
-  ELECTRICITY_RATE_NO_GRANT: 0.15, // €/kWh without grant
+  // Legacy flat rates (for reference/fallback)
+  ELECTRICITY_RATE_WITH_GRANT: 0.105, // €/kWh average with government grant
+  ELECTRICITY_RATE_NO_GRANT: 0.15, // €/kWh average without grant
 
   // Feed-in tariff
   FEED_IN_TARIFF: 0.055, // €/kWh

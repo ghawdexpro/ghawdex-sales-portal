@@ -11,6 +11,7 @@ const initialState: WizardState = {
   maxPanels: null,
   annualSunshine: null,
   solarPotential: null,
+  householdSize: null,
   monthlyBill: null,
   consumptionKwh: null,
   selectedSystem: null,
@@ -35,7 +36,7 @@ type WizardAction =
   | { type: 'PREV_STEP' }
   | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null } }
   | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null } }
-  | { type: 'SET_CONSUMPTION'; payload: { monthlyBill: number; consumptionKwh: number } }
+  | { type: 'SET_CONSUMPTION'; payload: { householdSize: number; monthlyBill: number; consumptionKwh: number } }
   | { type: 'SET_SYSTEM'; payload: { system: SystemPackage; withBattery: boolean; batterySize: number | null; grantPath: boolean } }
   | { type: 'SET_FINANCING'; payload: { paymentMethod: 'cash' | 'loan'; loanTerm: number | null } }
   | { type: 'SET_CONTACT'; payload: { fullName: string; email: string; phone: string; notes: string } }

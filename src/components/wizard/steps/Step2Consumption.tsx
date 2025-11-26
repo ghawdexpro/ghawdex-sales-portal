@@ -13,8 +13,17 @@ const BILL_PRESETS = [
   { label: '€250+', value: 300, description: 'Large villa / Pool' },
 ];
 
+const HOUSEHOLD_SIZES = [
+  { value: 1, label: '1 person', icon: '👤' },
+  { value: 2, label: '2 people', icon: '👥' },
+  { value: 3, label: '3 people', icon: '👨‍👩‍👦' },
+  { value: 4, label: '4 people', icon: '👨‍👩‍👧‍👦' },
+  { value: 5, label: '5+ people', icon: '👨‍👩‍👧‍👦' },
+];
+
 export default function Step2Consumption() {
   const { state, dispatch } = useWizard();
+  const [householdSize, setHouseholdSize] = useState<number | null>(state.householdSize || 2);
   const [monthlyBill, setMonthlyBill] = useState<number | null>(state.monthlyBill);
   const [customBill, setCustomBill] = useState('');
   const [useCustom, setUseCustom] = useState(false);
@@ -33,13 +42,14 @@ export default function Step2Consumption() {
   };
 
   const handleNext = () => {
-    if (!selectedBill) return;
+    if (!selectedBill || !householdSize) return;
 
-    const consumptionKwh = estimateConsumption(selectedBill, state.grantPath);
+    const consumptionKwh = estimateConsumption(selectedBill, householdSize);
 
     dispatch({
       type: 'SET_CONSUMPTION',
       payload: {
+        householdSize,
         monthlyBill: selectedBill,
         consumptionKwh,
       },
@@ -53,7 +63,7 @@ export default function Step2Consumption() {
     dispatch({ type: 'PREV_STEP' });
   };
 
-  const estimatedConsumption = selectedBill ? estimateConsumption(selectedBill, true) : null;
+  const estimatedConsumption = selectedBill && householdSize ? estimateConsumption(selectedBill, householdSize) : null;
 
   return (
     <div className="max-w-xl mx-auto">
@@ -84,6 +94,32 @@ export default function Step2Consumption() {
           </div>
         </div>
       )}
+
+      {/* Household Size */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+        <label className="block text-sm font-medium text-gray-300 mb-4">
+          How many people live in your household?
+        </label>
+        <div className="grid grid-cols-5 gap-2">
+          {HOUSEHOLD_SIZES.map((size) => (
+            <button
+              key={size.value}
+              onClick={() => setHouseholdSize(size.value)}
+              className={`p-3 rounded-xl border text-center transition-all ${
+                householdSize === size.value
+                  ? 'bg-amber-500/20 border-amber-500 text-white'
+                  : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/30'
+              }`}
+            >
+              <div className="text-xl mb-1">{size.icon}</div>
+              <div className="text-xs">{size.label}</div>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          This affects your eco-reduction rebate on electricity bills
+        </p>
+      </div>
 
       {/* Bill Presets */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">

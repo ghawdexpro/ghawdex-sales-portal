@@ -61,6 +61,7 @@ export default function Step5Contact() {
         phone,
         address: state.address,
         coordinates: state.coordinates,
+        household_size: state.householdSize,
         monthly_bill: state.monthlyBill,
         consumption_kwh: state.consumptionKwh,
         roof_area: state.roofArea,

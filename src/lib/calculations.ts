@@ -1,14 +1,138 @@
-import { MALTA_CONSTANTS, SystemPackage, BatteryOption, FinancingOption } from './types';
+import {
+  MALTA_CONSTANTS,
+  RESIDENTIAL_TARIFF_BANDS,
+  ECO_REDUCTION,
+  FIXED_CHARGES,
+  SystemPackage,
+  BatteryOption,
+  FinancingOption
+} from './types';
 
-// Estimate monthly consumption from electricity bill
-export function estimateConsumption(monthlyBill: number, hasGrant: boolean): number {
-  const rate = hasGrant
-    ? MALTA_CONSTANTS.ELECTRICITY_RATE_WITH_GRANT
-    : MALTA_CONSTANTS.ELECTRICITY_RATE_NO_GRANT;
+/**
+ * Calculate electricity bill from annual kWh consumption using tiered rates
+ * This is the FORWARD calculation: kWh -> Bill
+ */
+export function calculateBillFromConsumption(
+  annualKwh: number,
+  householdSize: number
+): { grossBill: number; ecoReduction: number; netBill: number } {
+  let grossBill = 0;
+  let remainingKwh = annualKwh;
+  let prevMax = 0;
 
-  // Remove standing charge estimate (roughly €10/month)
-  const energyCharge = Math.max(monthlyBill - 10, 0);
-  return Math.round(energyCharge / rate);
+  // Calculate gross bill using tiered rates
+  for (const band of RESIDENTIAL_TARIFF_BANDS) {
+    const bandKwh = Math.min(remainingKwh, band.maxKwh - prevMax);
+    if (bandKwh <= 0) break;
+    grossBill += bandKwh * band.rate;
+    remainingKwh -= bandKwh;
+    prevMax = band.maxKwh;
+  }
+
+  // Calculate eco-reduction
+  let ecoReduction = 0;
+  if (householdSize === 1) {
+    // Single person: 25% off all consumption if under 2,000 kWh
+    if (annualKwh <= ECO_REDUCTION.SINGLE_PERSON_THRESHOLD) {
+      ecoReduction = grossBill * ECO_REDUCTION.SINGLE_PERSON_DISCOUNT;
+    }
+  } else if (householdSize > 1) {
+    // Multi-person household
+    const totalAllowance = householdSize * ECO_REDUCTION.ALLOWANCE_PER_PERSON;
+    const eligibleKwh = Math.min(annualKwh, totalAllowance);
+
+    // First tier: 25% off first 1,000 kWh per person
+    const firstTierKwh = Math.min(eligibleKwh, householdSize * ECO_REDUCTION.FIRST_TIER_KWH);
+    const firstTierCost = calculateCostForKwh(firstTierKwh);
+    ecoReduction += firstTierCost * ECO_REDUCTION.FIRST_TIER_DISCOUNT;
+
+    // Second tier: 15% off next 750 kWh per person
+    const secondTierKwh = Math.min(
+      Math.max(0, eligibleKwh - firstTierKwh),
+      householdSize * ECO_REDUCTION.SECOND_TIER_KWH
+    );
+    if (secondTierKwh > 0) {
+      const secondTierCost = calculateCostForKwh(firstTierKwh + secondTierKwh) - firstTierCost;
+      ecoReduction += secondTierCost * ECO_REDUCTION.SECOND_TIER_DISCOUNT;
+    }
+  }
+
+  const netBill = grossBill - ecoReduction + FIXED_CHARGES.SERVICE_CHARGE_SINGLE_PHASE;
+
+  return {
+    grossBill: Math.round(grossBill * 100) / 100,
+    ecoReduction: Math.round(ecoReduction * 100) / 100,
+    netBill: Math.round(netBill * 100) / 100,
+  };
+}
+
+/**
+ * Helper: Calculate cost for a given kWh using tiered rates
+ */
+function calculateCostForKwh(kwh: number): number {
+  let cost = 0;
+  let remaining = kwh;
+  let prevMax = 0;
+
+  for (const band of RESIDENTIAL_TARIFF_BANDS) {
+    const bandKwh = Math.min(remaining, band.maxKwh - prevMax);
+    if (bandKwh <= 0) break;
+    cost += bandKwh * band.rate;
+    remaining -= bandKwh;
+    prevMax = band.maxKwh;
+  }
+
+  return cost;
+}
+
+/**
+ * Estimate annual consumption from monthly bill using reverse tiered calculation
+ * This is the REVERSE calculation: Bill -> kWh
+ */
+export function estimateConsumption(
+  monthlyBill: number,
+  householdSize: number
+): number {
+  const annualBill = monthlyBill * 12;
+
+  // Subtract annual service charge
+  const energyBill = Math.max(annualBill - FIXED_CHARGES.SERVICE_CHARGE_SINGLE_PHASE, 0);
+
+  // Binary search to find the kWh that produces this bill
+  let low = 0;
+  let high = 50000; // Max reasonable household consumption
+  let bestKwh = 0;
+
+  for (let i = 0; i < 50; i++) { // 50 iterations for precision
+    const mid = (low + high) / 2;
+    const { netBill } = calculateBillFromConsumption(mid, householdSize);
+    const calculatedEnergyBill = netBill - FIXED_CHARGES.SERVICE_CHARGE_SINGLE_PHASE;
+
+    if (Math.abs(calculatedEnergyBill - energyBill) < 1) {
+      bestKwh = mid;
+      break;
+    }
+
+    if (calculatedEnergyBill < energyBill) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+    bestKwh = mid;
+  }
+
+  // Return monthly consumption
+  return Math.round(bestKwh / 12);
+}
+
+/**
+ * Get effective electricity rate for a given consumption level
+ * Useful for savings calculations
+ */
+export function getEffectiveRate(annualKwh: number, householdSize: number): number {
+  const { netBill } = calculateBillFromConsumption(annualKwh, householdSize);
+  const energyCost = netBill - FIXED_CHARGES.SERVICE_CHARGE_SINGLE_PHASE;
+  return annualKwh > 0 ? energyCost / annualKwh : RESIDENTIAL_TARIFF_BANDS[0].rate;
 }
 
 // Calculate annual savings

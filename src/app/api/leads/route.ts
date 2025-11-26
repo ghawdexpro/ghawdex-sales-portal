@@ -19,9 +19,11 @@ async function sendTelegramNotification(lead: Lead) {
 📱 *Phone:* ${lead.phone}
 
 📍 *Address:* ${lead.address}
+👥 *Household:* ${lead.household_size || 'N/A'} people
 💡 *Monthly Bill:* €${lead.monthly_bill || 'N/A'}
+⚡ *Consumption:* ${lead.consumption_kwh || 'N/A'} kWh/month
 
-⚡ *System:* ${lead.system_size_kw || 'TBD'} kW
+🔆 *System:* ${lead.system_size_kw || 'TBD'} kWp
 🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
 🎫 *Grant Path:* ${lead.grant_path ? 'Yes' : 'No'}
 
@@ -92,6 +94,7 @@ export async function POST(request: NextRequest) {
       phone: body.phone,
       address: body.address || '',
       coordinates: body.coordinates || null,
+      household_size: body.household_size || null,
       monthly_bill: body.monthly_bill || null,
       consumption_kwh: body.consumption_kwh || null,
       roof_area: body.roof_area || null,
