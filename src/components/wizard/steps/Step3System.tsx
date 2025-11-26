@@ -96,19 +96,15 @@ export default function Step3System() {
         {SYSTEM_PACKAGES.map((system) => {
           const isRecommended = state.consumptionKwh &&
             system.id === recommendSystem(state.consumptionKwh, state.maxPanels, SYSTEM_PACKAGES).id;
-          const fitsOnRoof = !state.maxPanels || system.panels <= state.maxPanels;
 
           return (
             <button
               key={system.id}
-              onClick={() => fitsOnRoof && setSelectedSystem(system)}
-              disabled={!fitsOnRoof}
+              onClick={() => setSelectedSystem(system)}
               className={`w-full p-4 rounded-xl border text-left transition-all ${
                 selectedSystem?.id === system.id
                   ? 'bg-amber-500/20 border-amber-500'
-                  : fitsOnRoof
-                  ? 'bg-white/5 border-white/10 hover:border-white/30'
-                  : 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
+                  : 'bg-white/5 border-white/10 hover:border-white/30'
               } ${isRecommended ? 'ring-2 ring-amber-500/50' : ''}`}
             >
               <div className="flex items-start justify-between">
@@ -119,11 +115,6 @@ export default function Step3System() {
                     {isRecommended && (
                       <span className="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-medium">
                         Recommended
-                      </span>
-                    )}
-                    {!fitsOnRoof && (
-                      <span className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full">
-                        Too large for roof
                       </span>
                     )}
                   </div>
