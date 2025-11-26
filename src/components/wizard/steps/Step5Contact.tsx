@@ -163,7 +163,7 @@ export default function Step5Contact() {
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+356 7900 0000"
+            placeholder="79000000"
             className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-1 transition-colors ${
               errors.phone
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
