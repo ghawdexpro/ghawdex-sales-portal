@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackSystemSelected } from '@/lib/analytics';
 import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType, getFitRate } from '@/lib/types';
-import { recommendSystem, calculateAnnualSavingsWithGrant, calculateTotalPriceWithGrant, formatCurrency, formatNumber } from '@/lib/calculations';
+import { recommendSystem, calculateTotalPriceWithGrant, formatCurrency, formatNumber } from '@/lib/calculations';
 
 export default function Step3System() {
   const { state, dispatch } = useWizard();
@@ -55,8 +55,10 @@ export default function Step3System() {
       )
     : { totalPrice: 0, grantAmount: 0, grossPrice: 0 };
 
-  const annualSavings = selectedSystem
-    ? calculateAnnualSavingsWithGrant(selectedSystem.annualProductionKwh, grantType)
+  // Calculate annual income from FIT (all production × feed-in tariff rate)
+  const fitRate = getFitRate(grantType);
+  const annualIncome = selectedSystem
+    ? Math.round(selectedSystem.annualProductionKwh * fitRate)
     : 0;
 
   return (
@@ -326,8 +328,14 @@ export default function Step3System() {
               )}
             </div>
             <div>
-              <div className="text-gray-400 text-sm">Est. Annual Savings</div>
-              <div className="text-green-400 font-bold text-2xl">{formatCurrency(annualSavings)}</div>
+              <div className="text-gray-400 text-sm">Est. Annual Income</div>
+              <div className="text-green-400 font-bold text-2xl">{formatCurrency(annualIncome)}</div>
+              <div className="text-gray-500 text-xs">@ €{fitRate.toFixed(3)}/kWh FIT</div>
+              {grantType !== 'none' && selectedSystem && (
+                <div className="text-amber-400/70 text-xs mt-1">
+                  Without grant: {formatCurrency(Math.round(selectedSystem.annualProductionKwh * 0.15))}/yr @ €0.15
+                </div>
+              )}
             </div>
           </div>
         </div>
