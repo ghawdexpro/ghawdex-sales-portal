@@ -277,14 +277,9 @@ export function calculateGrantAmount(
       );
     }
 
-    // Hybrid inverter grant for battery systems: 80% of inverter costs
-    const inverterKwhBasedGrant = systemSizeKw * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp;
-    const inverterGrant = Math.min(
-      inverterKwhBasedGrant,
-      GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
-    );
-
-    totalGrant = pvGrant + batteryGrant + inverterGrant;
+    // Note: HYBRID_INVERTER_FOR_BATTERY grant is for upgrading EXISTING systems only
+    // For new PV+battery installations, the hybrid inverter is already included in PV_HYBRID_INVERTER rates
+    totalGrant = pvGrant + batteryGrant;
   }
 
   return Math.min(totalGrant, maxTotal);
