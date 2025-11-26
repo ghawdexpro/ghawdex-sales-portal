@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackSystemSelected } from '@/lib/analytics';
-import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType } from '@/lib/types';
+import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType, getFitRate } from '@/lib/types';
 import { recommendSystem, calculateAnnualSavingsWithGrant, calculateTotalPriceWithGrant, formatCurrency, formatNumber } from '@/lib/calculations';
 
 export default function Step3System() {
@@ -170,6 +170,10 @@ export default function Step3System() {
             state.location
           );
 
+          // Calculate annual FIT income
+          const fitRate = getFitRate(grantType);
+          const annualFitIncome = Math.round(system.annualProductionKwh * fitRate);
+
           return (
             <button
               key={system.id}
@@ -180,7 +184,7 @@ export default function Step3System() {
                   : 'bg-white/5 border-white/10 hover:border-white/30'
               } ${isRecommended ? 'ring-2 ring-amber-500/50' : ''}`}
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold text-lg">{system.name}</span>
@@ -195,7 +199,12 @@ export default function Step3System() {
                     {system.panels} panels • {formatNumber(system.annualProductionKwh)} kWh/year • {system.inverterModel}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-center px-4 border-l border-r border-white/10">
+                  <div className="text-gray-400 text-xs">Annual Income</div>
+                  <div className="text-green-400 font-bold text-lg">{formatCurrency(annualFitIncome)}</div>
+                  <div className="text-gray-500 text-xs">@ €{fitRate.toFixed(3)}/kWh</div>
+                </div>
+                <div className="text-right min-w-[100px]">
                   <div className="text-white font-bold text-xl">
                     {formatCurrency(systemPricing.totalPrice)}
                   </div>
