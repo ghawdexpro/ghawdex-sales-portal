@@ -141,19 +141,6 @@ export default function Step3System() {
             </button>
           </div>
 
-          {grantType !== 'none' && priceDetails.grantAmount > 0 && (
-            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-green-400 text-sm">Estimated Grant</span>
-                <span className="text-green-400 font-semibold">{formatCurrency(priceDetails.grantAmount)}</span>
-              </div>
-              {state.location === 'gozo' && grantType === 'pv_battery' && (
-                <div className="text-purple-400 text-xs mt-1">
-                  Gozo bonus: 95% battery subsidy (vs 80% Malta)
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -263,6 +250,23 @@ export default function Step3System() {
           </div>
         )}
       </div>
+
+      {/* Estimated Grant */}
+      {grantType !== 'none' && priceDetails.grantAmount > 0 && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-green-400 font-medium">Estimated Grant</div>
+              {state.location === 'gozo' && grantType === 'pv_battery' && (
+                <div className="text-purple-400 text-xs mt-1">
+                  Gozo bonus: 95% battery subsidy (vs 80% Malta)
+                </div>
+              )}
+            </div>
+            <div className="text-green-400 font-bold text-2xl">{formatCurrency(priceDetails.grantAmount)}</div>
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
       {selectedSystem && (
