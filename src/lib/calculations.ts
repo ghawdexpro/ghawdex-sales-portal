@@ -295,12 +295,15 @@ export function calculateTotalPriceWithGrant(
   const batteryGrossPrice = battery?.price || 0;
   const grossPrice = systemGrossPrice + batteryGrossPrice;
 
-  // Calculate grant based on type and location
+  // Calculate grant based on type, location, and actual costs
+  // Pass actual prices to apply percentage caps correctly
   const grantAmount = calculateGrantAmount(
     system.systemSizeKw,
     battery?.capacityKwh || null,
     grantType,
-    location
+    location,
+    systemGrossPrice,
+    batteryGrossPrice
   );
 
   const totalPrice = Math.max(0, grossPrice - grantAmount);

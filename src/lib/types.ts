@@ -220,11 +220,14 @@ export function detectLocation(lat: number): Location {
 }
 
 // Helper function to calculate grant amount
+// Now includes actual costs to apply percentage caps correctly
 export function calculateGrantAmount(
   systemSizeKw: number,
   batteryKwh: number | null,
   grantType: GrantType,
-  location: Location
+  location: Location,
+  systemPrice?: number,
+  batteryPrice?: number
 ): number {
   if (grantType === 'none') return 0;
 
@@ -233,27 +236,51 @@ export function calculateGrantAmount(
 
   if (grantType === 'pv_only') {
     // PV with hybrid inverter (most common)
+    // Grant is 50% of eligible costs, capped at €750/kWp and €3,000 total
+    const kwhBasedGrant = systemSizeKw * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.perKwp;
+    const percentageBasedGrant = systemPrice
+      ? systemPrice * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.percentage
+      : kwhBasedGrant;
+
     const pvGrant = Math.min(
-      systemSizeKw * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.perKwp,
+      kwhBasedGrant,
+      percentageBasedGrant,
       GRANT_SCHEME_2025.PV_HYBRID_INVERTER.maxTotal
     );
     totalGrant = pvGrant;
   } else if (grantType === 'pv_battery') {
     // PV + Battery grant
+    // PV: 50% of eligible costs, capped at €750/kWp and €3,000 total
+    const pvKwhBasedGrant = systemSizeKw * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.perKwp;
+    const pvPercentageBasedGrant = systemPrice
+      ? systemPrice * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.percentage
+      : pvKwhBasedGrant;
+
     const pvGrant = Math.min(
-      systemSizeKw * GRANT_SCHEME_2025.PV_HYBRID_INVERTER.perKwp,
+      pvKwhBasedGrant,
+      pvPercentageBasedGrant,
       GRANT_SCHEME_2025.PV_HYBRID_INVERTER.maxTotal
     );
 
-    const batteryGrant = batteryKwh
-      ? Math.min(
-          batteryKwh * GRANT_SCHEME_2025.BATTERY[location].perKwh,
-          GRANT_SCHEME_2025.BATTERY[location].maxTotal
-        )
-      : 0;
+    // Battery: 80% (Malta) or 95% (Gozo) of battery costs
+    let batteryGrant = 0;
+    if (batteryKwh && batteryKwh > 0) {
+      const batteryKwhBasedGrant = batteryKwh * GRANT_SCHEME_2025.BATTERY[location].perKwh;
+      const batteryPercentageBasedGrant = batteryPrice
+        ? batteryPrice * GRANT_SCHEME_2025.BATTERY[location].percentage
+        : batteryKwhBasedGrant;
 
+      batteryGrant = Math.min(
+        batteryKwhBasedGrant,
+        batteryPercentageBasedGrant,
+        GRANT_SCHEME_2025.BATTERY[location].maxTotal
+      );
+    }
+
+    // Hybrid inverter grant for battery systems: 80% of inverter costs
+    const inverterKwhBasedGrant = systemSizeKw * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp;
     const inverterGrant = Math.min(
-      systemSizeKw * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp,
+      inverterKwhBasedGrant,
       GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
     );
 

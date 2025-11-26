@@ -183,7 +183,7 @@ export default function Step3System() {
                     )}
                   </div>
                   <div className="text-gray-400 text-sm mt-1">
-                    {system.panels} panels • {formatNumber(system.annualProductionKwh)} kWh/year • {system.inverterModel}
+                    {system.panels} panels • {formatNumber(system.annualProductionKwh)} kWh/year
                   </div>
                 </div>
                 <div className="text-center px-4 border-l border-r border-white/10">
@@ -216,9 +216,21 @@ export default function Step3System() {
           </div>
           <button
             onClick={() => {
-              setWithBattery(!withBattery);
-              if (!withBattery && !selectedBattery) {
-                setSelectedBattery(BATTERY_OPTIONS[0]);
+              const newWithBattery = !withBattery;
+              setWithBattery(newWithBattery);
+              if (newWithBattery) {
+                // Turning battery ON - switch to pv_battery grant
+                if (!selectedBattery) {
+                  setSelectedBattery(BATTERY_OPTIONS[0]);
+                }
+                if (grantType !== 'none') {
+                  setGrantType('pv_battery');
+                }
+              } else {
+                // Turning battery OFF - switch back to pv_only grant
+                if (grantType === 'pv_battery') {
+                  setGrantType('pv_only');
+                }
               }
             }}
             className={`relative w-14 h-7 rounded-full transition-colors ${
