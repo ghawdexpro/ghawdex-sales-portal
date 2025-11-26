@@ -128,6 +128,7 @@ export default function Step1Location() {
           fullscreenControl: true,
           zoomControl: true,
           gestureHandling: 'greedy',
+          clickableIcons: false, // Disable POI clicks so they don't interfere with pin placement
         });
 
         googleMapRef.current = map;
