@@ -293,6 +293,7 @@ export function getFitRate(grantType: GrantType): number {
 }
 
 // System packages based on GhawdeX products
+// Pricing optimized to maximize battery grant (80-95%) vs PV grant (50%)
 export const SYSTEM_PACKAGES: SystemPackage[] = [
   {
     id: 'starter-3kw',
@@ -302,9 +303,9 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
     systemSizeKw: 3,
     inverterModel: 'Huawei SUN2000-3KTL-L1',
     annualProductionKwh: 5400,
-    priceWithGrant: 2250,
-    priceWithoutGrant: 2250,
-    grantAmount: 1500,
+    priceWithGrant: 1500,
+    priceWithoutGrant: 1500,
+    grantAmount: 750,
   },
   {
     id: 'essential-5kw',
@@ -314,9 +315,9 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
     systemSizeKw: 5,
     inverterModel: 'Huawei SUN2000-5KTL-L1',
     annualProductionKwh: 9000,
-    priceWithGrant: 3750,
-    priceWithoutGrant: 3750,
-    grantAmount: 2500,
+    priceWithGrant: 2000,
+    priceWithoutGrant: 2000,
+    grantAmount: 1000,
   },
   {
     id: 'performance-10kw',
@@ -326,9 +327,9 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
     systemSizeKw: 10,
     inverterModel: 'Huawei SUN2000-10KTL-M1',
     annualProductionKwh: 18000,
-    priceWithGrant: 7500,
-    priceWithoutGrant: 7500,
-    grantAmount: 5000,
+    priceWithGrant: 4000,
+    priceWithoutGrant: 4000,
+    grantAmount: 2000,
   },
   {
     id: 'max-15kw',
@@ -338,14 +339,15 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
     systemSizeKw: 15,
     inverterModel: 'Huawei SUN2000-15KTL-M5',
     annualProductionKwh: 27000,
-    priceWithGrant: 11250,
-    priceWithoutGrant: 11250,
-    grantAmount: 7500,
+    priceWithGrant: 6000,
+    priceWithoutGrant: 6000,
+    grantAmount: 3000,
   },
 ];
 
+// Battery pricing optimized to maximize 80% (Malta) / 95% (Gozo) grant
 export const BATTERY_OPTIONS: BatteryOption[] = [
-  { id: 'luna-5', name: 'Huawei LUNA2000-5-S0', capacityKwh: 5, price: 3500 },
-  { id: 'luna-10', name: 'Huawei LUNA2000-10-S0', capacityKwh: 10, price: 6500 },
-  { id: 'luna-15', name: 'Huawei LUNA2000-15-S0', capacityKwh: 15, price: 9500 },
+  { id: 'luna-5', name: 'Huawei LUNA2000-5-S0', capacityKwh: 5, price: 4000 },
+  { id: 'luna-10', name: 'Huawei LUNA2000-10-S0', capacityKwh: 10, price: 7500 },
+  { id: 'luna-15', name: 'Huawei LUNA2000-15-S0', capacityKwh: 15, price: 10500 },
 ];
