@@ -5,7 +5,7 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import FacebookPixel from "@/components/FacebookPixel";
 import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 import TimeTracker from "@/components/TimeTracker";
-import WhatsAppButton from "@/components/WhatsAppButton";
+// import WhatsAppButton from "@/components/WhatsAppButton";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -80,7 +80,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}
       >
         {children}
-        <WhatsAppButton />
+        {/* WhatsApp button disabled - covers wizard navigation buttons */}
+        {/* <WhatsAppButton /> */}
         <TimeTracker />
         <ZohoSalesIQ />
       </body>

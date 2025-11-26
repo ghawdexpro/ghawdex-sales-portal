@@ -85,9 +85,11 @@ export default function Step3System() {
             state.location
           );
 
-          // Calculate annual FIT income
+          // Calculate annual FIT income for both grant variants
+          const annualIncomeWithGrant = Math.round(system.annualProductionKwh * 0.105);
+          const annualIncomeNoGrant = Math.round(system.annualProductionKwh * 0.15);
           const fitRate = getFitRate(grantType);
-          const annualFitIncome = Math.round(system.annualProductionKwh * fitRate);
+          const annualFitIncome = grantType === 'none' ? annualIncomeNoGrant : annualIncomeWithGrant;
 
           return (
             <button
@@ -129,6 +131,12 @@ export default function Step3System() {
                   <div className="text-right">
                     <div className="text-gray-400 text-xs">Annual Income</div>
                     <div className="text-green-400 font-bold">{formatCurrency(annualFitIncome)}</div>
+                    <div className="text-amber-400/70 text-[10px]">
+                      {grantType === 'none'
+                        ? `${formatCurrency(annualIncomeWithGrant)} with grant`
+                        : `${formatCurrency(annualIncomeNoGrant)} without grant`
+                      }
+                    </div>
                   </div>
                 </div>
               </div>
@@ -156,6 +164,12 @@ export default function Step3System() {
                   <div className="text-gray-400 text-xs">Annual Income</div>
                   <div className="text-green-400 font-bold text-lg">{formatCurrency(annualFitIncome)}</div>
                   <div className="text-gray-500 text-xs">@ €{fitRate.toFixed(3)}/kWh</div>
+                  <div className="text-amber-400/70 text-xs mt-0.5">
+                    {grantType === 'none'
+                      ? `${formatCurrency(annualIncomeWithGrant)} with grant`
+                      : `${formatCurrency(annualIncomeNoGrant)} without grant`
+                    }
+                  </div>
                 </div>
                 <div className="text-right min-w-[100px]">
                   <div className="text-white font-bold text-xl">
