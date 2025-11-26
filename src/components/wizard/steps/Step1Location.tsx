@@ -253,12 +253,9 @@ export default function Step1Location() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-white mb-3">
-          Where is your property?
+        <h1 className="text-3xl font-bold text-white">
+          Put Pin on your roof!
         </h1>
-        <p className="text-gray-400">
-          Click on the map to select your exact property location. Zoom in to see your roof clearly.
-        </p>
       </div>
 
       {loadError && (
