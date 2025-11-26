@@ -61,11 +61,11 @@ export default function Step3System() {
 
   return (
     <div className="max-w-3xl mx-auto pb-24">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-3">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
           Choose your solar system
         </h1>
-        <p className="text-gray-400">
+        <p className="text-gray-400 text-sm sm:text-base px-2">
           Based on your consumption of {state.consumptionKwh} kWh/month, we recommend the highlighted option
         </p>
       </div>
@@ -90,7 +90,7 @@ export default function Step3System() {
 
         <div className="border-t border-white/10 pt-4">
           <div className="text-white font-medium mb-3">Government Grant Scheme</div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
             <button
               onClick={() => setGrantType('none')}
               className={`p-3 rounded-lg border text-center transition-all ${
@@ -171,7 +171,39 @@ export default function Step3System() {
                   : 'bg-white/5 border-white/10 hover:border-white/30'
               } ${isRecommended ? 'ring-2 ring-amber-500/50' : ''}`}
             >
-              <div className="flex items-start justify-between gap-4">
+              {/* Mobile layout */}
+              <div className="sm:hidden">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-semibold">{system.name}</span>
+                    <span className="text-amber-400 font-medium text-sm">{system.systemSizeKw} kWp</span>
+                  </div>
+                  {isRecommended && (
+                    <span className="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-medium">
+                      Recommended
+                    </span>
+                  )}
+                </div>
+                <div className="text-gray-400 text-xs mb-3">
+                  {system.panels} panels • {formatNumber(system.annualProductionKwh)} kWh/year
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                  <div>
+                    <div className="text-gray-400 text-xs">Price</div>
+                    <div className="text-white font-bold">{formatCurrency(systemPricing.totalPrice)}</div>
+                    {grantType !== 'none' && systemPricing.grantAmount > 0 && (
+                      <div className="text-green-400 text-xs">Grant: {formatCurrency(systemPricing.grantAmount)}</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-gray-400 text-xs">Annual Income</div>
+                    <div className="text-green-400 font-bold">{formatCurrency(annualFitIncome)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop layout */}
+              <div className="hidden sm:flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold text-lg">{system.name}</span>
@@ -244,19 +276,19 @@ export default function Step3System() {
         </div>
 
         {withBattery && (
-          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/10">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-4 border-t border-white/10">
             {BATTERY_OPTIONS.map((battery) => (
               <button
                 key={battery.id}
                 onClick={() => setSelectedBattery(battery)}
-                className={`p-3 rounded-lg border text-center transition-all ${
+                className={`p-2 sm:p-3 rounded-lg border text-center transition-all ${
                   selectedBattery?.id === battery.id
                     ? 'bg-amber-500/20 border-amber-500'
                     : 'bg-white/5 border-white/10 hover:border-white/30'
                 }`}
               >
-                <div className="text-white font-medium">{battery.capacityKwh} kWh</div>
-                <div className="text-gray-400 text-sm">{formatCurrency(battery.price)}</div>
+                <div className="text-white font-medium text-sm sm:text-base">{battery.capacityKwh} kWh</div>
+                <div className="text-gray-400 text-xs sm:text-sm">{formatCurrency(battery.price)}</div>
               </button>
             ))}
           </div>

@@ -71,11 +71,11 @@ export default function Step2Consumption() {
 
   return (
     <div className="max-w-xl mx-auto pb-24">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-3">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
           What&apos;s your monthly electricity bill?
         </h1>
-        <p className="text-gray-400">
+        <p className="text-gray-400 text-sm sm:text-base px-2">
           This helps us recommend the right system size for your needs
         </p>
       </div>
@@ -100,11 +100,11 @@ export default function Step2Consumption() {
       )}
 
       {/* Household Size / Business */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-        <label className="block text-sm font-medium text-gray-300 mb-4">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+        <label className="block text-sm font-medium text-gray-300 mb-3 sm:mb-4">
           {isBusiness ? 'Business Customer' : 'How many people live in your household?'}
         </label>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
           {HOUSEHOLD_SIZES.map((size) => (
             <button
               key={size.value}
@@ -112,14 +112,14 @@ export default function Step2Consumption() {
                 setHouseholdSize(size.value);
                 setIsBusiness(false);
               }}
-              className={`p-3 rounded-xl border text-center transition-all ${
+              className={`p-2 sm:p-3 rounded-xl border text-center transition-all ${
                 !isBusiness && householdSize === size.value
                   ? 'bg-amber-500/20 border-amber-500 text-white'
                   : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/30'
               }`}
             >
-              <div className="text-xl mb-1">{size.icon}</div>
-              <div className="text-xs">{size.label}</div>
+              <div className="text-lg sm:text-xl mb-0.5 sm:mb-1">{size.icon}</div>
+              <div className="text-[10px] sm:text-xs">{size.label}</div>
             </button>
           ))}
           {/* Business Button - stands out with blue/purple color */}
@@ -128,14 +128,14 @@ export default function Step2Consumption() {
               setIsBusiness(true);
               setHouseholdSize(null);
             }}
-            className={`p-3 rounded-xl border text-center transition-all ${
+            className={`p-2 sm:p-3 rounded-xl border text-center transition-all ${
               isBusiness
                 ? 'bg-blue-500/30 border-blue-400 text-white ring-2 ring-blue-400/50'
                 : 'bg-blue-500/10 border-blue-500/30 text-blue-300 hover:border-blue-400/50 hover:bg-blue-500/20'
             }`}
           >
-            <div className="text-xl mb-1">🏢</div>
-            <div className="text-xs font-medium">Business</div>
+            <div className="text-lg sm:text-xl mb-0.5 sm:mb-1">🏢</div>
+            <div className="text-[10px] sm:text-xs font-medium">Biz</div>
           </button>
         </div>
         <p className="text-xs text-gray-500 mt-3">
@@ -147,24 +147,24 @@ export default function Step2Consumption() {
       </div>
 
       {/* Bill Presets */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-        <label className="block text-sm font-medium text-gray-300 mb-4">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+        <label className="block text-sm font-medium text-gray-300 mb-3 sm:mb-4">
           Select your typical monthly bill
         </label>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
           {BILL_PRESETS.map((preset) => (
             <button
               key={preset.value}
               onClick={() => handlePresetClick(preset.value)}
-              className={`p-4 rounded-xl border text-left transition-all ${
+              className={`p-3 sm:p-4 rounded-xl border text-left transition-all ${
                 !useCustom && monthlyBill === preset.value
                   ? 'bg-amber-500/20 border-amber-500 text-white'
                   : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/30'
               }`}
             >
-              <div className="font-semibold">{preset.label}</div>
-              <div className="text-xs text-gray-400">{preset.description}</div>
+              <div className="font-semibold text-sm sm:text-base">{preset.label}</div>
+              <div className="text-[10px] sm:text-xs text-gray-400">{preset.description}</div>
             </button>
           ))}
         </div>
