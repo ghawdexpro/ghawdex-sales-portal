@@ -5,12 +5,20 @@ import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
 import { estimateConsumption } from '@/lib/calculations';
 
-const BILL_PRESETS = [
+const RESIDENTIAL_BILL_PRESETS = [
   { label: '€50-80', value: 65, description: 'Small apartment' },
   { label: '€80-120', value: 100, description: 'Medium home' },
   { label: '€120-180', value: 150, description: 'Large home' },
   { label: '€180-250', value: 215, description: 'Villa / AC heavy' },
   { label: '€250+', value: 300, description: 'Large villa / Pool' },
+];
+
+const BUSINESS_BILL_PRESETS = [
+  { label: '€300-500', value: 400, description: 'Small office / Shop' },
+  { label: '€500-800', value: 650, description: 'Restaurant / Clinic' },
+  { label: '€800-1,500', value: 1150, description: 'Warehouse / Factory' },
+  { label: '€1,500-3,000', value: 2250, description: 'Hotel / Supermarket' },
+  { label: '€3,000+', value: 4000, description: 'Large industrial' },
 ];
 
 const HOUSEHOLD_SIZES = [
@@ -109,8 +117,15 @@ export default function Step2Consumption() {
             <button
               key={size.value}
               onClick={() => {
+                const wasBusiness = isBusiness;
                 setHouseholdSize(size.value);
                 setIsBusiness(false);
+                // Reset bill selection when switching from business to residential
+                if (wasBusiness) {
+                  setMonthlyBill(null);
+                  setUseCustom(false);
+                  setCustomBill('');
+                }
               }}
               className={`p-2 sm:p-3 rounded-xl border text-center transition-all ${
                 !isBusiness && householdSize === size.value
@@ -122,11 +137,14 @@ export default function Step2Consumption() {
               <div className="text-[10px] sm:text-xs">{size.label}</div>
             </button>
           ))}
-          {/* Business Button - stands out with blue/purple color */}
+          {/* Business Button */}
           <button
             onClick={() => {
               setIsBusiness(true);
               setHouseholdSize(null);
+              setMonthlyBill(null);
+              setUseCustom(false);
+              setCustomBill('');
             }}
             className={`p-2 sm:p-3 rounded-xl border text-center transition-all ${
               isBusiness
@@ -135,7 +153,7 @@ export default function Step2Consumption() {
             }`}
           >
             <div className="text-lg sm:text-xl mb-0.5 sm:mb-1">🏢</div>
-            <div className="text-[10px] sm:text-xs font-medium">Biz</div>
+            <div className="text-[10px] sm:text-xs font-medium">Business</div>
           </button>
         </div>
         <p className="text-xs text-gray-500 mt-3">
@@ -153,7 +171,7 @@ export default function Step2Consumption() {
         </label>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
-          {BILL_PRESETS.map((preset) => (
+          {(isBusiness ? BUSINESS_BILL_PRESETS : RESIDENTIAL_BILL_PRESETS).map((preset) => (
             <button
               key={preset.value}
               onClick={() => handlePresetClick(preset.value)}
