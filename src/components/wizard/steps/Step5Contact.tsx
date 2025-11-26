@@ -102,13 +102,42 @@ export default function Step5Contact() {
 
   return (
     <div className="max-w-xl mx-auto pb-24">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-3">
-          Almost there! Tell us about yourself
+      <div className="text-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+          Get your full quote
         </h1>
-        <p className="text-gray-400">
-          We&apos;ll use this to prepare your personalized quote
+        <p className="text-gray-400 text-sm sm:text-base">
+          Enter your details to receive your personalized solar proposal
         </p>
+      </div>
+
+      {/* What you'll get */}
+      <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
+        <div className="text-amber-400 font-medium text-sm mb-3">You&apos;ll receive:</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="text-sm">
+              <div className="text-white font-medium">Full specs via email</div>
+              <div className="text-gray-400 text-xs">Detailed system breakdown</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="text-sm">
+              <div className="text-white font-medium">SMS confirmation</div>
+              <div className="text-gray-400 text-xs">Quick quote summary</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
