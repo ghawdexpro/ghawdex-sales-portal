@@ -81,7 +81,7 @@ export default function Step1Location() {
     // Gradual zoom - don't place marker until zoomed in enough
     const currentZoom = googleMapRef.current.getZoom() || INITIAL_ZOOM;
 
-    if (currentZoom < 18) {
+    if (currentZoom < 20) {
       // Zoom in gradually: +1 level per click, max 21
       const nextZoom = Math.min(currentZoom + 1, 21);
       // Set center first, then zoom to avoid drift
@@ -89,17 +89,15 @@ export default function Step1Location() {
       googleMapRef.current.setZoom(nextZoom);
 
       // Remove marker if not zoomed in enough - user needs to click again when closer
-      if (currentZoom < 15) {
-        if (markerRef.current) {
-          markerRef.current.setMap(null);
-          markerRef.current = null;
-        }
-        setSelectedAddress('');
-        dispatch({
-          type: 'SET_ADDRESS',
-          payload: { address: '', coordinates: null },
-        });
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
       }
+      setSelectedAddress('');
+      dispatch({
+        type: 'SET_ADDRESS',
+        payload: { address: '', coordinates: null },
+      });
       return;
     }
   }, [dispatch]);
