@@ -262,23 +262,6 @@ export default function Step1Location() {
         </div>
       )}
 
-      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
-        <div className="flex gap-3">
-          <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div className="text-amber-200 text-sm">
-            <strong>How to select your property:</strong>
-            <ol className="mt-1 ml-4 list-decimal space-y-1">
-              <li>Use the map to find your area in Malta or Gozo</li>
-              <li>Zoom in until you can see your roof clearly</li>
-              <li>Click directly on your property to place the marker</li>
-              <li>Drag the marker to adjust if needed</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
       <div className="relative rounded-2xl overflow-hidden border border-white/10 mb-4">
         <div
           ref={mapRef}
