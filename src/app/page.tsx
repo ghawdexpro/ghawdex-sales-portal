@@ -68,16 +68,17 @@ export default function Home() {
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[128px]" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[128px]" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-16 sm:pb-32">
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-10 sm:mb-16">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <span className="text-xl sm:text-2xl font-bold text-white">GhawdeX</span>
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-16 sm:pb-32">
+          {/* Hero Logo - Big and Bold */}
+          <div className="flex items-center justify-center mb-8 sm:mb-12">
+            <div className="relative">
+              {/* Glow effect behind logo */}
+              <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-amber-500/30 to-orange-500/30 scale-150" />
+              <img
+                src="/logo/Ghawdex engineering logo.svg"
+                alt="GhawdeX Engineering"
+                className="relative h-24 sm:h-32 lg:h-40 w-auto drop-shadow-2xl"
+              />
             </div>
           </div>
 
