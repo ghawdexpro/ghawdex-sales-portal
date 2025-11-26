@@ -71,7 +71,7 @@ export default function Step4Financing() {
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-3">
-          How would you like to pay?
+          Choose your financing
         </h1>
         <p className="text-gray-400">
           Choose between paying upfront or spreading the cost with BOV financing
