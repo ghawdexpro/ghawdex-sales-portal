@@ -218,6 +218,76 @@ export default function Step6Summary() {
   };
 
   const generateTechSpec = () => {
+    // Huawei inverter specifications
+    const inverterSpecs: Record<string, { maxDcPower: string; mpptVoltage: string; maxEfficiency: string; weight: string; dimensions: string; datasheet: string }> = {
+      'Huawei SUN2000-3KTL-L1': {
+        maxDcPower: '4.5 kW',
+        mpptVoltage: '140-980 V',
+        maxEfficiency: '98.4%',
+        weight: '10.5 kg',
+        dimensions: '365 × 365 × 156 mm',
+        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
+      },
+      'Huawei SUN2000-5KTL-L1': {
+        maxDcPower: '7.5 kW',
+        mpptVoltage: '140-980 V',
+        maxEfficiency: '98.6%',
+        weight: '10.5 kg',
+        dimensions: '365 × 365 × 156 mm',
+        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
+      },
+      'Huawei SUN2000-10KTL-M1': {
+        maxDcPower: '15 kW',
+        mpptVoltage: '200-1000 V',
+        maxEfficiency: '98.6%',
+        weight: '23.5 kg',
+        dimensions: '525 × 470 × 262 mm',
+        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-8-20ktl-m1.pdf',
+      },
+      'Huawei SUN2000-15KTL-M5': {
+        maxDcPower: '22.5 kW',
+        mpptVoltage: '200-1080 V',
+        maxEfficiency: '98.7%',
+        weight: '27 kg',
+        dimensions: '550 × 470 × 280 mm',
+        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-12-25ktl-m5.pdf',
+      },
+    };
+
+    // Huawei battery specifications
+    const batterySpecs: Record<string, { usableCapacity: string; voltage: string; maxCharge: string; maxDischarge: string; weight: string; dimensions: string; datasheet: string }> = {
+      'Huawei LUNA2000-5-S0': {
+        usableCapacity: '5 kWh',
+        voltage: '40-60 V',
+        maxCharge: '2.5 kW',
+        maxDischarge: '2.5 kW',
+        weight: '63.8 kg',
+        dimensions: '670 × 150 × 600 mm',
+        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+      },
+      'Huawei LUNA2000-10-S0': {
+        usableCapacity: '10 kWh',
+        voltage: '80-120 V',
+        maxCharge: '5 kW',
+        maxDischarge: '5 kW',
+        weight: '114 kg',
+        dimensions: '670 × 150 × 960 mm',
+        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+      },
+      'Huawei LUNA2000-15-S0': {
+        usableCapacity: '15 kWh',
+        voltage: '120-180 V',
+        maxCharge: '5 kW',
+        maxDischarge: '5 kW',
+        weight: '164 kg',
+        dimensions: '670 × 150 × 1320 mm',
+        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+      },
+    };
+
+    const inverter = inverterSpecs[state.selectedSystem?.inverterModel || ''] || inverterSpecs['Huawei SUN2000-5KTL-L1'];
+    const batterySpec = battery ? batterySpecs[battery.name] || batterySpecs['Huawei LUNA2000-10-S0'] : null;
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -226,14 +296,16 @@ export default function Step6Summary() {
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #1a1a2e; }
-          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 3px solid #3b82f6; padding-bottom: 20px; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 3px solid #c7000b; padding-bottom: 20px; }
           .logo { font-size: 28px; font-weight: bold; color: #f59e0b; }
           .logo span { color: #1a1a2e; }
+          .huawei-badge { display: inline-flex; align-items: center; gap: 8px; background: #c7000b; color: white; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-top: 8px; }
           .doc-info { text-align: right; font-size: 12px; color: #666; }
           .doc-info strong { display: block; font-size: 14px; color: #1a1a2e; }
           h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a2e; }
-          h2 { font-size: 16px; margin: 25px 0 12px; color: #3b82f6; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-          .site-info { background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3b82f6; }
+          h2 { font-size: 16px; margin: 25px 0 12px; color: #c7000b; border-bottom: 1px solid #eee; padding-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+          h2 img { height: 20px; }
+          .site-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #c7000b; }
           .site-info p { margin: 5px 0; }
           table { width: 100%; border-collapse: collapse; margin: 15px 0; }
           th, td { padding: 10px 12px; text-align: left; border: 1px solid #e5e7eb; }
@@ -244,12 +316,24 @@ export default function Step6Summary() {
           .perf-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
           .perf-item .value { font-size: 24px; font-weight: bold; color: #1a1a2e; }
           .perf-item .label { font-size: 12px; color: #666; margin-top: 5px; }
+          .datasheet-link { display: inline-flex; align-items: center; gap: 6px; background: #c7000b; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin-top: 10px; }
+          .datasheet-link:hover { background: #a5000a; }
+          .datasheet-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd; }
+          .ecosystem-box { background: linear-gradient(135deg, #fff5f5, #fff); border: 1px solid #c7000b; border-radius: 12px; padding: 20px; margin: 25px 0; }
+          .ecosystem-box h3 { color: #c7000b; font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+          .ecosystem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+          .ecosystem-item { text-align: center; padding: 12px; background: white; border-radius: 8px; border: 1px solid #eee; }
+          .ecosystem-item .icon { font-size: 24px; margin-bottom: 5px; }
+          .ecosystem-item .name { font-size: 11px; color: #666; }
           .notes { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 25px; font-size: 12px; }
           .notes h3 { font-size: 13px; margin-bottom: 10px; }
           .notes ul { padding-left: 20px; }
           .notes li { margin: 5px 0; }
           .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
-          @media print { body { padding: 20px; } }
+          @media print {
+            body { padding: 20px; }
+            .datasheet-link { background: #666; }
+          }
         </style>
       </head>
       <body>
@@ -257,6 +341,9 @@ export default function Step6Summary() {
           <div>
             <div class="logo">Ghawde<span>X</span></div>
             <div style="font-size: 12px; color: #666;">Engineering Excellence in Solar</div>
+            <div class="huawei-badge">
+              <span>HUAWEI</span> Certified Partner
+            </div>
           </div>
           <div class="doc-info">
             <strong>TECHNICAL SPECIFICATION</strong>
@@ -265,8 +352,8 @@ export default function Step6Summary() {
           </div>
         </div>
 
-        <h1>System Technical Specification</h1>
-        <p style="color: #666; margin-bottom: 20px;">Detailed technical specifications for the proposed solar installation.</p>
+        <h1>Huawei FusionSolar System Specification</h1>
+        <p style="color: #666; margin-bottom: 20px;">Complete Huawei ecosystem for maximum efficiency and reliability.</p>
 
         <div class="site-info">
           <p><strong>Customer:</strong> ${state.fullName}</p>
@@ -294,6 +381,33 @@ export default function Step6Summary() {
           </div>
         </div>
 
+        <div class="ecosystem-box">
+          <h3>
+            <span style="color: #c7000b; font-weight: bold;">HUAWEI</span> FusionSolar Ecosystem
+          </h3>
+          <div class="ecosystem-grid">
+            <div class="ecosystem-item">
+              <div class="icon">☀️</div>
+              <div class="name">Solar Panels</div>
+            </div>
+            <div class="ecosystem-item">
+              <div class="icon">⚡</div>
+              <div class="name">SUN2000 Inverter</div>
+            </div>
+            ${battery ? `
+            <div class="ecosystem-item">
+              <div class="icon">🔋</div>
+              <div class="name">LUNA2000 Battery</div>
+            </div>
+            ` : `
+            <div class="ecosystem-item">
+              <div class="icon">📱</div>
+              <div class="name">FusionSolar App</div>
+            </div>
+            `}
+          </div>
+        </div>
+
         <h2>Solar Panels</h2>
         <table>
           <tr>
@@ -309,75 +423,146 @@ export default function Step6Summary() {
             <td class="spec-value">${state.selectedSystem?.systemSizeKw} kWp (${(state.selectedSystem?.panels || 0) * (state.selectedSystem?.panelWattage || 0)}W)</td>
           </tr>
           <tr>
-            <th>Panel Type</th>
-            <td class="spec-value">Monocrystalline PERC</td>
+            <th>Cell Type</th>
+            <td class="spec-value">Monocrystalline PERC Half-Cut</td>
           </tr>
           <tr>
-            <th>Panel Efficiency</th>
-            <td class="spec-value">>21%</td>
+            <th>Module Efficiency</th>
+            <td class="spec-value">>21.5%</td>
           </tr>
           <tr>
-            <th>Panel Warranty</th>
-            <td class="spec-value">25 years performance warranty</td>
+            <th>Temperature Coefficient</th>
+            <td class="spec-value">-0.34%/°C</td>
+          </tr>
+          <tr>
+            <th>Warranty</th>
+            <td class="spec-value">12 years product / 25 years performance</td>
           </tr>
         </table>
+        <div class="datasheet-section">
+          <a href="https://cdn.ghawdex.pro/datasheets/solar-panels-450w.pdf" target="_blank" class="datasheet-link">
+            📄 Download Panel Datasheet (PDF)
+          </a>
+        </div>
 
-        <h2>Inverter</h2>
+        <h2>Huawei SUN2000 Hybrid Inverter</h2>
         <table>
-          <tr>
+          <tr class="highlight">
             <th>Model</th>
             <td class="spec-value">${state.selectedSystem?.inverterModel}</td>
           </tr>
           <tr>
             <th>Type</th>
-            <td class="spec-value">Hybrid (Grid-tied with battery support)</td>
+            <td class="spec-value">Hybrid (Grid-tied + Battery Ready)</td>
           </tr>
           <tr>
-            <th>Rated Power</th>
+            <th>Rated AC Power</th>
             <td class="spec-value">${state.selectedSystem?.systemSizeKw} kW</td>
           </tr>
           <tr>
-            <th>Efficiency</th>
-            <td class="spec-value">>98%</td>
+            <th>Max DC Input Power</th>
+            <td class="spec-value">${inverter.maxDcPower}</td>
+          </tr>
+          <tr>
+            <th>MPPT Voltage Range</th>
+            <td class="spec-value">${inverter.mpptVoltage}</td>
+          </tr>
+          <tr>
+            <th>Max Efficiency</th>
+            <td class="spec-value">${inverter.maxEfficiency}</td>
+          </tr>
+          <tr>
+            <th>MPPT Trackers</th>
+            <td class="spec-value">2 (optimized shade management)</td>
+          </tr>
+          <tr>
+            <th>Dimensions</th>
+            <td class="spec-value">${inverter.dimensions}</td>
+          </tr>
+          <tr>
+            <th>Weight</th>
+            <td class="spec-value">${inverter.weight}</td>
+          </tr>
+          <tr>
+            <th>IP Rating</th>
+            <td class="spec-value">IP65 (outdoor installation)</td>
           </tr>
           <tr>
             <th>Monitoring</th>
-            <td class="spec-value">Huawei FusionSolar App (real-time)</td>
+            <td class="spec-value">Huawei FusionSolar App (iOS/Android)</td>
           </tr>
           <tr>
             <th>Warranty</th>
             <td class="spec-value">10 years manufacturer warranty</td>
           </tr>
         </table>
+        <div class="datasheet-section">
+          <a href="${inverter.datasheet}" target="_blank" class="datasheet-link">
+            📄 Download Inverter Datasheet (PDF)
+          </a>
+        </div>
 
-        ${battery ? `
-        <h2>Battery Storage</h2>
+        ${battery && batterySpec ? `
+        <h2>Huawei LUNA2000 Smart Battery</h2>
         <table>
           <tr class="highlight">
             <th>Model</th>
             <td class="spec-value">${battery.name}</td>
           </tr>
           <tr class="highlight">
-            <th>Capacity</th>
-            <td class="spec-value">${battery.capacityKwh} kWh</td>
+            <th>Usable Capacity</th>
+            <td class="spec-value">${batterySpec.usableCapacity}</td>
           </tr>
           <tr>
-            <th>Type</th>
+            <th>Battery Type</th>
             <td class="spec-value">Lithium Iron Phosphate (LiFePO4)</td>
           </tr>
           <tr>
+            <th>Operating Voltage</th>
+            <td class="spec-value">${batterySpec.voltage}</td>
+          </tr>
+          <tr>
+            <th>Max Charge Power</th>
+            <td class="spec-value">${batterySpec.maxCharge}</td>
+          </tr>
+          <tr>
+            <th>Max Discharge Power</th>
+            <td class="spec-value">${batterySpec.maxDischarge}</td>
+          </tr>
+          <tr>
             <th>Cycle Life</th>
-            <td class="spec-value">>6,000 cycles</td>
+            <td class="spec-value">>6,000 cycles @ 90% DoD</td>
           </tr>
           <tr>
             <th>Depth of Discharge</th>
             <td class="spec-value">100%</td>
           </tr>
           <tr>
+            <th>Round-Trip Efficiency</th>
+            <td class="spec-value">>95%</td>
+          </tr>
+          <tr>
+            <th>Dimensions</th>
+            <td class="spec-value">${batterySpec.dimensions}</td>
+          </tr>
+          <tr>
+            <th>Weight</th>
+            <td class="spec-value">${batterySpec.weight}</td>
+          </tr>
+          <tr>
+            <th>IP Rating</th>
+            <td class="spec-value">IP66 (outdoor installation)</td>
+          </tr>
+          <tr>
             <th>Warranty</th>
             <td class="spec-value">10 years manufacturer warranty</td>
           </tr>
         </table>
+        <div class="datasheet-section">
+          <a href="${batterySpec.datasheet}" target="_blank" class="datasheet-link">
+            📄 Download Battery Datasheet (PDF)
+          </a>
+        </div>
         ` : ''}
 
         <h2>Estimated Performance</h2>
@@ -391,12 +576,16 @@ export default function Step6Summary() {
             <td class="spec-value">${formatNumber(Math.round((state.selectedSystem?.annualProductionKwh || 0) / 365))} kWh</td>
           </tr>
           <tr>
+            <th>Specific Yield</th>
+            <td class="spec-value">${formatNumber(Math.round((state.selectedSystem?.annualProductionKwh || 0) / (state.selectedSystem?.systemSizeKw || 1)))} kWh/kWp/year</td>
+          </tr>
+          <tr>
             <th>Peak Sun Hours (Malta avg)</th>
             <td class="spec-value">5.5 hours/day</td>
           </tr>
           <tr>
             <th>System Degradation</th>
-            <td class="spec-value">0.5% per year</td>
+            <td class="spec-value">0.5% per year (linear)</td>
           </tr>
           <tr>
             <th>25-Year Production Estimate</th>
@@ -410,13 +599,14 @@ export default function Step6Summary() {
             <li>Actual production may vary based on weather, shading, and roof orientation</li>
             <li>Final system design subject to site survey and technical assessment</li>
             <li>All equipment specifications subject to availability</li>
-            <li>Installation includes mounting system, cabling, and protection devices</li>
-            <li>Grid connection and metering by Enemalta (fees apply separately)</li>
+            <li>Installation includes mounting system, DC/AC cabling, and protection devices</li>
+            <li>Grid connection and metering by Enemalta (separate application required)</li>
+            <li>All Huawei equipment is TÜV certified and complies with EU standards</li>
           </ul>
         </div>
 
         <div class="footer">
-          <p><strong>GhawdeX Engineering</strong></p>
+          <p><strong>GhawdeX Engineering</strong> - Huawei Certified Partner</p>
           <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
           <p>www.ghawdex.pro</p>
         </div>
