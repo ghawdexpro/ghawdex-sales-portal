@@ -3,8 +3,8 @@ import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 const libraryCache: Record<string, unknown> = {}
 let isConfigured = false
 
-// Hardcoded because Railway doesn't expose env vars during build
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBrFY-fUgljav3Mtc_scNjNh8Vq63MJRXU'
+// NEXT_PUBLIC_ vars are inlined at build time, so this works on Railway
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
 
 const configureGoogleMaps = () => {
   if (!isConfigured && typeof window !== 'undefined') {
