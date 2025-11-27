@@ -2,7 +2,7 @@
 
 import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated } from '@/lib/analytics';
-import { BATTERY_OPTIONS } from '@/lib/types';
+import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber, calculateCO2Offset } from '@/lib/calculations';
 import { useEffect, useState } from 'react';
 
@@ -17,6 +17,14 @@ export default function Step6Summary() {
   const co2Offset = state.selectedSystem
     ? calculateCO2Offset(state.selectedSystem.annualProductionKwh)
     : 0;
+
+  const today = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const quoteRef = `GHX-${Date.now().toString(36).toUpperCase()}`;
 
   useEffect(() => {
     if (state.totalPrice && state.selectedSystem) {
@@ -41,6 +49,386 @@ export default function Step6Summary() {
 
   const handleCall = () => {
     window.location.href = 'tel:+35679055156';
+  };
+
+  const generateProposal = () => {
+    const fitRate = state.grantType === 'none'
+      ? GRANT_SCHEME_2025.FIT_WITHOUT_GRANT
+      : GRANT_SCHEME_2025.FIT_WITH_GRANT;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Solar System Proposal - ${state.fullName}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #1a1a2e; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 3px solid #f59e0b; padding-bottom: 20px; }
+          .logo { font-size: 28px; font-weight: bold; color: #f59e0b; }
+          .logo span { color: #1a1a2e; }
+          .doc-info { text-align: right; font-size: 12px; color: #666; }
+          .doc-info strong { display: block; font-size: 14px; color: #1a1a2e; }
+          h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a2e; }
+          h2 { font-size: 18px; margin: 30px 0 15px; color: #f59e0b; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+          .customer-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+          .customer-info p { margin: 5px 0; }
+          .price-box { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center; }
+          .price-box .label { font-size: 14px; color: #92400e; margin-bottom: 5px; }
+          .price-box .amount { font-size: 42px; font-weight: bold; color: #1a1a2e; }
+          .price-box .grant { color: #16a34a; font-size: 14px; margin-top: 8px; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+          th { background: #f8f9fa; font-weight: 600; }
+          .highlight { background: #fef3c7; }
+          .terms { font-size: 11px; color: #666; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; }
+          .terms h3 { font-size: 12px; color: #1a1a2e; margin-bottom: 10px; }
+          .terms ul { padding-left: 20px; }
+          .terms li { margin: 5px 0; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          .footer strong { color: #f59e0b; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="logo">Ghawde<span>X</span></div>
+            <div style="font-size: 12px; color: #666;">Engineering Excellence in Solar</div>
+          </div>
+          <div class="doc-info">
+            <strong>CONTRACT PROPOSAL</strong>
+            Ref: ${quoteRef}<br>
+            Date: ${today}<br>
+            Valid for: 30 days
+          </div>
+        </div>
+
+        <h1>Solar System Proposal</h1>
+        <p style="color: #666; margin-bottom: 20px;">Thank you for choosing GhawdeX Engineering for your solar installation.</p>
+
+        <div class="customer-info">
+          <p><strong>Customer:</strong> ${state.fullName}</p>
+          <p><strong>Email:</strong> ${state.email}</p>
+          <p><strong>Phone:</strong> ${state.phone}</p>
+          <p><strong>Installation Address:</strong> ${state.address}</p>
+          <p><strong>Location:</strong> ${state.location === 'gozo' ? 'Gozo' : 'Malta'}</p>
+        </div>
+
+        <div class="price-box">
+          <div class="label">Total Investment</div>
+          <div class="amount">${formatCurrency(state.totalPrice || 0)}</div>
+          ${state.grantType !== 'none' ? `<div class="grant">After government grant applied</div>` : ''}
+        </div>
+
+        <h2>System Configuration</h2>
+        <table>
+          <tr>
+            <td><strong>Package</strong></td>
+            <td>${state.selectedSystem?.name} Package</td>
+          </tr>
+          <tr>
+            <td><strong>System Size</strong></td>
+            <td>${state.selectedSystem?.systemSizeKw} kWp</td>
+          </tr>
+          <tr>
+            <td><strong>Solar Panels</strong></td>
+            <td>${state.selectedSystem?.panels} × ${state.selectedSystem?.panelWattage}W panels</td>
+          </tr>
+          <tr>
+            <td><strong>Inverter</strong></td>
+            <td>${state.selectedSystem?.inverterModel}</td>
+          </tr>
+          ${battery ? `
+          <tr class="highlight">
+            <td><strong>Battery Storage</strong></td>
+            <td>${battery.name} (${battery.capacityKwh} kWh)</td>
+          </tr>
+          ` : ''}
+        </table>
+
+        <h2>Financial Summary</h2>
+        <table>
+          <tr>
+            <td><strong>Annual Production</strong></td>
+            <td>${formatNumber(state.selectedSystem?.annualProductionKwh || 0)} kWh</td>
+          </tr>
+          <tr>
+            <td><strong>Feed-in Tariff Rate</strong></td>
+            <td>€${fitRate}/kWh (guaranteed 20 years)</td>
+          </tr>
+          <tr>
+            <td><strong>Estimated Annual Income</strong></td>
+            <td style="color: #16a34a; font-weight: bold;">${formatCurrency(state.annualSavings || 0)}</td>
+          </tr>
+          <tr>
+            <td><strong>Payback Period</strong></td>
+            <td>${state.paybackYears} years</td>
+          </tr>
+          <tr>
+            <td><strong>Payment Method</strong></td>
+            <td>${state.paymentMethod === 'loan' ? `BOV Financing (${state.loanTerm ? state.loanTerm / 12 : 0} years) - ${formatCurrency(state.monthlyPayment || 0)}/month` : 'Full Payment'}</td>
+          </tr>
+        </table>
+
+        ${state.grantType !== 'none' ? `
+        <h2>Government Grant (REWS 2025)</h2>
+        <table>
+          <tr>
+            <td><strong>Grant Scheme</strong></td>
+            <td>${state.grantType === 'pv_battery' ? 'PV + Battery Storage' : 'PV System Only'}</td>
+          </tr>
+          <tr>
+            <td><strong>Grant Amount</strong></td>
+            <td style="color: #16a34a; font-weight: bold;">€${state.selectedSystem?.grantAmount}</td>
+          </tr>
+          <tr>
+            <td><strong>Grant Status</strong></td>
+            <td>Subject to REWS approval</td>
+          </tr>
+        </table>
+        ` : ''}
+
+        <div class="terms">
+          <h3>Terms & Conditions</h3>
+          <ul>
+            <li>This proposal is valid for 30 days from the date of issue</li>
+            <li>Final price subject to site survey and technical assessment</li>
+            <li>Government grant subject to REWS approval and availability</li>
+            <li>Installation timeline: 14 days from contract signing (subject to permit approval)</li>
+            <li>All equipment comes with manufacturer warranty</li>
+            <li>Price includes installation, commissioning, and grid connection</li>
+          </ul>
+        </div>
+
+        <div class="footer">
+          <p><strong>GhawdeX Engineering</strong></p>
+          <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
+          <p>www.ghawdex.pro</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+    }
+  };
+
+  const generateTechSpec = () => {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Technical Specification - ${state.fullName}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #1a1a2e; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 3px solid #3b82f6; padding-bottom: 20px; }
+          .logo { font-size: 28px; font-weight: bold; color: #f59e0b; }
+          .logo span { color: #1a1a2e; }
+          .doc-info { text-align: right; font-size: 12px; color: #666; }
+          .doc-info strong { display: block; font-size: 14px; color: #1a1a2e; }
+          h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a2e; }
+          h2 { font-size: 16px; margin: 25px 0 12px; color: #3b82f6; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+          .site-info { background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3b82f6; }
+          .site-info p { margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          th, td { padding: 10px 12px; text-align: left; border: 1px solid #e5e7eb; }
+          th { background: #f8f9fa; font-weight: 600; width: 40%; }
+          .spec-value { font-weight: 500; }
+          .highlight { background: #fef3c7; }
+          .performance-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
+          .perf-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+          .perf-item .value { font-size: 24px; font-weight: bold; color: #1a1a2e; }
+          .perf-item .label { font-size: 12px; color: #666; margin-top: 5px; }
+          .notes { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 25px; font-size: 12px; }
+          .notes h3 { font-size: 13px; margin-bottom: 10px; }
+          .notes ul { padding-left: 20px; }
+          .notes li { margin: 5px 0; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="logo">Ghawde<span>X</span></div>
+            <div style="font-size: 12px; color: #666;">Engineering Excellence in Solar</div>
+          </div>
+          <div class="doc-info">
+            <strong>TECHNICAL SPECIFICATION</strong>
+            Ref: ${quoteRef}<br>
+            Date: ${today}
+          </div>
+        </div>
+
+        <h1>System Technical Specification</h1>
+        <p style="color: #666; margin-bottom: 20px;">Detailed technical specifications for the proposed solar installation.</p>
+
+        <div class="site-info">
+          <p><strong>Customer:</strong> ${state.fullName}</p>
+          <p><strong>Installation Site:</strong> ${state.address}</p>
+          <p><strong>Location:</strong> ${state.location === 'gozo' ? 'Gozo' : 'Malta'}</p>
+          ${state.roofArea ? `<p><strong>Estimated Roof Area:</strong> ${state.roofArea}m² (to be confirmed on site visit)</p>` : ''}
+        </div>
+
+        <div class="performance-box">
+          <div class="perf-item">
+            <div class="value">${state.selectedSystem?.systemSizeKw} kWp</div>
+            <div class="label">System Capacity</div>
+          </div>
+          <div class="perf-item">
+            <div class="value">${formatNumber(state.selectedSystem?.annualProductionKwh || 0)}</div>
+            <div class="label">Annual Production (kWh)</div>
+          </div>
+          <div class="perf-item">
+            <div class="value">${co2Offset}</div>
+            <div class="label">CO₂ Offset (tonnes/year)</div>
+          </div>
+          <div class="perf-item">
+            <div class="value">25+</div>
+            <div class="label">System Lifespan (years)</div>
+          </div>
+        </div>
+
+        <h2>Solar Panels</h2>
+        <table>
+          <tr>
+            <th>Quantity</th>
+            <td class="spec-value">${state.selectedSystem?.panels} panels</td>
+          </tr>
+          <tr>
+            <th>Panel Wattage</th>
+            <td class="spec-value">${state.selectedSystem?.panelWattage}W per panel</td>
+          </tr>
+          <tr>
+            <th>Total Capacity</th>
+            <td class="spec-value">${state.selectedSystem?.systemSizeKw} kWp (${(state.selectedSystem?.panels || 0) * (state.selectedSystem?.panelWattage || 0)}W)</td>
+          </tr>
+          <tr>
+            <th>Panel Type</th>
+            <td class="spec-value">Monocrystalline PERC</td>
+          </tr>
+          <tr>
+            <th>Panel Efficiency</th>
+            <td class="spec-value">>21%</td>
+          </tr>
+          <tr>
+            <th>Panel Warranty</th>
+            <td class="spec-value">25 years performance warranty</td>
+          </tr>
+        </table>
+
+        <h2>Inverter</h2>
+        <table>
+          <tr>
+            <th>Model</th>
+            <td class="spec-value">${state.selectedSystem?.inverterModel}</td>
+          </tr>
+          <tr>
+            <th>Type</th>
+            <td class="spec-value">Hybrid (Grid-tied with battery support)</td>
+          </tr>
+          <tr>
+            <th>Rated Power</th>
+            <td class="spec-value">${state.selectedSystem?.systemSizeKw} kW</td>
+          </tr>
+          <tr>
+            <th>Efficiency</th>
+            <td class="spec-value">>98%</td>
+          </tr>
+          <tr>
+            <th>Monitoring</th>
+            <td class="spec-value">Huawei FusionSolar App (real-time)</td>
+          </tr>
+          <tr>
+            <th>Warranty</th>
+            <td class="spec-value">10 years manufacturer warranty</td>
+          </tr>
+        </table>
+
+        ${battery ? `
+        <h2>Battery Storage</h2>
+        <table>
+          <tr class="highlight">
+            <th>Model</th>
+            <td class="spec-value">${battery.name}</td>
+          </tr>
+          <tr class="highlight">
+            <th>Capacity</th>
+            <td class="spec-value">${battery.capacityKwh} kWh</td>
+          </tr>
+          <tr>
+            <th>Type</th>
+            <td class="spec-value">Lithium Iron Phosphate (LiFePO4)</td>
+          </tr>
+          <tr>
+            <th>Cycle Life</th>
+            <td class="spec-value">>6,000 cycles</td>
+          </tr>
+          <tr>
+            <th>Depth of Discharge</th>
+            <td class="spec-value">100%</td>
+          </tr>
+          <tr>
+            <th>Warranty</th>
+            <td class="spec-value">10 years manufacturer warranty</td>
+          </tr>
+        </table>
+        ` : ''}
+
+        <h2>Estimated Performance</h2>
+        <table>
+          <tr>
+            <th>Annual Energy Production</th>
+            <td class="spec-value">${formatNumber(state.selectedSystem?.annualProductionKwh || 0)} kWh</td>
+          </tr>
+          <tr>
+            <th>Daily Average Production</th>
+            <td class="spec-value">${formatNumber(Math.round((state.selectedSystem?.annualProductionKwh || 0) / 365))} kWh</td>
+          </tr>
+          <tr>
+            <th>Peak Sun Hours (Malta avg)</th>
+            <td class="spec-value">5.5 hours/day</td>
+          </tr>
+          <tr>
+            <th>System Degradation</th>
+            <td class="spec-value">0.5% per year</td>
+          </tr>
+          <tr>
+            <th>25-Year Production Estimate</th>
+            <td class="spec-value">${formatNumber(Math.round((state.selectedSystem?.annualProductionKwh || 0) * 23.5))} kWh total</td>
+          </tr>
+        </table>
+
+        <div class="notes">
+          <h3>Important Notes</h3>
+          <ul>
+            <li>Actual production may vary based on weather, shading, and roof orientation</li>
+            <li>Final system design subject to site survey and technical assessment</li>
+            <li>All equipment specifications subject to availability</li>
+            <li>Installation includes mounting system, cabling, and protection devices</li>
+            <li>Grid connection and metering by Enemalta (fees apply separately)</li>
+          </ul>
+        </div>
+
+        <div class="footer">
+          <p><strong>GhawdeX Engineering</strong></p>
+          <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
+          <p>www.ghawdex.pro</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+    }
   };
 
   return (
@@ -177,6 +565,40 @@ export default function Step6Summary() {
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
         <div className="text-gray-400 text-sm mb-2">Installation Address</div>
         <div className="text-white">{state.address}</div>
+      </div>
+
+      {/* Download Documents */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+        <h3 className="text-white font-semibold text-lg mb-4">Your Documents</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={generateProposal}
+            className="flex flex-col items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl p-4 transition-all hover:scale-[1.02]"
+          >
+            <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+            </div>
+            <div className="text-white font-medium text-sm">Contract Proposal</div>
+            <div className="text-gray-400 text-xs">Pricing & Terms</div>
+          </button>
+          <button
+            onClick={generateTechSpec}
+            className="flex flex-col items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 transition-all hover:scale-[1.02]"
+          >
+            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+              </svg>
+            </div>
+            <div className="text-white font-medium text-sm">Technical Specs</div>
+            <div className="text-gray-400 text-xs">System Details</div>
+          </button>
+        </div>
+        <p className="text-gray-500 text-xs text-center mt-3">
+          Click to view, then use Ctrl+P / Cmd+P to save as PDF
+        </p>
       </div>
 
       {/* What's Next */}
