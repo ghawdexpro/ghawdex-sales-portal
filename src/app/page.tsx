@@ -69,8 +69,8 @@ export default function Home() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[128px]" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-16 sm:pb-32">
-          {/* Hero Logo - Big and Bold */}
-          <div className="flex items-center justify-center mb-8 sm:mb-12">
+          {/* Hero Logo - Big and Bold (hidden on mobile) */}
+          <div className="hidden sm:flex items-center justify-center mb-8 sm:mb-12">
             <div className="relative">
               {/* Glow effect behind logo */}
               <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-amber-500/30 to-orange-500/30 scale-150" />
@@ -84,7 +84,7 @@ export default function Home() {
 
           {/* Main Content */}
           <div className="text-center max-w-4xl mx-auto px-2">
-            <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 mb-6 sm:mb-8">
+            <div className="hidden sm:inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 mb-6 sm:mb-8">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
               <span className="text-amber-200 text-xs sm:text-sm font-medium">Malta&apos;s #1 Solar Installer</span>
             </div>

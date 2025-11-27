@@ -233,8 +233,8 @@ export default function Step5Contact() {
       </div>
 
       {/* Navigation - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-8">
-        <div className="max-w-xl mx-auto flex gap-4">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a] border-t border-white/10">
+        <div className="max-w-xl mx-auto flex gap-4 p-4">
           <button
             onClick={handleBack}
             className="flex-1 bg-white/5 border border-white/10 text-white font-semibold py-4 rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
