@@ -39,7 +39,6 @@ export default function Step1Location() {
         position: e.latLng,
         map: googleMapRef.current,
         draggable: true,
-        animation: google.maps.Animation.DROP,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 12,
