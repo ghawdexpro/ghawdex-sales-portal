@@ -22,7 +22,7 @@ export default function WizardLayout({ children, onClose }: WizardLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e]">
       {/* Combined Header with Progress */}
-      <header className="border-b border-white/10 bg-black/70 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-white/10 bg-black/70">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center gap-4">
             {/* Close button */}
