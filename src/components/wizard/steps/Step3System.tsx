@@ -78,12 +78,21 @@ export default function Step3System() {
           const isRecommended = state.consumptionKwh &&
             system.id === recommendSystem(state.consumptionKwh, state.maxPanels, SYSTEM_PACKAGES).id;
 
+          // Calculate system-only pricing (use bundle price when battery selected)
+          // Pass a minimal battery indicator to trigger bundle pricing, but don't add battery cost
+          const systemBasePrice = withBattery ? system.priceWithBattery : system.priceWithoutGrant;
           const systemPricing = calculateTotalPriceWithGrant(
             system,
-            null, // Don't include battery in per-system pricing
+            withBattery ? selectedBattery : null, // Use battery to trigger bundle pricing
             grantType,
             state.location
           );
+          // For card display: show system price only (subtract battery from total)
+          const batteryPriceForCard = withBattery && selectedBattery ? selectedBattery.price : 0;
+          const systemOnlyPrice = systemPricing.totalPrice - batteryPriceForCard + (withBattery ? systemPricing.grantAmount : 0);
+          // Simpler: just show the base system price with PV grant applied
+          const pvOnlyGrant = grantType !== 'none' ? Math.min(system.systemSizeKw * 750, 3000, systemBasePrice * 0.5) : 0;
+          const displayPrice = systemBasePrice - pvOnlyGrant;
 
           // Calculate annual FIT income for both grant variants
           const annualIncomeWithGrant = Math.round(system.annualProductionKwh * 0.105);
@@ -123,9 +132,9 @@ export default function Step3System() {
                 <div className="flex items-center justify-between pt-2 border-t border-white/10">
                   <div>
                     <div className="text-gray-400 text-xs">Price</div>
-                    <div className="text-white font-bold">{formatCurrency(systemPricing.totalPrice)}</div>
-                    {grantType !== 'none' && systemPricing.grantAmount > 0 && (
-                      <div className="text-green-400 text-xs">Grant: {formatCurrency(systemPricing.grantAmount)}</div>
+                    <div className="text-white font-bold">{formatCurrency(displayPrice)}</div>
+                    {grantType !== 'none' && pvOnlyGrant > 0 && (
+                      <div className="text-green-400 text-xs">Grant: {formatCurrency(pvOnlyGrant)}</div>
                     )}
                   </div>
                   <div className="text-right">
@@ -173,11 +182,11 @@ export default function Step3System() {
                 </div>
                 <div className="text-right min-w-[100px]">
                   <div className="text-white font-bold text-xl">
-                    {formatCurrency(systemPricing.totalPrice)}
+                    {formatCurrency(displayPrice)}
                   </div>
-                  {grantType !== 'none' && systemPricing.grantAmount > 0 && (
+                  {grantType !== 'none' && pvOnlyGrant > 0 && (
                     <div className="text-green-400 text-sm">
-                      Grant: {formatCurrency(systemPricing.grantAmount)}
+                      Grant: {formatCurrency(pvOnlyGrant)}
                     </div>
                   )}
                 </div>

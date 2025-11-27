@@ -277,7 +277,8 @@ export function calculateTotalPrice(
   battery: BatteryOption | null,
   hasGrant: boolean
 ): number {
-  const systemPrice = hasGrant ? system.priceWithGrant : system.priceWithoutGrant;
+  // Use discounted price for PV+Battery bundles, original price for PV-only
+  const systemPrice = battery ? system.priceWithBattery : (hasGrant ? system.priceWithGrant : system.priceWithoutGrant);
   const batteryPrice = battery?.price || 0;
 
   return systemPrice + batteryPrice;
@@ -290,8 +291,8 @@ export function calculateTotalPriceWithGrant(
   grantType: GrantType,
   location: Location
 ): { totalPrice: number; grantAmount: number; grossPrice: number } {
-  // Base system price (without any grant)
-  const systemGrossPrice = system.priceWithoutGrant;
+  // Use discounted price for PV+Battery bundles, original price for PV-only
+  const systemGrossPrice = battery ? system.priceWithBattery : system.priceWithoutGrant;
   const batteryGrossPrice = battery?.price || 0;
   const grossPrice = systemGrossPrice + batteryGrossPrice;
 
