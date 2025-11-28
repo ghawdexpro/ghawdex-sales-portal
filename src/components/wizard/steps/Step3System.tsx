@@ -18,10 +18,10 @@ export default function Step3System() {
   // Get recommended system based on consumption
   useEffect(() => {
     if (!selectedSystem && state.consumptionKwh) {
-      const recommended = recommendSystem(state.consumptionKwh, state.maxPanels, SYSTEM_PACKAGES);
+      const recommended = recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);
       setSelectedSystem(recommended);
     }
-  }, [state.consumptionKwh, state.maxPanels, selectedSystem]);
+  }, [state.consumptionKwh, selectedSystem]);
 
   const handleNext = () => {
     if (!selectedSystem) return;
@@ -76,7 +76,7 @@ export default function Step3System() {
       <div className="space-y-4 mb-6">
         {SYSTEM_PACKAGES.map((system) => {
           const isRecommended = state.consumptionKwh &&
-            system.id === recommendSystem(state.consumptionKwh, state.maxPanels, SYSTEM_PACKAGES).id;
+            system.id === recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES).id;
 
           // Calculate system-only pricing (use bundle price when battery selected)
           // Pass a minimal battery indicator to trigger bundle pricing, but don't add battery cost

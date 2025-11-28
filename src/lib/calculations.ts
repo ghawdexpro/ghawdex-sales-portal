@@ -236,38 +236,23 @@ export function getFinancingOptions(totalPrice: number): FinancingOption[] {
   });
 }
 
-// Recommend system based on consumption
+// Recommend system based on consumption only
 export function recommendSystem(
   monthlyConsumptionKwh: number,
-  maxPanels: number | null,
   systems: SystemPackage[]
 ): SystemPackage {
   const annualConsumption = monthlyConsumptionKwh * 12;
 
-  // Find system that covers ~100% of consumption
+  // Find smallest system that covers ~90% of consumption
   const sortedSystems = [...systems].sort((a, b) => a.systemSizeKw - b.systemSizeKw);
 
   for (const system of sortedSystems) {
-    // Check if fits on roof
-    if (maxPanels !== null && system.panels > maxPanels) {
-      continue;
-    }
-
-    // Check if production covers consumption
     if (system.annualProductionKwh >= annualConsumption * 0.9) {
       return system;
     }
   }
 
-  // Return largest system that fits
-  if (maxPanels !== null) {
-    const fittingSystems = sortedSystems.filter(s => s.panels <= maxPanels);
-    if (fittingSystems.length > 0) {
-      return fittingSystems[fittingSystems.length - 1];
-    }
-  }
-
-  // Default to largest
+  // If no system covers consumption, return largest
   return sortedSystems[sortedSystems.length - 1];
 }
 
