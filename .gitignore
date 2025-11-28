@@ -35,6 +35,8 @@ yarn-error.log*
 
 # credentials (NEVER commit)
 CREDENTIALS.md
+docs/GHAWDEX_CREDENTIALS.md
+docs/*CREDENTIALS*
 
 # vercel
 .vercel

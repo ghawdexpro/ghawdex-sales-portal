@@ -241,9 +241,22 @@ Type     Host    Value
 CNAME    get     [railway-url].up.railway.app
 ```
 
+## Business Documentation
+
+All business docs are in `/docs/`:
+
+| File | Purpose |
+|------|---------|
+| `GHAWDEX_PRODUCTS.md` | Product catalog & pricing |
+| `GHAWDEX_FINANCING.md` | BOV loan calculator specs |
+| `GRANT_OPTIMIZATION_STRATEGY.md` | Grant calculation strategy |
+| `MALTA_ELECTRICITY_TARIFFS.md` | Enemalta tariff reference |
+| `MALTA_SOLAR_KNOWLEDGE_BASE_COMPLETE.md` | Malta solar market knowledge |
+| `QUICK_SALES_REFERENCE.md` | Sales talking points |
+| `COMPANY_OVERVIEW.md` | Company profile |
+
 ## Related Projects
 
 - **www.ghawdex.pro** - Main landing page
 - **app.ghawdex.pro** - Solar scanner tool
 - **portal.ghawdex.pro** - Employee portal
-- **Sales docs** - /Users/maciejpopiel/GhawdeX sales/
