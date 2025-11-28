@@ -213,6 +213,7 @@ export default function Step1Location() {
           maxPanels: solarData.maxPanels || 20,
           annualSunshine: solarData.annualSunshine || 2000,
           solarPotential: solarData.solarPotential || null,
+          isFallback: solarData.isFallback || false,
         },
       });
 
@@ -227,6 +228,7 @@ export default function Step1Location() {
           maxPanels: 24,
           annualSunshine: 2000,
           solarPotential: null,
+          isFallback: true,
         },
       });
       trackWizardStep(1, 'Location');

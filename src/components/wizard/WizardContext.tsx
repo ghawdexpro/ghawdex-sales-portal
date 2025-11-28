@@ -12,6 +12,7 @@ const initialState: WizardState = {
   maxPanels: null,
   annualSunshine: null,
   solarPotential: null,
+  solarDataIsFallback: false,
   householdSize: null,
   monthlyBill: null,
   consumptionKwh: null,
@@ -37,7 +38,7 @@ type WizardAction =
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
   | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null; location: Location } }
-  | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null } }
+  | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null; isFallback?: boolean } }
   | { type: 'SET_CONSUMPTION'; payload: { householdSize: number; monthlyBill: number; consumptionKwh: number } }
   | { type: 'SET_SYSTEM'; payload: { system: SystemPackage; withBattery: boolean; batterySize: number | null; grantType: GrantType } }
   | { type: 'SET_FINANCING'; payload: { paymentMethod: 'cash' | 'loan'; loanTerm: number | null } }
@@ -56,7 +57,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
     case 'SET_ADDRESS':
       return { ...state, ...action.payload };
     case 'SET_SOLAR_DATA':
-      return { ...state, ...action.payload };
+      return { ...state, ...action.payload, solarDataIsFallback: action.payload.isFallback || false };
     case 'SET_CONSUMPTION':
       return { ...state, ...action.payload };
     case 'SET_SYSTEM':

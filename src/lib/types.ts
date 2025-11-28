@@ -15,6 +15,7 @@ export interface WizardState {
   maxPanels: number | null;
   annualSunshine: number | null;
   solarPotential: SolarPotential | null;
+  solarDataIsFallback: boolean;
 
   // Step 2: Consumption
   householdSize: number | null;

@@ -359,7 +359,7 @@ export default function Step6Summary() {
           <p><strong>Customer:</strong> ${state.fullName}</p>
           <p><strong>Installation Site:</strong> ${state.address}</p>
           <p><strong>Location:</strong> ${state.location === 'gozo' ? 'Gozo' : 'Malta'}</p>
-          ${state.roofArea ? `<p><strong>Estimated Roof Area:</strong> ${state.roofArea}m² (to be confirmed on site visit)</p>` : ''}
+          ${state.roofArea && !state.solarDataIsFallback ? `<p><strong>Estimated Roof Area:</strong> ${state.roofArea}m² (to be confirmed on site visit)</p>` : ''}
         </div>
 
         <div class="performance-box">
