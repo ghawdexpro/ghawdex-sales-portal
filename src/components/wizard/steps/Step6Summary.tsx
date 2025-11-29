@@ -1,14 +1,16 @@
 'use client';
 
 import { useWizard } from '../WizardContext';
-import { trackWizardComplete, trackQuoteGenerated } from '@/lib/analytics';
+import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber, calculateCO2Offset } from '@/lib/calculations';
-import { useEffect, useState } from 'react';
+import { createLead } from '@/lib/supabase';
+import { useEffect, useState, useRef } from 'react';
 
 export default function Step6Summary() {
   const { state } = useWizard();
   const [showConfetti, setShowConfetti] = useState(true);
+  const leadCreatedRef = useRef(false);
 
   const battery = state.batterySize
     ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize)
@@ -35,6 +37,52 @@ export default function Step6Summary() {
     const timer = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(timer);
   }, [state.totalPrice, state.selectedSystem]);
+
+  // Create lead for prefilled users (they skip Step5 which normally creates the lead)
+  useEffect(() => {
+    const createLeadForPrefilledUser = async () => {
+      if (!state.isPrefilledLead || leadCreatedRef.current) return;
+      if (!state.fullName || !state.email) return;
+
+      leadCreatedRef.current = true;
+
+      try {
+        const lead = await createLead({
+          full_name: state.fullName,
+          email: state.email,
+          phone: state.phone,
+          address: state.address,
+          coordinates: state.coordinates,
+          household_size: state.householdSize,
+          monthly_bill: state.monthlyBill,
+          consumption_kwh: state.consumptionKwh,
+          roof_area: state.roofArea,
+          selected_system: state.selectedSystem?.id || null,
+          system_size_kw: state.selectedSystem?.systemSizeKw || null,
+          with_battery: state.withBattery,
+          battery_size_kwh: battery?.capacityKwh || null,
+          grant_path: state.grantPath,
+          payment_method: state.paymentMethod,
+          loan_term: state.loanTerm,
+          total_price: state.totalPrice,
+          monthly_payment: state.monthlyPayment,
+          annual_savings: state.annualSavings,
+          notes: null,
+          zoho_lead_id: state.zohoLeadId,
+          status: 'new',
+          source: 'zoho_crm',
+        });
+
+        if (lead) {
+          trackLeadCreated(state.selectedSystem?.systemSizeKw);
+        }
+      } catch (error) {
+        console.error('Error creating lead for prefilled user:', error);
+      }
+    };
+
+    createLeadForPrefilledUser();
+  }, [state.isPrefilledLead, state.fullName, state.email, state.phone, state.address, state.coordinates, state.householdSize, state.monthlyBill, state.consumptionKwh, state.roofArea, state.selectedSystem, state.withBattery, battery, state.grantPath, state.paymentMethod, state.loanTerm, state.totalPrice, state.monthlyPayment, state.annualSavings, state.zohoLeadId]);
 
   const handleWhatsApp = () => {
     const message = encodeURIComponent(

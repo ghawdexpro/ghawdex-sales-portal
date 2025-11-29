@@ -76,6 +76,7 @@ export default function Step5Contact() {
         monthly_payment: state.monthlyPayment,
         annual_savings: state.annualSavings,
         notes: notes || null,
+        zoho_lead_id: null,
         status: 'new',
         source: 'sales-portal',
       });

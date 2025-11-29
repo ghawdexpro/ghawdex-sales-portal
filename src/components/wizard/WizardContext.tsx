@@ -27,6 +27,8 @@ const initialState: WizardState = {
   email: '',
   phone: '',
   notes: '',
+  zohoLeadId: null,
+  isPrefilledLead: false,
   totalPrice: null,
   monthlyPayment: null,
   annualSavings: null,
@@ -44,6 +46,7 @@ type WizardAction =
   | { type: 'SET_FINANCING'; payload: { paymentMethod: 'cash' | 'loan'; loanTerm: number | null } }
   | { type: 'SET_CONTACT'; payload: { fullName: string; email: string; phone: string; notes: string } }
   | { type: 'SET_CALCULATIONS'; payload: { totalPrice: number; monthlyPayment: number | null; annualSavings: number; paybackYears: number } }
+  | { type: 'SET_PREFILL'; payload: { fullName: string; email: string; phone: string; zohoLeadId: string } }
   | { type: 'RESET' };
 
 function wizardReducer(state: WizardState, action: WizardAction): WizardState {
@@ -75,6 +78,15 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, ...action.payload };
     case 'SET_CALCULATIONS':
       return { ...state, ...action.payload };
+    case 'SET_PREFILL':
+      return {
+        ...state,
+        fullName: action.payload.fullName,
+        email: action.payload.email,
+        phone: action.payload.phone,
+        zohoLeadId: action.payload.zohoLeadId,
+        isPrefilledLead: true,
+      };
     case 'RESET':
       return initialState;
     default:

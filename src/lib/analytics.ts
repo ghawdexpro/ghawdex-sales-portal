@@ -41,11 +41,12 @@ export const trackEvent = (
 // ============================================
 
 // Wizard Step Events
-export const trackWizardStart = () => {
+export const trackWizardStart = (source?: string) => {
   trackEvent('wizard_start', {
     event_category: 'funnel',
-    event_label: 'Started Quote Wizard',
+    event_label: source ? `Started Quote Wizard (${source})` : 'Started Quote Wizard',
     value: 1,
+    source: source || 'direct',
   });
   // Track as FB InitiateCheckout event
   if (typeof window !== 'undefined' && window.fbq) {

@@ -109,8 +109,9 @@ export async function POST(request: NextRequest) {
       monthly_payment: body.monthly_payment || null,
       annual_savings: body.annual_savings || null,
       notes: body.notes || null,
+      zoho_lead_id: body.zoho_lead_id || null,
       status: 'new',
-      source: 'sales-portal',
+      source: body.source || 'sales-portal',
     };
 
     // Create lead in Supabase

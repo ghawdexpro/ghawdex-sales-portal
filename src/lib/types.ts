@@ -39,6 +39,10 @@ export interface WizardState {
   phone: string;
   notes: string;
 
+  // CRM Pre-fill (from Zoho link)
+  zohoLeadId: string | null;
+  isPrefilledLead: boolean;
+
   // Calculated values
   totalPrice: number | null;
   monthlyPayment: number | null;
@@ -108,6 +112,7 @@ export interface Lead {
   monthly_payment: number | null;
   annual_savings: number | null;
   notes: string | null;
+  zoho_lead_id: string | null;
   status: 'new' | 'contacted' | 'quoted' | 'signed' | 'installed' | 'lost';
   source: string;
 }

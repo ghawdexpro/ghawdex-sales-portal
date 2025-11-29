@@ -62,7 +62,13 @@ export default function Step4Financing() {
     });
 
     trackWizardStep(4, 'Financing');
-    dispatch({ type: 'NEXT_STEP' });
+
+    // Skip Step 5 (Contact) if user came from Zoho CRM link (already has contact info)
+    if (state.isPrefilledLead) {
+      dispatch({ type: 'SET_STEP', payload: 6 });
+    } else {
+      dispatch({ type: 'NEXT_STEP' });
+    }
   };
 
   const handleBack = () => {

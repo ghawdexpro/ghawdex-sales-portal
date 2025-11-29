@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { trackWizardStart } from '@/lib/analytics';
 import { WizardProvider } from '@/components/wizard/WizardContext';
 import WizardLayout from '@/components/wizard/WizardLayout';
@@ -11,6 +12,35 @@ import Step4Financing from '@/components/wizard/steps/Step4Financing';
 import Step5Contact from '@/components/wizard/steps/Step5Contact';
 import Step6Summary from '@/components/wizard/steps/Step6Summary';
 import { useWizard } from '@/components/wizard/WizardContext';
+
+// Prefill data from URL params (Zoho CRM links)
+interface PrefillData {
+  name: string;
+  email: string;
+  phone: string;
+  zohoId: string;
+}
+
+// Component to handle prefill data dispatch on mount
+function PrefillHandler({ prefillData }: { prefillData: PrefillData | null }) {
+  const { dispatch } = useWizard();
+
+  useEffect(() => {
+    if (prefillData) {
+      dispatch({
+        type: 'SET_PREFILL',
+        payload: {
+          fullName: prefillData.name,
+          email: prefillData.email,
+          phone: prefillData.phone,
+          zohoLeadId: prefillData.zohoId,
+        },
+      });
+    }
+  }, [prefillData, dispatch]);
+
+  return null;
+}
 
 function WizardSteps() {
   const { state } = useWizard();
@@ -33,9 +63,10 @@ function WizardSteps() {
   }
 }
 
-function Wizard({ onClose }: { onClose: () => void }) {
+function Wizard({ onClose, prefillData }: { onClose: () => void; prefillData: PrefillData | null }) {
   return (
     <WizardProvider>
+      <PrefillHandler prefillData={prefillData} />
       <WizardLayout onClose={onClose}>
         <WizardSteps />
       </WizardLayout>
@@ -43,8 +74,30 @@ function Wizard({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [showWizard, setShowWizard] = useState(false);
+  const [prefillData, setPrefillData] = useState<PrefillData | null>(null);
+
+  // Check for prefill params on mount
+  useEffect(() => {
+    const name = searchParams.get('name');
+    const email = searchParams.get('email');
+    const phone = searchParams.get('phone');
+    const zohoId = searchParams.get('zoho_id');
+
+    // If we have prefill data from Zoho CRM, auto-start wizard
+    if (name && email && zohoId) {
+      setPrefillData({
+        name: decodeURIComponent(name),
+        email: decodeURIComponent(email),
+        phone: phone ? decodeURIComponent(phone) : '',
+        zohoId: zohoId,
+      });
+      trackWizardStart('zoho_crm');
+      setShowWizard(true);
+    }
+  }, [searchParams]);
 
   const handleStart = () => {
     trackWizardStart();
@@ -53,11 +106,12 @@ export default function Home() {
 
   const handleClose = () => {
     setShowWizard(false);
+    setPrefillData(null);
   };
 
   // Show wizard if started
   if (showWizard) {
-    return <Wizard onClose={handleClose} />;
+    return <Wizard onClose={handleClose} prefillData={prefillData} />;
   }
 
   return (
@@ -202,5 +256,17 @@ export default function Home() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] flex items-center justify-center">
+        <div className="text-amber-400">Loading...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
