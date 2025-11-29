@@ -219,11 +219,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Send notifications asynchronously (don't block response)
-    // Use different notification for quote completions vs new leads
-    if (lead) {
+    // Send Telegram even if only Zoho succeeded (use leadData as fallback)
+    const notificationLead = lead || {
+      ...leadData,
+      id: undefined,
+      created_at: undefined,
+    } as Lead;
+
+    // Always send Telegram if at least one system succeeded
+    if (lead || zohoLeadId) {
       Promise.all([
-        sendTelegramNotification(lead, isPrefilledUser),
-        triggerN8nWebhook(lead),
+        sendTelegramNotification(notificationLead, isPrefilledUser),
+        lead ? triggerN8nWebhook(lead) : Promise.resolve(),
       ]).catch(console.error);
     }
 
