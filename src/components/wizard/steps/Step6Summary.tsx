@@ -4,7 +4,6 @@ import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber, calculateCO2Offset } from '@/lib/calculations';
-import { createLead } from '@/lib/supabase';
 import { useEffect, useState, useRef } from 'react';
 
 export default function Step6Summary() {
@@ -39,6 +38,7 @@ export default function Step6Summary() {
   }, [state.totalPrice, state.selectedSystem]);
 
   // Create lead for prefilled users (they skip Step5 which normally creates the lead)
+  // Uses the API route to ensure dual-write to Supabase AND Zoho CRM
   useEffect(() => {
     const createLeadForPrefilledUser = async () => {
       if (!state.isPrefilledLead || leadCreatedRef.current) return;
@@ -47,34 +47,39 @@ export default function Step6Summary() {
       leadCreatedRef.current = true;
 
       try {
-        const lead = await createLead({
-          name: state.fullName,
-          email: state.email,
-          phone: state.phone,
-          address: state.address,
-          coordinates: state.coordinates,
-          household_size: state.householdSize,
-          monthly_bill: state.monthlyBill,
-          consumption_kwh: state.consumptionKwh,
-          roof_area: state.roofArea,
-          selected_system: state.selectedSystem?.id || null,
-          system_size_kw: state.selectedSystem?.systemSizeKw || null,
-          with_battery: state.withBattery,
-          battery_size_kwh: battery?.capacityKwh || null,
-          grant_path: state.grantPath,
-          payment_method: state.paymentMethod,
-          loan_term: state.loanTerm,
-          total_price: state.totalPrice,
-          monthly_payment: state.monthlyPayment,
-          annual_savings: state.annualSavings,
-          notes: null,
-          zoho_lead_id: state.zohoLeadId,
-          status: 'new',
-          source: 'zoho_crm',
+        const response = await fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: state.fullName,
+            email: state.email,
+            phone: state.phone,
+            address: state.address,
+            coordinates: state.coordinates,
+            household_size: state.householdSize,
+            monthly_bill: state.monthlyBill,
+            consumption_kwh: state.consumptionKwh,
+            roof_area: state.roofArea,
+            selected_system: state.selectedSystem?.id || null,
+            system_size_kw: state.selectedSystem?.systemSizeKw || null,
+            with_battery: state.withBattery,
+            battery_size_kwh: battery?.capacityKwh || null,
+            grant_path: state.grantPath,
+            payment_method: state.paymentMethod,
+            loan_term: state.loanTerm,
+            total_price: state.totalPrice,
+            monthly_payment: state.monthlyPayment,
+            annual_savings: state.annualSavings,
+            notes: null,
+            zoho_lead_id: state.zohoLeadId,
+            source: 'zoho_crm',
+          }),
         });
 
-        if (lead) {
+        if (response.ok) {
           trackLeadCreated(state.selectedSystem?.systemSizeKw);
+        } else {
+          console.error('Failed to create lead:', await response.text());
         }
       } catch (error) {
         console.error('Error creating lead for prefilled user:', error);
