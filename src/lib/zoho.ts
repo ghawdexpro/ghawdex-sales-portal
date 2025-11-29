@@ -139,7 +139,70 @@ export async function createZohoLead(lead: ZohoLeadData): Promise<string | null>
 }
 
 /**
+ * Search for Contact by email and update it (used when Lead was converted)
+ */
+async function updateContactByEmail(
+  lead: ZohoLeadData,
+  accessToken: string,
+  apiDomain: string
+): Promise<boolean> {
+  try {
+    // Search for Contact by email using COQL
+    const searchResponse = await fetch(`${apiDomain}/crm/v2/coql`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Zoho-oauthtoken ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        select_query: `SELECT id FROM Contacts WHERE Email = '${lead.email}'`
+      }),
+    });
+
+    const searchResult = await searchResponse.json();
+
+    if (!searchResult.data?.[0]?.id) {
+      console.log('No Contact found with email:', lead.email);
+      return false;
+    }
+
+    const contactId = searchResult.data[0].id;
+    console.log('Found Contact (converted lead):', contactId);
+
+    // Update the Contact
+    const updateResponse = await fetch(`${apiDomain}/crm/v2/Contacts/${contactId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Zoho-oauthtoken ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: [{
+          ...mapToZohoFields(lead),
+          id: contactId,
+        }],
+        trigger: ['workflow'],
+      }),
+    });
+
+    const updateResult = await updateResponse.json();
+
+    if (updateResult.data?.[0]?.status === 'success') {
+      console.log('Zoho Contact updated (converted lead):', contactId);
+      return true;
+    }
+
+    console.error('Zoho Contact update failed:', updateResult);
+    return false;
+  } catch (error) {
+    console.error('Error updating Contact:', error);
+    return false;
+  }
+}
+
+/**
  * Update an existing lead in Zoho CRM
+ * Falls back to Contact update if Lead was converted
  */
 export async function updateZohoLead(zohoLeadId: string, lead: ZohoLeadData): Promise<boolean> {
   try {
@@ -165,13 +228,21 @@ export async function updateZohoLead(zohoLeadId: string, lead: ZohoLeadData): Pr
 
     const result = await response.json();
 
+    // Success - Lead still exists
     if (result.data?.[0]?.status === 'success') {
       console.log('Zoho lead updated:', zohoLeadId);
       return true;
-    } else {
-      console.error('Zoho lead update failed:', result);
-      return false;
     }
+
+    // Check if Lead was converted (record not found)
+    const errorCode = result.data?.[0]?.code || result.code;
+    if (errorCode === 'INVALID_DATA' || errorCode === 'INVALID_MODULE' || result.status === 'error') {
+      console.log('Lead may have been converted, searching for Contact by email...');
+      return await updateContactByEmail(lead, accessToken, apiDomain);
+    }
+
+    console.error('Zoho lead update failed:', result);
+    return false;
   } catch (error) {
     console.error('Zoho CRM update error:', error);
     return false;
