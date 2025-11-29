@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Framework:** Next.js 15 (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS v4
-- **Database:** Supabase (project: kuoklfrqztafxtoghola)
+- **Database:** Supabase (project: lccebuetwhezxpviyfrs)
 - **AI:** OpenRouter API (gemini-2.0-flash-001)
 - **Deployment:** Railway
 - **Analytics:** GA4 + Facebook Pixel
@@ -87,18 +87,21 @@ The wizard is a single-page app driven by `WizardContext` state (not URL routes)
 - Solar income vs payment comparison
 
 ### 6. Lead Capture (Dual-Write)
-- **Supabase** - Primary database (backup)
-- **Zoho CRM** - Sales team's CRM (direct API, no n8n)
-- **Telegram** - Instant notifications
+- **Supabase** - Primary database
+- **Zoho CRM** - Sales team's CRM (direct API)
+- **Telegram** - Instant notifications for every lead
 - Both systems written in parallel with `Promise.allSettled` (one failure doesn't block other)
+- Telegram fires even if one system fails (uses fallback data)
 
-### 7. Zoho CRM Pre-fill
+### 7. Zoho CRM Integration
 Users from Zoho CRM emails can be sent with pre-filled data:
 ```
 https://get.ghawdex.pro/?name=John&email=john@test.com&phone=79123456&zoho_id=12345
 ```
 - Contact form (Step 5) is automatically skipped
 - Lead updated in Zoho CRM on completion (not created new)
+- **Lead-to-Contact conversion handling:** If Lead was converted to Contact in CRM, the system automatically detects this and updates the Contact instead
+- Business rule: Only convert Leads to Contacts after customer has signed
 
 ## Database Schema (Supabase)
 
@@ -107,75 +110,44 @@ https://get.ghawdex.pro/?name=John&email=john@test.com&phone=79123456&zoho_id=12
 CREATE TABLE leads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
 
   -- Contact
   name TEXT,
   email TEXT,
   phone TEXT,
 
-  -- Property
+  -- Location
   address TEXT,
-  locality TEXT,
-  property_type TEXT,
-  roof_type TEXT,
+  coordinates JSONB,
 
-  -- Qualification
-  current_bill DECIMAL,
-  timeline TEXT,
-  goals TEXT[],
+  -- Consumption
+  household_size INTEGER,
+  monthly_bill NUMERIC,
+  consumption_kwh NUMERIC,
+  roof_area NUMERIC,
 
-  -- Analysis
-  roof_area_m2 DECIMAL,
-  usable_area_m2 DECIMAL,
-  annual_production_kwh DECIMAL,
+  -- System Selection
+  selected_system TEXT,
+  system_size_kw NUMERIC,
+  with_battery BOOLEAN DEFAULT false,
+  battery_size_kwh NUMERIC,
+  grant_path BOOLEAN DEFAULT true,
 
-  -- Selection
-  system_size_kwp DECIMAL,
-  battery_kwh DECIMAL,
-  with_ems BOOLEAN DEFAULT FALSE,
-  grant_path BOOLEAN,
+  -- Financing
+  payment_method TEXT,
+  loan_term INTEGER,
 
-  -- Pricing
-  total_price DECIMAL,
-  monthly_income DECIMAL,
-  payback_years DECIMAL,
-
-  -- Status
-  status TEXT DEFAULT 'new',
-  step_completed INTEGER DEFAULT 0,
+  -- Calculated Values
+  total_price NUMERIC,
+  monthly_payment NUMERIC,
+  annual_savings NUMERIC,
 
   -- Metadata
-  utm_source TEXT,
-  utm_medium TEXT,
-  utm_campaign TEXT
-);
-```
-
-### deals table
-```sql
-CREATE TABLE deals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  lead_id UUID REFERENCES leads(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Deal details
-  system_config JSONB,
-  pricing JSONB,
-  financing JSONB,
-
-  -- Contract
-  proposal_pdf_url TEXT,
-  signature_status TEXT,
-  signed_at TIMESTAMPTZ,
-
-  -- Payment
-  deposit_amount DECIMAL,
-  deposit_paid BOOLEAN DEFAULT FALSE,
-  deposit_paid_at TIMESTAMPTZ,
-
-  -- Installation
-  installation_date DATE,
-  status TEXT DEFAULT 'pending'
+  notes TEXT,
+  zoho_lead_id VARCHAR(50),
+  status TEXT DEFAULT 'new',
+  source TEXT DEFAULT 'sales-portal'
 );
 ```
 
