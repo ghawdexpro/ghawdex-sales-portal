@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackLeadCreated } from '@/lib/analytics';
-import { createLead } from '@/lib/supabase';
 import { BATTERY_OPTIONS } from '@/lib/types';
 
 export default function Step5Contact() {
@@ -50,38 +49,41 @@ export default function Step5Contact() {
         payload: { fullName, email, phone, notes },
       });
 
-      // Create lead in Supabase
+      // Create lead via API (writes to Supabase + Zoho CRM + sends Telegram)
       const battery = state.batterySize
         ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize)
         : null;
 
-      const lead = await createLead({
-        name: fullName,
-        email,
-        phone,
-        address: state.address,
-        coordinates: state.coordinates,
-        household_size: state.householdSize,
-        monthly_bill: state.monthlyBill,
-        consumption_kwh: state.consumptionKwh,
-        roof_area: state.roofArea,
-        selected_system: state.selectedSystem?.id || null,
-        system_size_kw: state.selectedSystem?.systemSizeKw || null,
-        with_battery: state.withBattery,
-        battery_size_kwh: battery?.capacityKwh || null,
-        grant_path: state.grantPath,
-        payment_method: state.paymentMethod,
-        loan_term: state.loanTerm,
-        total_price: state.totalPrice,
-        monthly_payment: state.monthlyPayment,
-        annual_savings: state.annualSavings,
-        notes: notes || null,
-        zoho_lead_id: null,
-        status: 'new',
-        source: 'sales-portal',
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName,
+          email,
+          phone,
+          address: state.address,
+          coordinates: state.coordinates,
+          household_size: state.householdSize,
+          monthly_bill: state.monthlyBill,
+          consumption_kwh: state.consumptionKwh,
+          roof_area: state.roofArea,
+          selected_system: state.selectedSystem?.id || null,
+          system_size_kw: state.selectedSystem?.systemSizeKw || null,
+          with_battery: state.withBattery,
+          battery_size_kwh: battery?.capacityKwh || null,
+          grant_path: state.grantPath,
+          payment_method: state.paymentMethod,
+          loan_term: state.loanTerm,
+          total_price: state.totalPrice,
+          monthly_payment: state.monthlyPayment,
+          annual_savings: state.annualSavings,
+          notes: notes || null,
+          zoho_lead_id: null,
+          source: 'sales-portal',
+        }),
       });
 
-      if (lead) {
+      if (response.ok) {
         trackLeadCreated(state.selectedSystem?.systemSizeKw);
       }
 
