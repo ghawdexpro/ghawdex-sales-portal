@@ -48,7 +48,7 @@ export default function Step6Summary() {
 
       try {
         const lead = await createLead({
-          full_name: state.fullName,
+          name: state.fullName,
           email: state.email,
           phone: state.phone,
           address: state.address,

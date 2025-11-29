@@ -9,7 +9,7 @@ interface ZohoTokenResponse {
 }
 
 interface ZohoLeadData {
-  full_name: string;
+  name: string;
   email: string;
   phone: string;
   address?: string;
@@ -77,9 +77,9 @@ async function getAccessToken(): Promise<string> {
  */
 function mapToZohoFields(lead: ZohoLeadData): Record<string, unknown> {
   // Split full name into first and last
-  const nameParts = lead.full_name.trim().split(' ');
+  const nameParts = lead.name.trim().split(' ');
   const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '';
-  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : lead.full_name;
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : lead.name;
 
   return {
     First_Name: firstName || undefined,

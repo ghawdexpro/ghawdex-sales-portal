@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -33,42 +33,28 @@ npm run lint         # Run ESLint
 ### The Sales Journey (Wizard Flow)
 
 ```
-STEP 1: Welcome → STEP 2: Property → STEP 3: Analysis → STEP 4: Recommend → STEP 5: Pricing → STEP 6: Finance → STEP 7: Deal
+Step 1: Location → Step 2: Consumption → Step 3: System → Step 4: Financing → Step 5: Contact → Step 6: Summary
 ```
 
-### Directory Structure
+Note: Step 5 (Contact) is skipped for users coming from Zoho CRM links with pre-filled data.
 
-```
-src/
-├── app/
-│   ├── layout.tsx          # Root layout with analytics
-│   ├── page.tsx            # Landing/entry point
-│   ├── wizard/
-│   │   ├── layout.tsx      # Wizard layout with progress
-│   │   ├── step-1/         # Welcome & qualification
-│   │   ├── step-2/         # Property details
-│   │   ├── step-3/         # Roof analysis
-│   │   ├── step-4/         # System recommendation
-│   │   ├── step-5/         # Pricing & ROI
-│   │   ├── step-6/         # Financing options
-│   │   └── step-7/         # Deal & signature
-│   └── api/
-│       ├── ai/             # OpenRouter AI endpoints
-│       ├── solar/          # Google Solar API
-│       └── leads/          # Lead management
-├── components/
-│   ├── wizard/             # Wizard-specific components
-│   ├── ui/                 # Reusable UI components
-│   └── forms/              # Form components
-├── lib/
-│   ├── supabase.ts         # Supabase client
-│   ├── openrouter.ts       # AI client
-│   ├── solar-api.ts        # Google Solar API
-│   ├── calculations.ts     # Solar calculations
-│   └── analytics.ts        # GA4 + FB tracking
-└── types/
-    └── index.ts            # TypeScript types
-```
+### Architecture
+
+The wizard is a single-page app driven by `WizardContext` state (not URL routes). All steps render on `/` based on `state.step`.
+
+**Key files:**
+- `src/app/page.tsx` - Entry point, handles Zoho CRM URL params for pre-fill
+- `src/components/wizard/WizardContext.tsx` - Central state management (useReducer)
+- `src/components/wizard/WizardLayout.tsx` - Wrapper with progress bar
+- `src/components/wizard/steps/Step[1-6]*.tsx` - Individual step components
+- `src/lib/calculations.ts` - Solar pricing, savings, ROI calculations
+- `src/lib/types.ts` - TypeScript interfaces (WizardState, Lead, SystemPackage, etc.)
+
+**Integrations:**
+- `src/lib/supabase.ts` - Lead storage
+- `src/lib/zoho.ts` - Direct Zoho CRM API (OAuth2, create/update leads)
+- `src/app/api/leads/route.ts` - Lead API (writes to both Supabase + Zoho in parallel)
+- `src/app/api/solar/route.ts` - Google Solar API proxy
 
 ## Key Features
 
@@ -100,11 +86,19 @@ src/
 - Monthly payment estimates
 - Solar income vs payment comparison
 
-### 6. Lead Capture
-- Supabase storage
-- Zoho CRM integration
-- Telegram notifications
-- n8n webhook triggers
+### 6. Lead Capture (Dual-Write)
+- **Supabase** - Primary database (backup)
+- **Zoho CRM** - Sales team's CRM (direct API, no n8n)
+- **Telegram** - Instant notifications
+- Both systems written in parallel with `Promise.allSettled` (one failure doesn't block other)
+
+### 7. Zoho CRM Pre-fill
+Users from Zoho CRM emails can be sent with pre-filled data:
+```
+https://get.ghawdex.pro/?name=John&email=john@test.com&phone=79123456&zoho_id=12345
+```
+- Contact form (Step 5) is automatically skipped
+- Lead updated in Zoho CRM on completion (not created new)
 
 ## Database Schema (Supabase)
 
@@ -190,12 +184,12 @@ CREATE TABLE deals (
 See `.env.local` for all required variables.
 
 **Required for production (Railway):**
-- NEXT_PUBLIC_SUPABASE_URL
-- NEXT_PUBLIC_SUPABASE_ANON_KEY
-- GOOGLE_SOLAR_API_KEY
-- OPENROUTER_API_KEY
-- NEXT_PUBLIC_GA4_ID
-- NEXT_PUBLIC_FB_PIXEL_ID
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps/Solar API
+- `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_REFRESH_TOKEN` - Zoho CRM
+- `ZOHO_API_DOMAIN=https://www.zohoapis.eu`, `ZOHO_ACCOUNTS_URL=https://accounts.zoho.eu`
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID` - Notifications
+- `NEXT_PUBLIC_GA4_ID`, `NEXT_PUBLIC_FB_PIXEL_ID` - Analytics
 
 ## Malta Solar Constants
 
@@ -223,22 +217,15 @@ const BATTERY_PRICE_PER_KWH = 1000; // €
 
 ## Deployment
 
-**Railway:**
+**Railway (always push manually - auto-deploy not working):**
 ```bash
-# Link to project (run interactively)
-railway link
-
-# Deploy
-railway up
-
-# Add custom domain
-railway domain get.ghawdex.pro
+git push origin main && railway up
 ```
 
-**DNS (Namecheap):**
-```
-Type     Host    Value
-CNAME    get     [railway-url].up.railway.app
+**Set Railway variables:**
+```bash
+railway variables --set "KEY=value" --set "KEY2=value2"
+railway variables --kv  # View all
 ```
 
 ## Business Documentation

@@ -15,7 +15,7 @@ async function sendTelegramNotification(lead: Lead) {
 
   const message = `🌞 *New Solar Lead!*
 
-👤 *Name:* ${lead.full_name}
+👤 *Name:* ${lead.name}
 📧 *Email:* ${lead.email}
 📱 *Phone:* ${lead.phone}
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    if (!body.full_name || !body.email || !body.phone) {
+    if (!body.name || !body.email || !body.phone) {
       return NextResponse.json(
         { error: 'Name, email, and phone are required' },
         { status: 400 }
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare lead data
     const leadData: Omit<Lead, 'id' | 'created_at'> = {
-      full_name: body.full_name,
+      name: body.name,
       email: body.email,
       phone: body.phone,
       address: body.address || '',
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     const [supabaseResult, zohoResult] = await Promise.allSettled([
       createLead(leadData),
       createOrUpdateZohoLead({
-        full_name: leadData.full_name,
+        name: leadData.name,
         email: leadData.email,
         phone: leadData.phone,
         address: leadData.address,

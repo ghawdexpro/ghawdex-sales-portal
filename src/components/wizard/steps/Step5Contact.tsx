@@ -56,7 +56,7 @@ export default function Step5Contact() {
         : null;
 
       const lead = await createLead({
-        full_name: fullName,
+        name: fullName,
         email,
         phone,
         address: state.address,

@@ -92,7 +92,7 @@ export interface FinancingOption {
 export interface Lead {
   id?: string;
   created_at?: string;
-  full_name: string;
+  name: string;
   email: string;
   phone: string;
   address: string;
