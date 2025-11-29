@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createLead, updateLead } from '@/lib/supabase';
+import { createOrUpdateZohoLead } from '@/lib/zoho';
 import { Lead } from '@/lib/types';
 
 // Telegram notification helper
@@ -114,28 +115,65 @@ export async function POST(request: NextRequest) {
       source: body.source || 'sales-portal',
     };
 
-    // Create lead in Supabase
-    const lead = await createLead(leadData);
+    // Create lead in both Supabase and Zoho CRM independently
+    // Using Promise.allSettled so one failure doesn't block the other
+    const [supabaseResult, zohoResult] = await Promise.allSettled([
+      createLead(leadData),
+      createOrUpdateZohoLead({
+        full_name: leadData.full_name,
+        email: leadData.email,
+        phone: leadData.phone,
+        address: leadData.address,
+        system_size_kw: leadData.system_size_kw,
+        total_price: leadData.total_price,
+        annual_savings: leadData.annual_savings,
+        payment_method: leadData.payment_method,
+        loan_term: leadData.loan_term,
+        with_battery: leadData.with_battery,
+        battery_size_kwh: leadData.battery_size_kwh,
+        monthly_bill: leadData.monthly_bill,
+        source: leadData.source,
+        zoho_lead_id: leadData.zoho_lead_id,
+      }),
+    ]);
 
-    if (!lead) {
+    // Log results
+    if (supabaseResult.status === 'rejected') {
+      console.error('Supabase lead creation failed:', supabaseResult.reason);
+    }
+    if (zohoResult.status === 'rejected') {
+      console.error('Zoho CRM lead creation failed:', zohoResult.reason);
+    }
+
+    // Get the Supabase lead if successful
+    const lead = supabaseResult.status === 'fulfilled' ? supabaseResult.value : null;
+    const zohoLeadId = zohoResult.status === 'fulfilled' ? zohoResult.value : null;
+
+    // If both failed, return error
+    if (!lead && !zohoLeadId) {
       return NextResponse.json(
-        { error: 'Failed to create lead' },
+        { error: 'Failed to create lead in both systems' },
         { status: 500 }
       );
     }
 
     // Send notifications asynchronously (don't block response)
-    Promise.all([
-      sendTelegramNotification(lead),
-      triggerN8nWebhook(lead),
-    ]).catch(console.error);
+    if (lead) {
+      Promise.all([
+        sendTelegramNotification(lead),
+        triggerN8nWebhook(lead),
+      ]).catch(console.error);
+    }
 
     return NextResponse.json({
       success: true,
-      lead: {
+      lead: lead ? {
         id: lead.id,
         created_at: lead.created_at,
-      },
+      } : null,
+      zoho_lead_id: zohoLeadId,
+      supabase_success: supabaseResult.status === 'fulfilled',
+      zoho_success: zohoResult.status === 'fulfilled',
     });
   } catch (error) {
     console.error('Lead creation error:', error);
