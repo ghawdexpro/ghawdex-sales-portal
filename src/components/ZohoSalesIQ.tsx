@@ -1,5 +1,3 @@
-'use client';
-
 import Script from 'next/script';
 
 export default function ZohoSalesIQ() {
@@ -13,7 +11,7 @@ export default function ZohoSalesIQ() {
     <>
       <Script
         id="zoho-salesiq-init"
-        strategy="afterInteractive"
+        strategy="beforeInteractive"
         dangerouslySetInnerHTML={{
           __html: `window.$zoho=window.$zoho || {};$zoho.salesiq=$zoho.salesiq||{ready:function(){}}`
         }}
@@ -21,8 +19,7 @@ export default function ZohoSalesIQ() {
       <Script
         id="zsiqscript"
         src={`https://salesiq.zohopublic.eu/widget?wc=${widgetCode}`}
-        strategy="afterInteractive"
-        defer
+        strategy="beforeInteractive"
       />
     </>
   );
