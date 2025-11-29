@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createLead, updateLead } from '@/lib/supabase';
+import { createLead, updateLead, getLeadByZohoId } from '@/lib/supabase';
 import { createOrUpdateZohoLead } from '@/lib/zoho';
 import { Lead } from '@/lib/types';
 
 // Telegram notification helper
-async function sendTelegramNotification(lead: Lead) {
+async function sendTelegramNotification(lead: Lead, isQuoteCompletion = false) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
@@ -13,7 +13,27 @@ async function sendTelegramNotification(lead: Lead) {
     return;
   }
 
-  const message = `🌞 *New Solar Lead!*
+  // Different message for quote completions (prefilled users from CRM)
+  const message = isQuoteCompletion
+    ? `✅ *Quote Completed - Needs Callback!*
+
+👤 *Name:* ${lead.name}
+📧 *Email:* ${lead.email}
+📱 *Phone:* ${lead.phone}
+
+📍 *Address:* ${lead.address}
+
+🔆 *System:* ${lead.system_size_kw || 'TBD'} kWp
+🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
+🎫 *Grant Path:* ${lead.grant_path ? 'Yes' : 'No'}
+💳 *Payment:* ${lead.payment_method === 'loan' ? `Loan (${lead.loan_term ? lead.loan_term/12 : '?'} years)` : 'Cash'}
+
+💰 *Total Price:* €${lead.total_price?.toLocaleString() || 'TBD'}
+📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}
+
+⚡ *Action:* Customer completed quote from CRM link - ready for callback!
+🔗 Source: Zoho CRM`
+    : `🌞 *New Solar Lead!*
 
 👤 *Name:* ${lead.name}
 📧 *Email:* ${lead.email}
@@ -115,10 +135,50 @@ export async function POST(request: NextRequest) {
       source: body.source || 'sales-portal',
     };
 
-    // Create lead in both Supabase and Zoho CRM independently
-    // Using Promise.allSettled so one failure doesn't block the other
-    const [supabaseResult, zohoResult] = await Promise.allSettled([
-      createLead(leadData),
+    // Check if this is a prefilled user (from Zoho CRM link)
+    const isPrefilledUser = !!body.zoho_lead_id;
+    let existingLead: Lead | null = null;
+
+    // For prefilled users, find existing lead in Supabase
+    if (isPrefilledUser) {
+      existingLead = await getLeadByZohoId(body.zoho_lead_id);
+    }
+
+    // Handle Supabase: UPDATE existing or CREATE new
+    let supabaseResult: PromiseSettledResult<Lead | null>;
+    if (existingLead && existingLead.id) {
+      // Update existing lead with quote data
+      supabaseResult = await Promise.resolve(
+        updateLead(existingLead.id, {
+          address: leadData.address,
+          coordinates: leadData.coordinates,
+          household_size: leadData.household_size,
+          monthly_bill: leadData.monthly_bill,
+          consumption_kwh: leadData.consumption_kwh,
+          roof_area: leadData.roof_area,
+          selected_system: leadData.selected_system,
+          system_size_kw: leadData.system_size_kw,
+          with_battery: leadData.with_battery,
+          battery_size_kwh: leadData.battery_size_kwh,
+          grant_path: leadData.grant_path,
+          payment_method: leadData.payment_method,
+          loan_term: leadData.loan_term,
+          total_price: leadData.total_price,
+          monthly_payment: leadData.monthly_payment,
+          annual_savings: leadData.annual_savings,
+          status: 'quoted',
+        })
+      ).then(value => ({ status: 'fulfilled' as const, value }))
+       .catch(reason => ({ status: 'rejected' as const, reason }));
+    } else {
+      // Create new lead
+      supabaseResult = await Promise.resolve(createLead(leadData))
+        .then(value => ({ status: 'fulfilled' as const, value }))
+        .catch(reason => ({ status: 'rejected' as const, reason }));
+    }
+
+    // Update Zoho CRM (createOrUpdateZohoLead handles both create/update)
+    const zohoResult = await Promise.resolve(
       createOrUpdateZohoLead({
         name: leadData.name,
         email: leadData.email,
@@ -134,15 +194,16 @@ export async function POST(request: NextRequest) {
         monthly_bill: leadData.monthly_bill,
         source: leadData.source,
         zoho_lead_id: leadData.zoho_lead_id,
-      }),
-    ]);
+      })
+    ).then(value => ({ status: 'fulfilled' as const, value }))
+     .catch(reason => ({ status: 'rejected' as const, reason }));
 
     // Log results
     if (supabaseResult.status === 'rejected') {
-      console.error('Supabase lead creation failed:', supabaseResult.reason);
+      console.error('Supabase lead operation failed:', supabaseResult.reason);
     }
     if (zohoResult.status === 'rejected') {
-      console.error('Zoho CRM lead creation failed:', zohoResult.reason);
+      console.error('Zoho CRM lead operation failed:', zohoResult.reason);
     }
 
     // Get the Supabase lead if successful
@@ -152,15 +213,16 @@ export async function POST(request: NextRequest) {
     // If both failed, return error
     if (!lead && !zohoLeadId) {
       return NextResponse.json(
-        { error: 'Failed to create lead in both systems' },
+        { error: 'Failed to process lead in both systems' },
         { status: 500 }
       );
     }
 
     // Send notifications asynchronously (don't block response)
+    // Use different notification for quote completions vs new leads
     if (lead) {
       Promise.all([
-        sendTelegramNotification(lead),
+        sendTelegramNotification(lead, isPrefilledUser),
         triggerN8nWebhook(lead),
       ]).catch(console.error);
     }

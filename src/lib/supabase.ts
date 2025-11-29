@@ -79,3 +79,19 @@ export async function getLead(id: string): Promise<Lead | null> {
     return null;
   }
 }
+
+export async function getLeadByZohoId(zohoLeadId: string): Promise<Lead | null> {
+  try {
+    const response = await supabaseFetch(`/leads?zoho_lead_id=eq.${zohoLeadId}`);
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data[0] || null;
+  } catch (error) {
+    console.error('Error fetching lead by Zoho ID:', error);
+    return null;
+  }
+}
