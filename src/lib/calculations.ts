@@ -376,11 +376,9 @@ export function calculateTotalPriceWithGrant(
   location: Location
 ): { totalPrice: number; grantAmount: number; grossPrice: number } {
   // Handle battery-only case (no solar system)
+  // Battery price includes all necessary hardware (inverter, integration, etc.)
   if (grantType === 'battery_only' || !system) {
-    const batteryGrossPrice = battery?.price || 0;
-    // Add hybrid inverter cost for battery-only (approx €2,500 for 5kW hybrid)
-    const inverterPrice = 2500;
-    const grossPrice = batteryGrossPrice + inverterPrice;
+    const grossPrice = battery?.price || 0;
 
     const grantAmount = calculateGrantAmount(
       0, // No PV
@@ -388,7 +386,7 @@ export function calculateTotalPriceWithGrant(
       grantType === 'battery_only' ? grantType : 'none',
       location,
       0,
-      batteryGrossPrice
+      grossPrice
     );
 
     const totalPrice = Math.max(0, grossPrice - grantAmount);

@@ -158,16 +158,13 @@ export default function Step3System() {
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {BATTERY_OPTIONS.map((battery) => {
               // Calculate grant for this battery option
+              // Battery price includes all necessary hardware, so only battery grant applies
               const batteryGrant = Math.min(
                 battery.capacityKwh * GRANT_SCHEME_2025.BATTERY[state.location].perKwh,
                 battery.price * GRANT_SCHEME_2025.BATTERY[state.location].percentage,
                 GRANT_SCHEME_2025.BATTERY[state.location].maxTotal
               );
-              const inverterGrant = Math.min(
-                5 * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp,
-                GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
-              );
-              const totalGrant = batteryGrant + inverterGrant;
+              const totalGrant = batteryGrant;
 
               return (
                 <button
@@ -201,14 +198,8 @@ export default function Step3System() {
                 ))}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm mt-1">
-              <span className="text-gray-400">Hybrid Inverter Grant (80%)</span>
-              <span className="text-green-400 font-medium">
-                {formatCurrency(Math.min(
-                  5 * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp,
-                  GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
-                ))}
-              </span>
+            <div className="text-gray-500 text-xs mt-1">
+              Battery price includes hybrid inverter and all integration hardware
             </div>
             {state.location === 'gozo' && (
               <div className="text-purple-400 text-xs mt-2">

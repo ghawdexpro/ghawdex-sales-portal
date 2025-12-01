@@ -290,7 +290,8 @@ export function calculateGrantAmount(
   } else if (grantType === 'battery_only') {
     // Battery-only grant (for customers who already have solar or want standalone battery)
     // Battery: 80% (Malta) or 95% (Gozo) of battery costs
-    // Also includes hybrid inverter grant for battery integration
+    // Note: Battery price includes all necessary hardware (inverter, integration, etc.)
+    // so we only apply the battery grant, not a separate inverter grant
     let batteryGrant = 0;
     if (batteryKwh && batteryKwh > 0) {
       const batteryKwhBasedGrant = batteryKwh * GRANT_SCHEME_2025.BATTERY[location].perKwh;
@@ -305,17 +306,7 @@ export function calculateGrantAmount(
       );
     }
 
-    // Hybrid inverter grant for battery-only installations
-    // 80% of hybrid inverter costs, capped at €450/kWp and €1,800 total
-    // Use a standard 5kW inverter assumption for battery-only
-    const inverterKwp = 5; // Standard hybrid inverter size for batteries
-    const inverterKwhBasedGrant = inverterKwp * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp;
-    const inverterGrant = Math.min(
-      inverterKwhBasedGrant,
-      GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
-    );
-
-    totalGrant = batteryGrant + inverterGrant;
+    totalGrant = batteryGrant;
   }
 
   return Math.min(totalGrant, maxTotal);
