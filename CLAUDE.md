@@ -435,11 +435,21 @@ All business docs in `/docs/`:
 
 | File | Purpose |
 |------|---------|
-| `BATTERY_ONLY_GRANT_COMPLETE_GUIDE.md` | **Complete battery-only grant reference** |
+| `REWS_GRANT_RULES_REFERENCE.md` | **CRITICAL: All grant caps, eligibility, calculations** |
+| `BATTERY_ONLY_GRANT_COMPLETE_GUIDE.md` | Complete battery-only grant documentation |
 | `GHAWDEX_PRODUCTS.md` | Product catalog & pricing |
 | `GHAWDEX_FINANCING.md` | BOV loan calculator specs |
-| `GRANT_OPTIMIZATION_STRATEGY.md` | REWS 2025 grant logic |
+| `GRANT_OPTIMIZATION_STRATEGY.md` | REWS 2025 grant optimization |
 | `MALTA_ELECTRICITY_TARIFFS.md` | Enemalta tariff reference |
 | `MALTA_SOLAR_KNOWLEDGE_BASE_COMPLETE.md` | Market knowledge |
 | `QUICK_SALES_REFERENCE.md` | Sales talking points |
 | `COMPANY_OVERVIEW.md` | Company profile |
+
+### Grant Calculation Quick Reference
+
+**ALWAYS check `/docs/REWS_GRANT_RULES_REFERENCE.md` for:**
+- Previous grant eligibility (PV grant since 2010 = permanently excluded)
+- Three-way cap system (per-unit, percentage, maximum)
+- Malta vs Gozo rates (95% battery grant in Gozo!)
+- Option C vs Option D differences
+- Calculation examples
