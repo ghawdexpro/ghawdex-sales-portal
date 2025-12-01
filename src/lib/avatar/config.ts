@@ -134,6 +134,7 @@ export const AVATAR_TOOLS: Tool[] = [
         },
         channel: {
           type: 'string',
+          description: 'Delivery channel for the link',
           enum: ['sms', 'whatsapp'],
         },
       },
@@ -152,10 +153,12 @@ export const AVATAR_TOOLS: Tool[] = [
         },
         document_type: {
           type: 'string',
+          description: 'Type of document to upload',
           enum: ['id_card', 'property_deed', 'other'],
         },
         channel: {
           type: 'string',
+          description: 'Delivery channel for the link',
           enum: ['sms', 'whatsapp'],
         },
       },
@@ -178,6 +181,7 @@ export const AVATAR_TOOLS: Tool[] = [
         },
         channel: {
           type: 'string',
+          description: 'Delivery channel for the signature link',
           enum: ['sms', 'whatsapp', 'email'],
         },
       },
@@ -192,6 +196,7 @@ export const AVATAR_TOOLS: Tool[] = [
       properties: {
         data_type: {
           type: 'string',
+          description: 'Type of data to check for',
           enum: ['location', 'bill', 'document', 'signature'],
         },
       },
@@ -302,6 +307,7 @@ export const AVATAR_TOOLS: Tool[] = [
         },
         priority: {
           type: 'string',
+          description: 'Priority level for the human callback',
           enum: ['low', 'medium', 'high', 'urgent'],
         },
         preferred_contact_time: {
@@ -328,6 +334,7 @@ export const AVATAR_TOOLS: Tool[] = [
         },
         resume_channel: {
           type: 'string',
+          description: 'Channel to send resume link',
           enum: ['sms', 'whatsapp', 'email'],
         },
       },
@@ -360,6 +367,7 @@ export const AVATAR_TOOLS: Tool[] = [
       properties: {
         type: {
           type: 'string',
+          description: 'Type of appointment to schedule',
           enum: ['call', 'site_visit'],
         },
         preferred_date: {

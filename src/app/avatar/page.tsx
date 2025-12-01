@@ -197,9 +197,7 @@ function AvatarChatContent() {
       console.log('Avatar session created:', sessionConfig);
 
       // Start voice chat mode
-      await avatar.startVoiceChat({
-        useSilencePrompt: true,
-      });
+      await avatar.startVoiceChat();
 
       // Get initial greeting
       await requestGreeting();

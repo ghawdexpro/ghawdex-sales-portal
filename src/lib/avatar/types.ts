@@ -1,5 +1,5 @@
 /**
- * Hayden Avatar Chat - Type Definitions
+ * HeyGen Avatar Chat - Type Definitions
  *
  * Types for the conversational AI sales experience powered by HeyGen Interactive Avatar
  * and Google Gemini for conversation orchestration.
