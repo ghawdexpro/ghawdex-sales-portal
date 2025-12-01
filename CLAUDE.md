@@ -435,6 +435,7 @@ All business docs in `/docs/`:
 
 | File | Purpose |
 |------|---------|
+| `BATTERY_ONLY_GRANT_COMPLETE_GUIDE.md` | **Complete battery-only grant reference** |
 | `GHAWDEX_PRODUCTS.md` | Product catalog & pricing |
 | `GHAWDEX_FINANCING.md` | BOV loan calculator specs |
 | `GRANT_OPTIMIZATION_STRATEGY.md` | REWS 2025 grant logic |

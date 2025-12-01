@@ -67,6 +67,51 @@ All batteries: LFP (Lithium Iron Phosphate) - safest technology, 6,000+ cycles, 
 
 ---
 
+## BATTERY-ONLY OPTION (No Solar Required)
+
+Customers can purchase battery storage **without solar panels** and still receive grants!
+
+### Battery-Only Grant Rates
+
+| Location | Grant % | Max Grant | Customer Pays (10kWh) |
+|----------|---------|-----------|----------------------|
+| Malta | 80% | €7,200 | €1,500 |
+| **Gozo** | **95%** | **€8,550** | **€375** |
+
+### Who Should Consider Battery-Only?
+
+1. **Existing solar owners** - Add battery to store excess production
+2. **High electricity consumers** - Save by charging at night
+3. **Future solar planners** - Get battery now, add solar later
+4. **Gozo residents** - 95% grant = incredible value!
+
+### Customer Cost Examples (GhawdeX Pricing)
+
+| Battery | Price | Malta Grant | Malta Pays | Gozo Grant | Gozo Pays |
+|---------|-------|-------------|------------|------------|-----------|
+| 5 kWh | €4,000 | €3,200 | **€800** | €3,600 | **€400** |
+| 10 kWh | €7,500 | €6,000 | **€1,500** | €7,125 | **€375** |
+| 15 kWh | €10,500 | €7,200 | **€3,300** | €8,550 | **€1,950** |
+
+### Battery-Only Savings (Without Solar)
+
+Batteries save money through tariff arbitrage:
+- Charge at cheapest rate times
+- Use stored power during expensive peak hours
+- **Annual savings: €300-900** depending on consumption
+
+### Key Selling Points
+
+> "In Gozo, you can get a €7,500 battery for just €375 - the government covers 95%!"
+
+> "Already have solar? Add a battery for just €1,500 and store your excess production."
+
+> "No solar? No problem! Battery-only grant covers 80% of your costs."
+
+**Full details:** See `/docs/BATTERY_ONLY_GRANT_COMPLETE_GUIDE.md`
+
+---
+
 ## REWS 2025 GRANT SCHEME
 
 ### Grant Percentages
