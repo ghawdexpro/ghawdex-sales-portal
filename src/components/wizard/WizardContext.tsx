@@ -42,7 +42,7 @@ type WizardAction =
   | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null; location: Location } }
   | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null; isFallback?: boolean } }
   | { type: 'SET_CONSUMPTION'; payload: { householdSize: number; monthlyBill: number; consumptionKwh: number } }
-  | { type: 'SET_SYSTEM'; payload: { system: SystemPackage; withBattery: boolean; batterySize: number | null; grantType: GrantType } }
+  | { type: 'SET_SYSTEM'; payload: { system: SystemPackage | null; withBattery: boolean; batterySize: number | null; grantType: GrantType } }
   | { type: 'SET_FINANCING'; payload: { paymentMethod: 'cash' | 'loan'; loanTerm: number | null } }
   | { type: 'SET_CONTACT'; payload: { fullName: string; email: string; phone: string; notes: string } }
   | { type: 'SET_CALCULATIONS'; payload: { totalPrice: number; monthlyPayment: number | null; annualSavings: number; paybackYears: number } }

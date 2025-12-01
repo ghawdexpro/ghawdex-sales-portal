@@ -3,40 +3,44 @@
 import { useState, useEffect } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackSystemSelected } from '@/lib/analytics';
-import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType, getFitRate } from '@/lib/types';
+import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType, getFitRate, GRANT_SCHEME_2025 } from '@/lib/types';
 import { recommendSystem, calculateTotalPriceWithGrant, formatCurrency, formatNumber } from '@/lib/calculations';
 
 export default function Step3System() {
   const { state, dispatch } = useWizard();
+  const [batteryOnlyMode, setBatteryOnlyMode] = useState(state.grantType === 'battery_only');
   const [selectedSystem, setSelectedSystem] = useState<SystemPackage | null>(state.selectedSystem);
-  const [withBattery, setWithBattery] = useState(state.withBattery);
+  const [withBattery, setWithBattery] = useState(state.withBattery || state.grantType === 'battery_only');
   const [selectedBattery, setSelectedBattery] = useState<BatteryOption | null>(
-    state.batterySize ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null : null
+    state.batterySize ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null : BATTERY_OPTIONS[1] // Default to 10kWh
   );
   const [grantType, setGrantType] = useState<GrantType>(state.grantType || 'pv_only');
 
-  // Get recommended system based on consumption
+  // Get recommended system based on consumption (only if not battery-only mode)
   useEffect(() => {
-    if (!selectedSystem && state.consumptionKwh) {
+    if (!batteryOnlyMode && !selectedSystem && state.consumptionKwh) {
       const recommended = recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);
       setSelectedSystem(recommended);
     }
-  }, [state.consumptionKwh, selectedSystem]);
+  }, [state.consumptionKwh, selectedSystem, batteryOnlyMode]);
 
   const handleNext = () => {
-    if (!selectedSystem) return;
+    // For battery-only mode, don't require a solar system
+    if (!batteryOnlyMode && !selectedSystem) return;
+    // For battery-only mode, require a battery
+    if (batteryOnlyMode && !selectedBattery) return;
 
     dispatch({
       type: 'SET_SYSTEM',
       payload: {
-        system: selectedSystem,
-        withBattery,
+        system: batteryOnlyMode ? null : selectedSystem,
+        withBattery: batteryOnlyMode ? true : withBattery,
         batterySize: selectedBattery?.capacityKwh || null,
-        grantType,
+        grantType: batteryOnlyMode ? 'battery_only' : grantType,
       },
     });
 
-    trackSystemSelected(selectedSystem.systemSizeKw, withBattery, grantType !== 'none');
+    trackSystemSelected(batteryOnlyMode ? 0 : (selectedSystem?.systemSizeKw || 0), true, grantType !== 'none');
     trackWizardStep(3, 'System');
     dispatch({ type: 'NEXT_STEP' });
   };
@@ -45,8 +49,37 @@ export default function Step3System() {
     dispatch({ type: 'PREV_STEP' });
   };
 
+  // Toggle battery-only mode
+  const handleBatteryOnlyToggle = () => {
+    const newMode = !batteryOnlyMode;
+    setBatteryOnlyMode(newMode);
+    if (newMode) {
+      // Entering battery-only mode
+      setGrantType('battery_only');
+      setWithBattery(true);
+      if (!selectedBattery) {
+        setSelectedBattery(BATTERY_OPTIONS[1]); // Default to 10kWh
+      }
+    } else {
+      // Exiting battery-only mode
+      setGrantType('pv_only');
+      // Re-recommend a system if we have consumption data
+      if (state.consumptionKwh) {
+        const recommended = recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);
+        setSelectedSystem(recommended);
+      }
+    }
+  };
+
   // Calculate pricing with new grant system
-  const priceDetails = selectedSystem
+  const priceDetails = batteryOnlyMode
+    ? calculateTotalPriceWithGrant(
+        null,
+        selectedBattery,
+        'battery_only',
+        state.location
+      )
+    : selectedSystem
     ? calculateTotalPriceWithGrant(
         selectedSystem,
         withBattery ? selectedBattery : null,
@@ -55,24 +88,128 @@ export default function Step3System() {
       )
     : { totalPrice: 0, grantAmount: 0, grossPrice: 0 };
 
-  // Calculate annual income from FIT (all production × feed-in tariff rate)
+  // Calculate annual income from FIT (all production × feed-in tariff rate) - not applicable for battery-only
   const fitRate = getFitRate(grantType);
-  const annualIncome = selectedSystem
+  const annualIncome = batteryOnlyMode ? 0 : (selectedSystem
     ? Math.round(selectedSystem.annualProductionKwh * fitRate)
-    : 0;
+    : 0);
 
   return (
     <div className="max-w-3xl mx-auto pb-52">
       <div className="text-center mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
-          Choose your solar system
+          {batteryOnlyMode ? 'Choose your battery storage' : 'Choose your solar system'}
         </h1>
         <p className="text-gray-400 text-sm sm:text-base px-2">
-          Based on your consumption of {state.consumptionKwh} kWh/month, we recommend the highlighted option
+          {batteryOnlyMode
+            ? 'Add battery storage to your existing solar system or for energy independence'
+            : `Based on your consumption of ${state.consumptionKwh} kWh/month, we recommend the highlighted option`
+          }
         </p>
       </div>
 
-      {/* System Packages */}
+      {/* Battery Only Mode Toggle */}
+      <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-xl p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-white font-medium flex items-center gap-2">
+              <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Battery Only (No Solar)
+            </div>
+            <div className="text-gray-400 text-sm">
+              Already have solar? Add battery storage with up to {state.location === 'gozo' ? '95%' : '80%'} grant
+            </div>
+          </div>
+          <button
+            onClick={handleBatteryOnlyToggle}
+            className={`relative w-14 h-7 rounded-full transition-colors ${
+              batteryOnlyMode ? 'bg-purple-500' : 'bg-white/20'
+            }`}
+          >
+            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
+              batteryOnlyMode ? 'left-8' : 'left-1'
+            }`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Battery-Only Selection */}
+      {batteryOnlyMode && (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+          <div className="mb-4">
+            <div className="text-white font-medium mb-2">Select Battery Size</div>
+            <div className="text-gray-400 text-sm">
+              Includes hybrid inverter for seamless integration with your existing solar
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {BATTERY_OPTIONS.map((battery) => {
+              // Calculate grant for this battery option
+              const batteryGrant = Math.min(
+                battery.capacityKwh * GRANT_SCHEME_2025.BATTERY[state.location].perKwh,
+                battery.price * GRANT_SCHEME_2025.BATTERY[state.location].percentage,
+                GRANT_SCHEME_2025.BATTERY[state.location].maxTotal
+              );
+              const inverterGrant = Math.min(
+                5 * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp,
+                GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
+              );
+              const totalGrant = batteryGrant + inverterGrant;
+
+              return (
+                <button
+                  key={battery.id}
+                  onClick={() => setSelectedBattery(battery)}
+                  className={`p-3 sm:p-4 rounded-lg border text-center transition-all ${
+                    selectedBattery?.id === battery.id
+                      ? 'bg-purple-500/20 border-purple-500'
+                      : 'bg-white/5 border-white/10 hover:border-white/30'
+                  }`}
+                >
+                  <div className="text-white font-bold text-lg sm:text-xl">{battery.capacityKwh} kWh</div>
+                  <div className="text-gray-400 text-sm">{formatCurrency(battery.price)}</div>
+                  <div className="text-green-400 text-xs mt-1">
+                    -{formatCurrency(totalGrant)} grant
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Battery-only grant info */}
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">Battery Grant ({state.location === 'gozo' ? '95%' : '80%'})</span>
+              <span className="text-green-400 font-medium">
+                {formatCurrency(Math.min(
+                  (selectedBattery?.capacityKwh || 0) * GRANT_SCHEME_2025.BATTERY[state.location].perKwh,
+                  (selectedBattery?.price || 0) * GRANT_SCHEME_2025.BATTERY[state.location].percentage,
+                  GRANT_SCHEME_2025.BATTERY[state.location].maxTotal
+                ))}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm mt-1">
+              <span className="text-gray-400">Hybrid Inverter Grant (80%)</span>
+              <span className="text-green-400 font-medium">
+                {formatCurrency(Math.min(
+                  5 * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp,
+                  GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
+                ))}
+              </span>
+            </div>
+            {state.location === 'gozo' && (
+              <div className="text-purple-400 text-xs mt-2">
+                Gozo bonus: 95% battery subsidy (vs 80% in Malta)
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* System Packages (hidden in battery-only mode) */}
+      {!batteryOnlyMode && (
       <div className="space-y-4 mb-6">
         {SYSTEM_PACKAGES.map((system) => {
           const isRecommended = state.consumptionKwh &&
@@ -195,8 +332,10 @@ export default function Step3System() {
           );
         })}
       </div>
+      )}
 
-      {/* Battery Add-on */}
+      {/* Battery Add-on (only shown when NOT in battery-only mode) */}
+      {!batteryOnlyMode && (
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -251,16 +390,22 @@ export default function Step3System() {
           </div>
         )}
       </div>
+      )}
 
-      {/* Estimated Grant */}
-      {grantType !== 'none' && priceDetails.grantAmount > 0 && (
+      {/* Estimated Grant (shown for all modes with grants) */}
+      {(grantType !== 'none' || batteryOnlyMode) && priceDetails.grantAmount > 0 && (
         <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-green-400 font-medium">Estimated Grant</div>
-              {state.location === 'gozo' && grantType === 'pv_battery' && (
+              {state.location === 'gozo' && (grantType === 'pv_battery' || batteryOnlyMode) && (
                 <div className="text-purple-400 text-xs mt-1">
                   Gozo bonus: 95% battery subsidy (vs 80% Malta)
+                </div>
+              )}
+              {batteryOnlyMode && (
+                <div className="text-gray-400 text-xs mt-1">
+                  Includes battery + hybrid inverter grants
                 </div>
               )}
             </div>
@@ -271,11 +416,11 @@ export default function Step3System() {
 
       {/* Fixed bottom section with Summary + Grant Selector + Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]">
-        {/* Amber glow divider */}
-        <div className="h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent shadow-[0_0_15px_rgba(245,158,11,0.6)]" />
+        {/* Amber/Purple glow divider based on mode */}
+        <div className={`h-[2px] bg-gradient-to-r from-transparent ${batteryOnlyMode ? 'via-purple-500' : 'via-amber-500'} to-transparent shadow-[0_0_15px_${batteryOnlyMode ? 'rgba(168,85,247,0.6)' : 'rgba(245,158,11,0.6)'}]`} />
         <div className="max-w-3xl mx-auto px-4 py-3">
-          {/* Price Summary */}
-          {selectedSystem && (
+          {/* Price Summary - show for both solar and battery-only modes */}
+          {(selectedSystem || batteryOnlyMode) && (
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
               <div>
                 <div className="text-gray-400 text-xs">Total Price</div>
@@ -284,22 +429,33 @@ export default function Step3System() {
                   <div className="text-green-400 text-[10px]">After {formatCurrency(priceDetails.grantAmount)} grant</div>
                 )}
               </div>
+              {batteryOnlyMode ? (
+                <div className="text-right">
+                  <div className="text-gray-400 text-xs">Battery Storage</div>
+                  <div className="text-purple-400 font-bold text-lg">{selectedBattery?.capacityKwh || 0} kWh</div>
+                  <div className="text-gray-500 text-[10px]">
+                    Store energy for nighttime use
+                  </div>
+                </div>
+              ) : (
               <div className="text-right">
                 <div className="text-gray-400 text-xs">Annual Income</div>
                 <div className="text-green-400 font-bold text-lg">{formatCurrency(annualIncome)}/yr</div>
                 <div className="text-gray-500 text-[10px]">
                   @ €{fitRate.toFixed(3)}/kWh
-                  {grantType !== 'none' && (
+                  {grantType !== 'none' && selectedSystem && (
                     <span className="text-amber-400/70 ml-1">
                       (€{formatCurrency(Math.round(selectedSystem.annualProductionKwh * 0.15))} without grant)
                     </span>
                   )}
                 </div>
               </div>
+              )}
             </div>
           )}
 
-          {/* Compact Grant Selector */}
+          {/* Compact Grant Selector (hidden in battery-only mode) */}
+          {!batteryOnlyMode && (
           <div className="flex items-center gap-2 mb-3">
             <span className="text-gray-400 text-xs whitespace-nowrap">Grant:</span>
             <div className="flex gap-1.5 flex-1">
@@ -348,6 +504,7 @@ export default function Step3System() {
               </button>
             </div>
           </div>
+          )}
 
           {/* Navigation Buttons */}
           <div className="flex gap-3">
@@ -362,8 +519,8 @@ export default function Step3System() {
             </button>
             <button
               onClick={handleNext}
-              disabled={!selectedSystem}
-              className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled={batteryOnlyMode ? !selectedBattery : !selectedSystem}
+              className={`flex-[2] bg-gradient-to-r ${batteryOnlyMode ? 'from-purple-500 to-blue-500' : 'from-amber-500 to-orange-500'} text-black font-semibold py-3 rounded-xl hover:shadow-lg ${batteryOnlyMode ? 'hover:shadow-purple-500/25' : 'hover:shadow-amber-500/25'} transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
             >
               <span>Continue</span>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

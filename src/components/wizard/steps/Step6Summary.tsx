@@ -11,6 +11,8 @@ export default function Step6Summary() {
   const [showConfetti, setShowConfetti] = useState(true);
   const leadCreatedRef = useRef(false);
 
+  const isBatteryOnly = state.grantType === 'battery_only';
+
   const battery = state.batterySize
     ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize)
     : null;
@@ -91,11 +93,18 @@ export default function Step6Summary() {
 
   const handleWhatsApp = () => {
     const message = encodeURIComponent(
-      `Hi! I just completed my solar quote on your portal.\n\n` +
-      `Name: ${state.fullName}\n` +
-      `System: ${state.selectedSystem?.name} (${state.selectedSystem?.systemSizeKw} kWp)\n` +
-      `Total: ${formatCurrency(state.totalPrice || 0)}\n\n` +
-      `I'd like to proceed with my installation!`
+      isBatteryOnly
+        ? `Hi! I just completed my battery storage quote on your portal.\n\n` +
+          `Name: ${state.fullName}\n` +
+          `Battery: ${battery?.capacityKwh || 0} kWh (${battery?.name})\n` +
+          `Location: ${state.location === 'gozo' ? 'Gozo' : 'Malta'}\n` +
+          `Total: ${formatCurrency(state.totalPrice || 0)}\n\n` +
+          `I'd like to proceed with my battery installation!`
+        : `Hi! I just completed my solar quote on your portal.\n\n` +
+          `Name: ${state.fullName}\n` +
+          `System: ${state.selectedSystem?.name} (${state.selectedSystem?.systemSizeKw} kWp)\n` +
+          `Total: ${formatCurrency(state.totalPrice || 0)}\n\n` +
+          `I'd like to proceed with my installation!`
     );
     window.open(`https://wa.me/35679055156?text=${message}`, '_blank');
   };
@@ -704,30 +713,41 @@ export default function Step6Summary() {
           Your Quote is Ready, {state.fullName?.split(' ')[0]}!
         </h1>
         <p className="text-gray-400">
-          Here&apos;s your personalized solar system recommendation
+          {isBatteryOnly
+            ? 'Here\'s your personalized battery storage recommendation'
+            : 'Here\'s your personalized solar system recommendation'
+          }
         </p>
       </div>
 
       {/* Quote Card */}
-      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-2xl p-6 mb-6">
+      <div className={`bg-gradient-to-br ${isBatteryOnly ? 'from-purple-500/20 to-blue-500/20 border-purple-500/30' : 'from-amber-500/20 to-orange-500/20 border-amber-500/30'} border rounded-2xl p-6 mb-6`}>
         <div className="flex items-start justify-between mb-6">
           <div>
-            <div className="text-amber-400 text-sm font-medium mb-1">Selected System</div>
+            <div className={`${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'} text-sm font-medium mb-1`}>
+              {isBatteryOnly ? 'Battery Storage' : 'Selected System'}
+            </div>
             <div className="text-white text-2xl font-bold">
-              {state.selectedSystem?.name} Package
+              {isBatteryOnly ? `${battery?.capacityKwh || 0} kWh Battery` : `${state.selectedSystem?.name} Package`}
             </div>
             <div className="text-gray-400">
-              {state.selectedSystem?.systemSizeKw} kWp • {state.selectedSystem?.panels} panels
+              {isBatteryOnly
+                ? `${battery?.name || 'Huawei LUNA2000'} + Hybrid Inverter`
+                : `${state.selectedSystem?.systemSizeKw} kWp • ${state.selectedSystem?.panels} panels`
+              }
             </div>
           </div>
           <div className="text-right">
-            <div className="text-amber-400 text-sm font-medium mb-1">Total Price</div>
+            <div className={`${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'} text-sm font-medium mb-1`}>Total Price</div>
             <div className="text-white text-3xl font-bold">
               {formatCurrency(state.totalPrice || 0)}
             </div>
-            {state.grantPath && state.selectedSystem && (
+            {(state.grantPath || isBatteryOnly) && (
               <div className="text-green-400 text-sm">
-                Includes €{state.selectedSystem.grantAmount} grant
+                {isBatteryOnly
+                  ? `After ${state.location === 'gozo' ? '95%' : '80%'}+ grant`
+                  : state.selectedSystem ? `Includes €${state.selectedSystem.grantAmount} grant` : ''
+                }
               </div>
             )}
           </div>
@@ -735,30 +755,61 @@ export default function Step6Summary() {
 
         {/* System Details */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white/5 rounded-xl p-4">
-            <div className="text-gray-400 text-sm">Annual Production</div>
-            <div className="text-white font-semibold text-xl">
-              {formatNumber(state.selectedSystem?.annualProductionKwh || 0)} kWh
-            </div>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4">
-            <div className="text-gray-400 text-sm">Annual Savings</div>
-            <div className="text-green-400 font-semibold text-xl">
-              {formatCurrency(state.annualSavings || 0)}
-            </div>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4">
-            <div className="text-gray-400 text-sm">Payback Period</div>
-            <div className="text-white font-semibold text-xl">
-              {state.paybackYears} years
-            </div>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4">
-            <div className="text-gray-400 text-sm">CO₂ Offset</div>
-            <div className="text-white font-semibold text-xl">
-              {co2Offset} tonnes/year
-            </div>
-          </div>
+          {isBatteryOnly ? (
+            <>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Battery Capacity</div>
+                <div className="text-purple-400 font-semibold text-xl">
+                  {battery?.capacityKwh || 0} kWh
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Est. Annual Savings</div>
+                <div className="text-green-400 font-semibold text-xl">
+                  {formatCurrency(state.annualSavings || 0)}
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Payback Period</div>
+                <div className="text-white font-semibold text-xl">
+                  {state.paybackYears} years
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Location Bonus</div>
+                <div className="text-white font-semibold text-xl">
+                  {state.location === 'gozo' ? 'Gozo 95%' : 'Malta 80%'}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Annual Production</div>
+                <div className="text-white font-semibold text-xl">
+                  {formatNumber(state.selectedSystem?.annualProductionKwh || 0)} kWh
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Annual Savings</div>
+                <div className="text-green-400 font-semibold text-xl">
+                  {formatCurrency(state.annualSavings || 0)}
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Payback Period</div>
+                <div className="text-white font-semibold text-xl">
+                  {state.paybackYears} years
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">CO₂ Offset</div>
+                <div className="text-white font-semibold text-xl">
+                  {co2Offset} tonnes/year
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Payment */}
@@ -783,8 +834,8 @@ export default function Step6Summary() {
           </div>
         </div>
 
-        {/* Battery if selected */}
-        {battery && (
+        {/* Battery if selected (only show for solar+battery, not battery-only since it's in main card) */}
+        {battery && !isBatteryOnly && (
           <div className="bg-white/5 rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
