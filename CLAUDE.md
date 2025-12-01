@@ -170,7 +170,7 @@ Customers can purchase battery storage without PV panels:
 - Full summary display in Step 6
 
 ### 6. HeyGen Avatar Chat (`/avatar`)
-Voice-based solar consultation with AI avatar "Hayden":
+Voice-based solar consultation with AI avatar "Anthony":
 
 **Architecture:**
 ```
@@ -190,7 +190,8 @@ POST /api/avatar/message
 - `src/lib/avatar/conversation-engine.ts` - Dialogue state machine with phases
 - `src/lib/avatar/tools.ts` - Function calling implementations (send_location_link, calculate_system, etc.)
 - `src/lib/avatar/session-manager.ts` - Session CRUD operations
-- `src/lib/avatar/config.ts` - HeyGen + Gemini configuration, dialogue prompts
+- `src/lib/avatar/config.ts` - HeyGen + Gemini configuration, system prompt with product knowledge
+- `src/lib/avatar/AVATAR_KNOWLEDGE_BASE.md` - Comprehensive product/pricing/grant reference for AI
 
 **Conversation Phases:**
 `greeting` → `location` → `bill` → `consumption` → `system_recommendation` → `selection` → `financing` → `contact` → `summary` → `completed`
