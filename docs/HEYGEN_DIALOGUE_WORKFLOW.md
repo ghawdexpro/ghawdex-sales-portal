@@ -1,6 +1,6 @@
-# Hayden Avatar Chat - Complete Dialogue Workflow
+# HeyGen Avatar Chat - Complete Dialogue Workflow
 
-This document defines the complete conversation flow for the Hayden Avatar Chat system, including all dialogue scripts, phase transitions, and decision points.
+This document defines the complete conversation flow for the HeyGen Avatar Chat system, including all dialogue scripts, phase transitions, and decision points.
 
 ---
 
@@ -8,7 +8,7 @@ This document defines the complete conversation flow for the Hayden Avatar Chat 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        HAYDEN CONVERSATION FLOW                             │
+│                        HEYGEN CONVERSATION FLOW                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  START                                                                      │

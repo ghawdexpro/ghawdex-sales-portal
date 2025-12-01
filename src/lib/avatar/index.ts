@@ -1,5 +1,5 @@
 /**
- * Hayden Avatar Chat - Main Entry Point
+ * HeyGen Avatar Chat - Main Entry Point
  *
  * Exports all avatar chat system components for easy importing.
  */
@@ -10,7 +10,7 @@ export * from './types';
 // Configuration
 export {
   ENV,
-  HAYDEN_AVATAR,
+  HEYGEN_AVATAR,
   DEFAULT_SESSION_CONFIG,
   GEMINI_CONFIG,
   SYSTEM_PROMPT,

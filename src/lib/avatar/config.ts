@@ -1,5 +1,5 @@
 /**
- * Hayden Avatar Chat - Configuration
+ * HeyGen Avatar Chat - Configuration
  *
  * Central configuration for the avatar chat system including:
  * - HeyGen avatar settings
@@ -34,7 +34,7 @@ export const ENV = {
 // HeyGen Avatar Configuration
 // ============================================================================
 
-export const HAYDEN_AVATAR: AvatarConfig = {
+export const HEYGEN_AVATAR: AvatarConfig = {
   avatar_id: 'Hayden_20241025', // Default public avatar - replace with custom
   voice_id: 'en-US-GuyNeural', // Microsoft Azure voice - natural English
   quality: 'high',
@@ -43,7 +43,7 @@ export const HAYDEN_AVATAR: AvatarConfig = {
 };
 
 export const DEFAULT_SESSION_CONFIG: AvatarSessionConfig = {
-  avatar_config: HAYDEN_AVATAR,
+  avatar_config: HEYGEN_AVATAR,
   idle_timeout_seconds: 300, // 5 minutes of inactivity before timeout prompt
   use_voice_chat: true,
   silence_prompt: true,      // Hayden prompts if user is silent too long
