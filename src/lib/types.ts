@@ -319,60 +319,60 @@ export function getFitRate(grantType: GrantType): number {
     : GRANT_SCHEME_2025.FIT_WITH_GRANT;
 }
 
-// System packages based on GhawdeX products
-// PV-only uses original pricing, PV+Battery uses discounted bundle pricing
+// Standard System Packages (4 fixed options - custom quotes for anything else)
+// Prices aligned with backoffice: 3.5k, 5.5k, 9.5k, 13.5k
 export const SYSTEM_PACKAGES: SystemPackage[] = [
   {
     id: 'starter-3kw',
     name: 'Starter',
     panels: 7,
-    panelWattage: 450,
+    panelWattage: 430,
     systemSizeKw: 3,
     inverterModel: 'Huawei SUN2000-3KTL-L1',
-    annualProductionKwh: 5400,
-    priceWithGrant: 2950,       // PV-only price
-    priceWithoutGrant: 2950,    // PV-only price
-    priceWithBattery: 1500,     // PV+Battery bundle price
-    grantAmount: 750,
+    annualProductionKwh: 4500,
+    priceWithGrant: 3500,       // Standard price
+    priceWithoutGrant: 3500,
+    priceWithBattery: 2000,     // PV+Battery bundle price
+    grantAmount: 2250,          // 50% of €3500 capped at €750/kWp = €2250
   },
   {
     id: 'essential-5kw',
     name: 'Essential',
-    panels: 10,
-    panelWattage: 450,
+    panels: 11,
+    panelWattage: 455,
     systemSizeKw: 5,
     inverterModel: 'Huawei SUN2000-5KTL-L1',
-    annualProductionKwh: 9000,
-    priceWithGrant: 3750,       // PV-only price
-    priceWithoutGrant: 3750,    // PV-only price
-    priceWithBattery: 2000,     // PV+Battery bundle price
-    grantAmount: 1000,
+    annualProductionKwh: 7500,
+    priceWithGrant: 5500,       // Standard price
+    priceWithoutGrant: 5500,
+    priceWithBattery: 3000,     // PV+Battery bundle price
+    grantAmount: 2750,          // 50% of €5500 capped at €3000 max = €2750
   },
   {
     id: 'performance-10kw',
     name: 'Performance',
     panels: 22,
-    panelWattage: 450,
+    panelWattage: 455,
     systemSizeKw: 10,
     inverterModel: 'Huawei SUN2000-10KTL-M1',
-    annualProductionKwh: 18000,
-    priceWithGrant: 7500,       // PV-only price
-    priceWithoutGrant: 7500,    // PV-only price
-    priceWithBattery: 4000,     // PV+Battery bundle price
-    grantAmount: 2000,
+    annualProductionKwh: 15000,
+    priceWithGrant: 9500,       // Standard price
+    priceWithoutGrant: 9500,
+    priceWithBattery: 5000,     // PV+Battery bundle price
+    grantAmount: 3000,          // Max grant €3000
   },
   {
     id: 'max-15kw',
     name: 'Max',
     panels: 33,
-    panelWattage: 450,
+    panelWattage: 455,
     systemSizeKw: 15,
     inverterModel: 'Huawei SUN2000-15KTL-M5',
-    annualProductionKwh: 27000,
-    priceWithGrant: 11250,      // PV-only price
-    priceWithoutGrant: 11250,   // PV-only price
-    priceWithBattery: 6000,     // PV+Battery bundle price
-    grantAmount: 3000,
+    annualProductionKwh: 22500,
+    priceWithGrant: 13500,      // Standard price
+    priceWithoutGrant: 13500,
+    priceWithBattery: 7500,     // PV+Battery bundle price
+    grantAmount: 3000,          // Max grant €3000
   },
 ];
 
