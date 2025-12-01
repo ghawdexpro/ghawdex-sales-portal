@@ -140,6 +140,105 @@ export function getEffectiveRate(annualKwh: number, householdSize: number): numb
   return annualKwh > 0 ? energyCost / annualKwh : RESIDENTIAL_TARIFF_BANDS[0].rate;
 }
 
+/**
+ * Calculate battery storage savings based on Malta's tiered electricity rates
+ *
+ * Battery savings come from:
+ * 1. Storing solar/cheap electricity during the day
+ * 2. Using stored energy at night instead of drawing from grid
+ * 3. Avoiding higher tariff tiers by reducing apparent grid consumption
+ *
+ * Key assumptions:
+ * - Battery cycles ~300 times per year (realistic for Malta climate)
+ * - Round-trip efficiency: 90%
+ * - Usable capacity: 95% of nominal
+ * - Savings are calculated at the MARGINAL rate (highest tier the customer is in)
+ */
+export function calculateBatterySavings(
+  batteryKwh: number,
+  monthlyConsumptionKwh: number | null,
+  householdSize: number | null
+): { annualSavings: number; explanation: string; marginalRate: number } {
+  // Battery performance constants
+  const CYCLES_PER_YEAR = 300; // Conservative estimate for Malta
+  const ROUND_TRIP_EFFICIENCY = 0.90;
+  const USABLE_CAPACITY_RATIO = 0.95;
+
+  // Calculate annual kWh offset by battery
+  const annualBatteryOffset = batteryKwh * USABLE_CAPACITY_RATIO * ROUND_TRIP_EFFICIENCY * CYCLES_PER_YEAR;
+
+  // Determine the marginal rate based on consumption
+  let marginalRate: number;
+  let explanation: string;
+
+  if (monthlyConsumptionKwh && monthlyConsumptionKwh > 0) {
+    const annualConsumption = monthlyConsumptionKwh * 12;
+
+    // Find which tariff band the customer's consumption falls into
+    // The marginal rate is the rate they pay for their LAST kWh
+    if (annualConsumption <= 2000) {
+      marginalRate = RESIDENTIAL_TARIFF_BANDS[0].rate; // €0.1047
+      explanation = 'Band 1 (0-2,000 kWh)';
+    } else if (annualConsumption <= 6000) {
+      marginalRate = RESIDENTIAL_TARIFF_BANDS[1].rate; // €0.1298
+      explanation = 'Band 2 (2,001-6,000 kWh)';
+    } else if (annualConsumption <= 10000) {
+      marginalRate = RESIDENTIAL_TARIFF_BANDS[2].rate; // €0.1607
+      explanation = 'Band 3 (6,001-10,000 kWh)';
+    } else if (annualConsumption <= 20000) {
+      marginalRate = RESIDENTIAL_TARIFF_BANDS[3].rate; // €0.3420
+      explanation = 'Band 4 (10,001-20,000 kWh) - HIGH SAVINGS';
+    } else {
+      marginalRate = RESIDENTIAL_TARIFF_BANDS[4].rate; // €0.6076
+      explanation = 'Band 5 (20,001+ kWh) - MAXIMUM SAVINGS';
+    }
+  } else {
+    // For battery-only customers without consumption data,
+    // assume they're high consumers (otherwise why buy battery-only?)
+    // Use Band 3-4 average as conservative estimate
+    marginalRate = (RESIDENTIAL_TARIFF_BANDS[2].rate + RESIDENTIAL_TARIFF_BANDS[3].rate) / 2; // ~€0.25
+    explanation = 'Est. Band 3-4 (high consumption household)';
+  }
+
+  // Calculate annual savings
+  // The battery reduces grid consumption by annualBatteryOffset kWh
+  // Each kWh saved avoids paying the marginal rate
+  const annualSavings = Math.round(annualBatteryOffset * marginalRate);
+
+  return { annualSavings, explanation, marginalRate };
+}
+
+/**
+ * Get detailed battery savings breakdown for display
+ */
+export function getBatterySavingsBreakdown(
+  batteryKwh: number,
+  monthlyConsumptionKwh: number | null
+): {
+  annualOffset: number;
+  savingsPerTier: { tier: string; rate: number; savings: number }[];
+  totalSavings: number;
+} {
+  const CYCLES_PER_YEAR = 300;
+  const ROUND_TRIP_EFFICIENCY = 0.90;
+  const USABLE_CAPACITY_RATIO = 0.95;
+
+  const annualOffset = Math.round(batteryKwh * USABLE_CAPACITY_RATIO * ROUND_TRIP_EFFICIENCY * CYCLES_PER_YEAR);
+
+  const savingsPerTier = [
+    { tier: 'Band 1 (0-2k kWh)', rate: 0.1047, savings: Math.round(annualOffset * 0.1047) },
+    { tier: 'Band 2 (2-6k kWh)', rate: 0.1298, savings: Math.round(annualOffset * 0.1298) },
+    { tier: 'Band 3 (6-10k kWh)', rate: 0.1607, savings: Math.round(annualOffset * 0.1607) },
+    { tier: 'Band 4 (10-20k kWh)', rate: 0.3420, savings: Math.round(annualOffset * 0.3420) },
+    { tier: 'Band 5 (20k+ kWh)', rate: 0.6076, savings: Math.round(annualOffset * 0.6076) },
+  ];
+
+  // Calculate total based on actual consumption tier
+  const { annualSavings } = calculateBatterySavings(batteryKwh, monthlyConsumptionKwh, null);
+
+  return { annualOffset, savingsPerTier, totalSavings: annualSavings };
+}
+
 // Calculate annual savings (legacy - kept for compatibility)
 export function calculateAnnualSavings(
   annualProductionKwh: number,
