@@ -444,6 +444,8 @@ All business docs in `/docs/`:
 | `MALTA_SOLAR_KNOWLEDGE_BASE_COMPLETE.md` | Market knowledge |
 | `QUICK_SALES_REFERENCE.md` | Sales talking points |
 | `COMPANY_OVERVIEW.md` | Company profile |
+| `SALES_INFOGRAPHIC_PROMPTS.md` | Prompts for generating sales infographics |
+| `infographics/` | **17 visual cheat sheets for sales team** |
 
 ### Grant Calculation Quick Reference
 

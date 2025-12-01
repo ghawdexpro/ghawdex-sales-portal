@@ -323,3 +323,20 @@ Every installation includes:
 - **€10,200** max Malta grant
 - **€11,550** max Gozo grant
 - **95%** battery grant in Gozo!
+
+---
+
+## SALES TEAM RESOURCES
+
+### Visual Cheat Sheets
+17 infographics available in `/docs/infographics/`:
+
+**Overview:** A1 Customer Journey, A2 Pipeline Stages, A3 System Architecture
+**Lead Qualification:** B1 New Lead Checklist, B2 Bill Analysis, B3 Qualification Check
+**System Selection:** C1 Decision Tree, C2 Battery Sizing, C3 ROI Calculator
+**Grants:** D1 Eligibility Flowchart, D2 Calculation Reference
+**Process:** E1 Contract Checklist, E2 Site Visit, F1 Installation Handoff
+**Sales Tools:** G1 Objection Responses, G2 Key Selling Points
+**System:** H1 Telegram Notifications
+
+See `/docs/infographics/README.md` for full index.

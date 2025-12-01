@@ -291,20 +291,15 @@ railway up
 - [x] Verify grant calculations are correct (REWS 2025)
 - [x] Fix grant double-counting bug
 - [x] Fix Gozo battery max cap
+- [x] Create sales team infographics (17 cheat sheets)
+- [x] Document all REWS 2025 grant rules
+- [x] Battery-only grant documentation
 
-### Enhancements
-- [ ] Add product images/visuals to /products page
-- [ ] Add search functionality to products
-- [ ] Add testimonials section
-- [ ] Add FAQ section
-- [ ] Consider payback period calculation display
-- [ ] Add email notification when lead is submitted
-- [ ] Re-enable WhatsApp button (positioned differently to not overlap)
-
-### Technical
-- [ ] Set up metadataBase for social sharing images
-- [ ] Add loading states/skeletons
-- [ ] Consider adding Google Analytics events for grant type changes
+### Nice to Have (Not Blocking)
+- [ ] Product images on /products page
+- [ ] Testimonials section
+- [ ] FAQ section
+- [ ] Reposition WhatsApp button (currently disabled - covers nav)
 
 ---
 
