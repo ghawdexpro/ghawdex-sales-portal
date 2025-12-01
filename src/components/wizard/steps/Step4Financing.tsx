@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
 import { BATTERY_OPTIONS } from '@/lib/types';
@@ -10,6 +10,7 @@ import {
   calculateAnnualSavingsWithGrant,
   calculatePaybackYears,
   calculate25YearSavings,
+  calculateBatterySavings,
   formatCurrency,
 } from '@/lib/calculations';
 
@@ -18,20 +19,34 @@ export default function Step4Financing() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'loan'>(state.paymentMethod || 'cash');
   const [selectedTerm, setSelectedTerm] = useState<number>(state.loanTerm || 60);
 
+  const isBatteryOnly = state.grantType === 'battery_only';
+
   const battery = state.batterySize
     ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null
     : null;
 
-  const priceDetails = state.selectedSystem
-    ? calculateTotalPriceWithGrant(state.selectedSystem, battery, state.grantType, state.location)
-    : { totalPrice: 0, grantAmount: 0, grossPrice: 0 };
+  // Calculate price for both solar+battery and battery-only modes
+  const priceDetails = calculateTotalPriceWithGrant(
+    state.selectedSystem,
+    battery,
+    state.grantType,
+    state.location
+  );
 
   const totalPrice = priceDetails.totalPrice;
 
   const financingOptions = getFinancingOptions(totalPrice);
   const selectedOption = financingOptions.find(f => f.term === selectedTerm);
 
-  const annualSavings = state.selectedSystem
+  // For battery-only, calculate savings based on Malta's tiered electricity rates
+  // Battery reduces grid consumption, avoiding higher tariff tiers
+  const batterySavingsData = isBatteryOnly
+    ? calculateBatterySavings(state.batterySize || 10, state.consumptionKwh, state.householdSize)
+    : null;
+
+  const annualSavings = isBatteryOnly
+    ? batterySavingsData?.annualSavings || 0
+    : state.selectedSystem
     ? calculateAnnualSavingsWithGrant(state.selectedSystem.annualProductionKwh, state.grantType)
     : 0;
 
@@ -82,7 +97,10 @@ export default function Step4Financing() {
           Choose your financing
         </h1>
         <p className="text-gray-400">
-          Choose between paying upfront or spreading the cost with BOV financing
+          {isBatteryOnly
+            ? 'Choose how to pay for your battery storage system'
+            : 'Choose between paying upfront or spreading the cost with BOV financing'
+          }
         </p>
       </div>
 
@@ -162,10 +180,33 @@ export default function Step4Financing() {
       {/* Financial Summary */}
       <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-6">
         <h3 className="text-white font-semibold mb-4">Your Financial Benefits</h3>
+
+        {/* Battery-only explanation */}
+        {isBatteryOnly && batterySavingsData && (
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-4">
+            <div className="text-purple-400 text-sm font-medium mb-1">How Battery Saves You Money</div>
+            <div className="text-gray-300 text-xs">
+              Malta uses <strong>progressive electricity rates</strong> - the more you use, the higher the rate per kWh.
+              Your battery stores energy and uses it at night, reducing your grid consumption and keeping you in lower tariff bands.
+            </div>
+            <div className="flex items-center gap-2 mt-2 text-xs">
+              <span className="text-gray-400">Your estimated tier:</span>
+              <span className="text-purple-300 font-medium">{batterySavingsData.explanation}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs mt-1">
+              <span className="text-gray-400">Marginal rate avoided:</span>
+              <span className="text-green-400 font-medium">€{batterySavingsData.marginalRate.toFixed(4)}/kWh</span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-6">
           <div>
             <div className="text-gray-400 text-sm">Annual Savings</div>
             <div className="text-green-400 font-bold text-2xl">{formatCurrency(annualSavings)}</div>
+            {isBatteryOnly && (
+              <div className="text-gray-500 text-xs">~{Math.round((state.batterySize || 10) * 0.95 * 0.9 * 300)} kWh/yr offset</div>
+            )}
           </div>
           <div>
             <div className="text-gray-400 text-sm">Payback Period</div>
@@ -190,7 +231,9 @@ export default function Step4Financing() {
               <span className="text-white font-medium">{formatCurrency(selectedOption.monthlyPayment)}</span>
             </div>
             <div className="flex items-center justify-between text-sm mt-1">
-              <span className="text-gray-400">Monthly savings from solar</span>
+              <span className="text-gray-400">
+                {isBatteryOnly ? 'Monthly savings from battery' : 'Monthly savings from solar'}
+              </span>
               <span className="text-green-400 font-medium">~{formatCurrency(Math.round(annualSavings / 12))}</span>
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-green-500/20">
