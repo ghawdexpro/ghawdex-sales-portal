@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
-import { loadGoogleMaps, reverseGeocode } from '@/lib/google/maps-service';
+import { loadGoogleMaps, reverseGeocode, loadPlacesLibrary } from '@/lib/google/maps-service';
 import { detectLocation } from '@/lib/types';
 
 // Malta center coordinates
@@ -19,10 +19,15 @@ export default function Step1Location() {
   const [selectedAddress, setSelectedAddress] = useState(state.address || '');
   const [mapZoom, setMapZoom] = useState(INITIAL_ZOOM);
   const [loadError, setLoadError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
 
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   // Handle map click
   const handleMapClick = useCallback(async (e: google.maps.MapMouseEvent) => {
@@ -104,6 +109,118 @@ export default function Step1Location() {
     }
   }, [dispatch]);
 
+  // Place marker at specific coordinates (used by autocomplete and geolocation)
+  const placeMarkerAt = useCallback(async (lat: number, lng: number, zoomLevel: number = 19) => {
+    if (!googleMapRef.current) return;
+
+    const position = new google.maps.LatLng(lat, lng);
+
+    // Update or create marker
+    if (markerRef.current) {
+      markerRef.current.setPosition(position);
+    } else {
+      markerRef.current = new google.maps.Marker({
+        position,
+        map: googleMapRef.current,
+        draggable: true,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: '#f59e0b',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+      });
+
+      // Handle marker drag
+      markerRef.current.addListener('dragend', async () => {
+        const pos = markerRef.current?.getPosition();
+        if (pos) {
+          const address = await reverseGeocode(pos.lat(), pos.lng());
+          setSelectedAddress(address);
+          setSearchQuery('');
+          dispatch({
+            type: 'SET_ADDRESS',
+            payload: {
+              address,
+              coordinates: { lat: pos.lat(), lng: pos.lng() },
+              location: detectLocation(pos.lat()),
+            },
+          });
+        }
+      });
+    }
+
+    // Get address and update state
+    const address = await reverseGeocode(lat, lng);
+    setSelectedAddress(address);
+    setSearchQuery('');
+
+    dispatch({
+      type: 'SET_ADDRESS',
+      payload: {
+        address,
+        coordinates: { lat, lng },
+        location: detectLocation(lat),
+      },
+    });
+
+    // Center and zoom the map
+    googleMapRef.current.setCenter(position);
+    googleMapRef.current.setZoom(zoomLevel);
+  }, [dispatch]);
+
+  // Handle "Use my location" button
+  const handleUseMyLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationError('');
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Check if location is in Malta/Gozo area (roughly)
+        const isInMalta = latitude >= 35.7 && latitude <= 36.1 && longitude >= 14.1 && longitude <= 14.6;
+
+        if (!isInMalta) {
+          setLocationError('Your location appears to be outside Malta. Please search for your address or click on the map.');
+          setIsLocating(false);
+          return;
+        }
+
+        await placeMarkerAt(latitude, longitude, 19);
+        setIsLocating(false);
+      },
+      (error) => {
+        setIsLocating(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError('Location access denied. Please enable location permissions or search for your address.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError('Location unavailable. Please search for your address.');
+            break;
+          case error.TIMEOUT:
+            setLocationError('Location request timed out. Please try again or search for your address.');
+            break;
+          default:
+            setLocationError('Could not get your location. Please search for your address.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  }, [placeMarkerAt]);
+
   // Initialize map
   useEffect(() => {
     const initMap = async () => {
@@ -180,6 +297,39 @@ export default function Step1Location() {
 
     initMap();
   }, [state.coordinates, handleMapClick, dispatch]);
+
+  // Initialize Places Autocomplete
+  useEffect(() => {
+    const initAutocomplete = async () => {
+      if (!searchInputRef.current || autocompleteRef.current || !mapsLoaded) return;
+
+      try {
+        await loadPlacesLibrary();
+
+        const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
+          componentRestrictions: { country: 'mt' },
+          fields: ['geometry', 'formatted_address', 'name'],
+          types: ['address'],
+        });
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+
+          if (place.geometry?.location) {
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+            placeMarkerAt(lat, lng, 19);
+          }
+        });
+
+        autocompleteRef.current = autocomplete;
+      } catch (err) {
+        console.error('Failed to initialize autocomplete:', err);
+      }
+    };
+
+    initAutocomplete();
+  }, [mapsLoaded, placeMarkerAt]);
 
   const handleNext = async () => {
     if (!state.coordinates) {
@@ -258,9 +408,56 @@ export default function Step1Location() {
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-4 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">
-          Put Pin on your roof!
+          Find your property
         </h1>
+        <p className="text-gray-400 text-sm mt-2">
+          Search for your address, use your location, or click on the map
+        </p>
       </div>
+
+      {/* Search bar and location button */}
+      <div className="flex gap-2 mb-4">
+        <div className="flex-1 relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search address in Malta..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
+          />
+        </div>
+        <button
+          onClick={handleUseMyLocation}
+          disabled={isLocating}
+          className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+          title="Use my current location"
+        >
+          {isLocating ? (
+            <svg className="animate-spin w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          )}
+          <span className="hidden sm:inline">{isLocating ? 'Locating...' : 'I\'m home'}</span>
+        </button>
+      </div>
+
+      {locationError && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-4">
+          <p className="text-amber-400 text-sm">{locationError}</p>
+        </div>
+      )}
 
       {loadError && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">

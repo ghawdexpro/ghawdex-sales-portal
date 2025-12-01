@@ -58,3 +58,33 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
     })
   })
 }
+
+export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number; formatted: string } | null> => {
+  const google = await loadGoogleMaps()
+  const geocoder = new google.maps.Geocoder()
+
+  return new Promise((resolve) => {
+    geocoder.geocode(
+      {
+        address,
+        componentRestrictions: { country: 'MT' }
+      },
+      (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const location = results[0].geometry.location
+          resolve({
+            lat: location.lat(),
+            lng: location.lng(),
+            formatted: results[0].formatted_address
+          })
+        } else {
+          resolve(null)
+        }
+      }
+    )
+  })
+}
+
+export const loadPlacesLibrary = async () => {
+  return loadLibrary('places')
+}
