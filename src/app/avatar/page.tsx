@@ -184,10 +184,10 @@ function AvatarChatContent() {
 
       // Start avatar session
       const sessionConfig = await avatar.createStartAvatar({
-        avatarName: 'Adrian_public_2_20240312', // Adrian in Blue Suit
+        avatarName: 'Anthony_ProfessionalLook_public', // Anthony Professional Look (Interactive Avatar)
         quality: AvatarQuality.High,
         voice: {
-          voiceId: 'en-US-GuyNeural',
+          voiceId: '6f94c8b2a6784a1d92ffbe0339138f31', // Anthony's default voice
           rate: 1.0,
           emotion: VoiceEmotion.FRIENDLY,
         },
