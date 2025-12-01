@@ -30,14 +30,15 @@ export default function Step6Summary() {
   const quoteRef = `GHX-${Date.now().toString(36).toUpperCase()}`;
 
   useEffect(() => {
-    if (state.totalPrice && state.selectedSystem) {
-      trackQuoteGenerated(state.totalPrice, state.selectedSystem.systemSizeKw);
+    // Track quote generation for both solar and battery-only modes
+    if (state.totalPrice && (state.selectedSystem || isBatteryOnly)) {
+      trackQuoteGenerated(state.totalPrice, state.selectedSystem?.systemSizeKw || 0);
       trackWizardComplete();
     }
 
     const timer = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(timer);
-  }, [state.totalPrice, state.selectedSystem]);
+  }, [state.totalPrice, state.selectedSystem, isBatteryOnly]);
 
   // Create lead for prefilled users (they skip Step5 which normally creates the lead)
   // Uses the API route to ensure dual-write to Supabase AND Zoho CRM
@@ -62,24 +63,25 @@ export default function Step6Summary() {
             monthly_bill: state.monthlyBill,
             consumption_kwh: state.consumptionKwh,
             roof_area: state.roofArea,
-            selected_system: state.selectedSystem?.id || null,
-            system_size_kw: state.selectedSystem?.systemSizeKw || null,
-            with_battery: state.withBattery,
+            selected_system: isBatteryOnly ? 'battery_only' : (state.selectedSystem?.id || null),
+            system_size_kw: state.selectedSystem?.systemSizeKw || 0,
+            with_battery: state.withBattery || isBatteryOnly,
             battery_size_kwh: battery?.capacityKwh || null,
             grant_path: state.grantPath,
+            grant_type: state.grantType, // Include grant type to identify battery-only leads
             payment_method: state.paymentMethod,
             loan_term: state.loanTerm,
             total_price: state.totalPrice,
             monthly_payment: state.monthlyPayment,
             annual_savings: state.annualSavings,
-            notes: null,
+            notes: isBatteryOnly ? 'Battery-only installation (no solar)' : null,
             zoho_lead_id: state.zohoLeadId,
             source: 'zoho_crm',
           }),
         });
 
         if (response.ok) {
-          trackLeadCreated(state.selectedSystem?.systemSizeKw);
+          trackLeadCreated(state.selectedSystem?.systemSizeKw || 0);
         } else {
           console.error('Failed to create lead:', await response.text());
         }
@@ -89,7 +91,7 @@ export default function Step6Summary() {
     };
 
     createLeadForPrefilledUser();
-  }, [state.isPrefilledLead, state.fullName, state.email, state.phone, state.address, state.coordinates, state.householdSize, state.monthlyBill, state.consumptionKwh, state.roofArea, state.selectedSystem, state.withBattery, battery, state.grantPath, state.paymentMethod, state.loanTerm, state.totalPrice, state.monthlyPayment, state.annualSavings, state.zohoLeadId]);
+  }, [state.isPrefilledLead, state.fullName, state.email, state.phone, state.address, state.coordinates, state.householdSize, state.monthlyBill, state.consumptionKwh, state.roofArea, state.selectedSystem, state.withBattery, battery, state.grantPath, state.grantType, state.paymentMethod, state.loanTerm, state.totalPrice, state.monthlyPayment, state.annualSavings, state.zohoLeadId, isBatteryOnly]);
 
   const handleWhatsApp = () => {
     const message = encodeURIComponent(
