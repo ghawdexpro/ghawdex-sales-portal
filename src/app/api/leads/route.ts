@@ -3,8 +3,76 @@ import { createLead, updateLead, getLeadByZohoId } from '@/lib/supabase';
 import { createOrUpdateZohoLead } from '@/lib/zoho';
 import { Lead } from '@/lib/types';
 
+// Calculate lead priority score (0-100)
+function calculateLeadPriority(lead: Partial<Lead>): { score: number; level: 'high' | 'medium' | 'low' } {
+  let score = 0;
+
+  // System size scoring (max 30 points)
+  if (lead.system_size_kw) {
+    if (lead.system_size_kw >= 15) score += 30;
+    else if (lead.system_size_kw >= 10) score += 25;
+    else if (lead.system_size_kw >= 5) score += 15;
+    else score += 10;
+  }
+
+  // Total price scoring (max 25 points)
+  if (lead.total_price) {
+    if (lead.total_price >= 15000) score += 25;
+    else if (lead.total_price >= 10000) score += 20;
+    else if (lead.total_price >= 5000) score += 10;
+    else score += 5;
+  }
+
+  // Battery included (15 points)
+  if (lead.with_battery && lead.battery_size_kwh && lead.battery_size_kwh > 0) {
+    score += 15;
+  }
+
+  // Grant path (10 points - easier to close)
+  if (lead.grant_path) {
+    score += 10;
+  }
+
+  // Loan financing (10 points - committed buyer)
+  if (lead.payment_method === 'loan') {
+    score += 10;
+  }
+
+  // Has monthly bill data (5 points - engaged user)
+  if (lead.monthly_bill && lead.monthly_bill > 0) {
+    score += 5;
+  }
+
+  // Has address (5 points - serious inquiry)
+  if (lead.address && lead.address.length > 5) {
+    score += 5;
+  }
+
+  const level = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
+  return { score, level };
+}
+
+// Generate Zoho prefill link for sales team
+function generateZohoPrefillLink(lead: Partial<Lead>, zohoLeadId: string): string {
+  const baseUrl = 'https://get.ghawdex.pro';
+  const params = new URLSearchParams();
+
+  if (lead.name) params.set('name', lead.name);
+  if (lead.email) params.set('email', lead.email);
+  if (lead.phone) params.set('phone', lead.phone);
+  params.set('zoho_id', zohoLeadId);
+
+  return `${baseUrl}/?${params.toString()}`;
+}
+
 // Telegram notification helper
-async function sendTelegramNotification(lead: Lead, isQuoteCompletion = false) {
+interface TelegramOptions {
+  isQuoteCompletion?: boolean;
+  priority?: { score: number; level: 'high' | 'medium' | 'low' };
+  prefillLink?: string;
+}
+
+async function sendTelegramNotification(lead: Lead, options: TelegramOptions = {}) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
@@ -13,9 +81,19 @@ async function sendTelegramNotification(lead: Lead, isQuoteCompletion = false) {
     return;
   }
 
+  const { isQuoteCompletion, priority, prefillLink } = options;
+
+  // Priority emoji and label
+  const priorityEmoji = priority?.level === 'high' ? '🔥' : priority?.level === 'medium' ? '⭐' : '📋';
+  const priorityLabel = priority ? `${priorityEmoji} *Priority:* ${priority.level.toUpperCase()} (${priority.score}/100)` : '';
+
+  // Prefill link section
+  const linkSection = prefillLink ? `\n\n🔗 *Quick Quote Link:*\n\`${prefillLink}\`` : '';
+
   // Different message for quote completions (prefilled users from CRM)
   const message = isQuoteCompletion
     ? `✅ *Quote Completed - Needs Callback!*
+${priorityLabel}
 
 👤 *Name:* ${lead.name}
 📧 *Email:* ${lead.email}
@@ -34,6 +112,7 @@ async function sendTelegramNotification(lead: Lead, isQuoteCompletion = false) {
 ⚡ *Action:* Customer completed quote from CRM link - ready for callback!
 🔗 Source: Zoho CRM`
     : `🌞 *New Solar Lead!*
+${priorityLabel}
 
 👤 *Name:* ${lead.name}
 📧 *Email:* ${lead.email}
@@ -49,7 +128,7 @@ async function sendTelegramNotification(lead: Lead, isQuoteCompletion = false) {
 🎫 *Grant Path:* ${lead.grant_path ? 'Yes' : 'No'}
 
 💰 *Total Price:* €${lead.total_price?.toLocaleString() || 'TBD'}
-📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}
+📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}${linkSection}
 
 🔗 Source: get.ghawdex.pro`;
 
@@ -226,10 +305,23 @@ export async function POST(request: NextRequest) {
       created_at: undefined,
     } as Lead;
 
+    // Calculate priority score
+    const priority = calculateLeadPriority(notificationLead);
+
+    // Generate prefill link for new leads (not for quote completions)
+    const finalZohoId = zohoLeadId || leadData.zoho_lead_id;
+    const prefillLink = !isPrefilledUser && finalZohoId
+      ? generateZohoPrefillLink(notificationLead, finalZohoId)
+      : undefined;
+
     // Always send Telegram if at least one system succeeded
     if (lead || zohoLeadId) {
       Promise.all([
-        sendTelegramNotification(notificationLead, isPrefilledUser),
+        sendTelegramNotification(notificationLead, {
+          isQuoteCompletion: isPrefilledUser,
+          priority,
+          prefillLink,
+        }),
         lead ? triggerN8nWebhook(lead) : Promise.resolve(),
       ]).catch(console.error);
     }
