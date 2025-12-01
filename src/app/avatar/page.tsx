@@ -184,7 +184,7 @@ function AvatarChatContent() {
 
       // Start avatar session
       const sessionConfig = await avatar.createStartAvatar({
-        avatarName: 'Hayden_20241025', // Default public avatar
+        avatarName: 'Adrian_public_2_20240312', // Adrian in Blue Suit
         quality: AvatarQuality.High,
         voice: {
           voiceId: 'en-US-GuyNeural',

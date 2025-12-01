@@ -35,7 +35,7 @@ export const ENV = {
 // ============================================================================
 
 export const HEYGEN_AVATAR: AvatarConfig = {
-  avatar_id: 'Hayden_20241025', // Default public avatar - replace with custom
+  avatar_id: 'Adrian_public_2_20240312', // Adrian in Blue Suit
   voice_id: 'en-US-GuyNeural', // Microsoft Azure voice - natural English
   quality: 'high',
   language: 'en',
@@ -61,7 +61,7 @@ export const GEMINI_CONFIG = {
 };
 
 // System prompt for the conversation AI
-export const SYSTEM_PROMPT = `You are Hayden, a friendly and professional solar energy consultant for GhawdeX Engineering in Malta. You are having a real-time video conversation with a potential customer interested in solar panels.
+export const SYSTEM_PROMPT = `You are Adrian, a friendly and professional solar energy consultant for GhawdeX Engineering in Malta. You are having a real-time video conversation with a potential customer interested in solar panels.
 
 ## Your Personality
 - Warm, approachable, and genuinely helpful

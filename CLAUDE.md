@@ -162,7 +162,45 @@ https://get.ghawdex.pro/?name=John&email=john@test.com&phone=79123456&zoho_id=12
 - **BOV loan calculator:** Monthly payment estimates with interest rates
 - **20-year ROI projections:** Net present value calculations with inflation
 
-### 5. Analytics & Tracking
+### 5. Battery-Only Purchase Option
+Customers can purchase battery storage without PV panels:
+- Toggle in Step 3 enables battery-only mode (`grant_type: 'battery_only'`)
+- Savings calculated using Enemalta tiered tariffs (charge off-peak €0.11, use at peak €0.18)
+- Separate financing calculations in Step 4
+- Full summary display in Step 6
+
+### 6. HeyGen Avatar Chat (`/avatar`)
+Voice-based solar consultation with AI avatar "Hayden":
+
+**Architecture:**
+```
+/avatar page (React)
+    ↓
+HeyGen Streaming Avatar (WebRTC)
+    ↓
+POST /api/avatar/message
+    ├─ Gemini 2.0 Flash (conversation AI)
+    ├─ Function calling (tools.ts)
+    └─ Session persistence (avatar_sessions table)
+```
+
+**Key Files:**
+- `src/app/avatar/page.tsx` - Main chat interface with HeyGen streaming
+- `src/app/avatar/resume/[token]/page.tsx` - Resume paused sessions via unique link
+- `src/lib/avatar/conversation-engine.ts` - Dialogue state machine with phases
+- `src/lib/avatar/tools.ts` - Function calling implementations (send_location_link, calculate_system, etc.)
+- `src/lib/avatar/session-manager.ts` - Session CRUD operations
+- `src/lib/avatar/config.ts` - HeyGen + Gemini configuration, dialogue prompts
+
+**Conversation Phases:**
+`greeting` → `location` → `bill` → `consumption` → `system_recommendation` → `selection` → `financing` → `contact` → `summary` → `completed`
+
+**Session Persistence:**
+- Sessions stored in `avatar_sessions` table with full conversation history
+- Resume via unique token: `https://get.ghawdex.pro/avatar/resume/[token]`
+- Supports pausing ("I need to go") and human handoff requests
+
+### 7. Analytics & Tracking
 - **GA4 events:** Step transitions, lead generation, system selection
 - **Facebook Pixel:** Lead conversion tracking
 - **Session duration:** TimeTracker component monitors engagement
@@ -212,6 +250,36 @@ CREATE TABLE leads (
   zoho_lead_id VARCHAR(50),
   status TEXT DEFAULT 'new',
   source TEXT DEFAULT 'sales-portal'
+);
+```
+
+### avatar_sessions table
+```sql
+CREATE TABLE avatar_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Customer identification
+  customer_phone VARCHAR(20),
+  customer_email VARCHAR(255),
+  customer_name VARCHAR(255),
+  zoho_lead_id VARCHAR(50),
+
+  -- Session state
+  status TEXT DEFAULT 'active',  -- active, paused, completed, abandoned
+  current_phase TEXT DEFAULT 'greeting',
+  resume_token UUID UNIQUE,      -- For resume links
+
+  -- Conversation data
+  conversation_history JSONB DEFAULT '[]',
+  collected_data JSONB,          -- All customer/system selection data
+  documents JSONB DEFAULT '[]',
+
+  -- Metadata
+  source TEXT DEFAULT 'website',
+  total_duration_seconds INTEGER DEFAULT 0,
+  heygen_session_id VARCHAR(100)
 );
 ```
 
@@ -273,6 +341,9 @@ See `.env.local` for all required variables.
 
 **OpenRouter (optional - AI assistant):**
 - `OPENROUTER_API_KEY` - API key for Gemini 2.0 Flash
+
+**HeyGen Avatar Chat:**
+- `HEYGEN_API_KEY` - HeyGen API key for streaming avatar
 
 **Analytics:**
 - `NEXT_PUBLIC_GA4_ID` - Google Analytics property ID
