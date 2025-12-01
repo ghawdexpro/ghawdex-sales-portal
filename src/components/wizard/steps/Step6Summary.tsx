@@ -116,6 +116,187 @@ export default function Step6Summary() {
   };
 
   const generateProposal = () => {
+    // Battery-only has different PDF structure
+    if (isBatteryOnly) {
+      const grantPercentage = state.location === 'gozo' ? 95 : 80;
+      const batteryGrossPrice = battery ? battery.price : 0;
+      const grantAmount = batteryGrossPrice - (state.totalPrice || 0);
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Battery Storage Proposal - ${state.fullName}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #1a1a2e; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 3px solid #8b5cf6; padding-bottom: 20px; }
+            .logo { font-size: 28px; font-weight: bold; color: #f59e0b; }
+            .logo span { color: #1a1a2e; }
+            .doc-info { text-align: right; font-size: 12px; color: #666; }
+            .doc-info strong { display: block; font-size: 14px; color: #1a1a2e; }
+            h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a2e; }
+            h2 { font-size: 18px; margin: 30px 0 15px; color: #8b5cf6; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+            .customer-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+            .customer-info p { margin: 5px 0; }
+            .price-box { background: linear-gradient(135deg, #ede9fe, #ddd6fe); padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center; }
+            .price-box .label { font-size: 14px; color: #6d28d9; margin-bottom: 5px; }
+            .price-box .amount { font-size: 42px; font-weight: bold; color: #1a1a2e; }
+            .price-box .grant { color: #16a34a; font-size: 14px; margin-top: 8px; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+            th { background: #f8f9fa; font-weight: 600; }
+            .highlight { background: #ede9fe; }
+            .gozo-badge { display: inline-block; background: #16a34a; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+            .terms { font-size: 11px; color: #666; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; }
+            .terms h3 { font-size: 12px; color: #1a1a2e; margin-bottom: 10px; }
+            .terms ul { padding-left: 20px; }
+            .terms li { margin: 5px 0; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+            .footer strong { color: #8b5cf6; }
+            .savings-box { background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0; }
+            .savings-box h4 { color: #16a34a; margin-bottom: 10px; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">Ghawde<span>X</span></div>
+              <div style="font-size: 12px; color: #666;">Engineering Excellence in Energy Storage</div>
+            </div>
+            <div class="doc-info">
+              <strong>CONTRACT PROPOSAL</strong>
+              Ref: ${quoteRef}<br>
+              Date: ${today}<br>
+              Valid for: 30 days
+            </div>
+          </div>
+
+          <h1>Battery Storage Proposal</h1>
+          <p style="color: #666; margin-bottom: 20px;">Thank you for choosing GhawdeX Engineering for your battery storage installation.</p>
+
+          <div class="customer-info">
+            <p><strong>Customer:</strong> ${state.fullName}</p>
+            <p><strong>Email:</strong> ${state.email}</p>
+            <p><strong>Phone:</strong> ${state.phone}</p>
+            <p><strong>Installation Address:</strong> ${state.address}</p>
+            <p><strong>Location:</strong> ${state.location === 'gozo' ? '<span class="gozo-badge">Gozo - 95% Grant</span>' : 'Malta'}</p>
+          </div>
+
+          <div class="price-box">
+            <div class="label">Your Investment</div>
+            <div class="amount">${formatCurrency(state.totalPrice || 0)}</div>
+            <div class="grant">After ${grantPercentage}% government grant (saving ${formatCurrency(grantAmount)})</div>
+          </div>
+
+          <h2>Battery System</h2>
+          <table>
+            <tr class="highlight">
+              <td><strong>Battery Model</strong></td>
+              <td>${battery?.name || 'Huawei LUNA2000'}</td>
+            </tr>
+            <tr class="highlight">
+              <td><strong>Capacity</strong></td>
+              <td>${battery?.capacityKwh || 0} kWh</td>
+            </tr>
+            <tr>
+              <td><strong>Battery Type</strong></td>
+              <td>LiFePO4 (Lithium Iron Phosphate)</td>
+            </tr>
+            <tr>
+              <td><strong>Hybrid Inverter</strong></td>
+              <td>Included in system</td>
+            </tr>
+            <tr>
+              <td><strong>Cycle Life</strong></td>
+              <td>6,000+ cycles</td>
+            </tr>
+            <tr>
+              <td><strong>Warranty</strong></td>
+              <td>10 years manufacturer warranty</td>
+            </tr>
+          </table>
+
+          <h2>Grant Calculation (REWS 2025)</h2>
+          <table>
+            <tr>
+              <td><strong>System Gross Price</strong></td>
+              <td>${formatCurrency(batteryGrossPrice)}</td>
+            </tr>
+            <tr>
+              <td><strong>Grant Rate</strong></td>
+              <td>${grantPercentage}% (${state.location === 'gozo' ? 'Gozo enhanced rate' : 'Malta standard rate'})</td>
+            </tr>
+            <tr>
+              <td><strong>Grant Cap</strong></td>
+              <td>€720/kWh (max ${state.location === 'gozo' ? '€8,550' : '€7,200'})</td>
+            </tr>
+            <tr class="highlight">
+              <td><strong>Grant Amount</strong></td>
+              <td style="color: #16a34a; font-weight: bold;">${formatCurrency(grantAmount)}</td>
+            </tr>
+            <tr class="highlight">
+              <td><strong>You Pay</strong></td>
+              <td style="font-weight: bold;">${formatCurrency(state.totalPrice || 0)}</td>
+            </tr>
+          </table>
+
+          <div class="savings-box">
+            <h4>How Battery Storage Saves You Money</h4>
+            <p style="font-size: 13px; color: #333;">
+              Your battery stores energy when rates are low and powers your home during peak hours.
+              This tariff arbitrage saves approximately <strong>${formatCurrency(state.annualSavings || 0)}/year</strong>.
+            </p>
+          </div>
+
+          <h2>Financial Summary</h2>
+          <table>
+            <tr>
+              <td><strong>Estimated Annual Savings</strong></td>
+              <td style="color: #16a34a; font-weight: bold;">${formatCurrency(state.annualSavings || 0)}</td>
+            </tr>
+            <tr>
+              <td><strong>Payback Period</strong></td>
+              <td>${state.paybackYears} years</td>
+            </tr>
+            <tr>
+              <td><strong>Payment Method</strong></td>
+              <td>${state.paymentMethod === 'loan' ? `BOV Financing (${state.loanTerm ? state.loanTerm / 12 : 0} years) - ${formatCurrency(state.monthlyPayment || 0)}/month` : 'Full Payment'}</td>
+            </tr>
+          </table>
+
+          <div class="terms">
+            <h3>Terms & Conditions</h3>
+            <ul>
+              <li>This proposal is valid for 30 days from the date of issue</li>
+              <li>Final price subject to site survey and technical assessment</li>
+              <li>Government grant subject to REWS approval and availability</li>
+              <li>Battery-only grant requires no previous battery grant in last 6 years</li>
+              <li>Installation timeline: 7-14 days from contract signing</li>
+              <li>All equipment comes with manufacturer warranty</li>
+              <li>Price includes installation, commissioning, and grid connection</li>
+            </ul>
+          </div>
+
+          <div class="footer">
+            <p><strong>GhawdeX Engineering</strong></p>
+            <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
+            <p>www.ghawdex.pro</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+      }
+      return;
+    }
+
+    // Standard solar system proposal
     const fitRate = state.grantType === 'none'
       ? GRANT_SCHEME_2025.FIT_WITHOUT_GRANT
       : GRANT_SCHEME_2025.FIT_WITH_GRANT;
@@ -244,7 +425,7 @@ export default function Step6Summary() {
           </tr>
           <tr>
             <td><strong>Grant Amount</strong></td>
-            <td style="color: #16a34a; font-weight: bold;">€${state.selectedSystem?.grantAmount}</td>
+            <td style="color: #16a34a; font-weight: bold;">${formatCurrency(state.selectedSystem?.grantAmount || 0)}</td>
           </tr>
           <tr>
             <td><strong>Grant Status</strong></td>
@@ -282,6 +463,281 @@ export default function Step6Summary() {
   };
 
   const generateTechSpec = () => {
+    // Battery-only has different tech spec structure
+    if (isBatteryOnly) {
+      // Huawei battery specifications for battery-only
+      const batterySpecs: Record<string, { usableCapacity: string; voltage: string; maxCharge: string; maxDischarge: string; weight: string; dimensions: string; datasheet: string }> = {
+        'Huawei LUNA2000-5-S0': {
+          usableCapacity: '5 kWh',
+          voltage: '40-60 V',
+          maxCharge: '2.5 kW',
+          maxDischarge: '2.5 kW',
+          weight: '63.8 kg',
+          dimensions: '670 × 150 × 600 mm',
+          datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+        },
+        'Huawei LUNA2000-10-S0': {
+          usableCapacity: '10 kWh',
+          voltage: '80-120 V',
+          maxCharge: '5 kW',
+          maxDischarge: '5 kW',
+          weight: '114 kg',
+          dimensions: '670 × 150 × 960 mm',
+          datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+        },
+        'Huawei LUNA2000-15-S0': {
+          usableCapacity: '15 kWh',
+          voltage: '120-180 V',
+          maxCharge: '5 kW',
+          maxDischarge: '5 kW',
+          weight: '164 kg',
+          dimensions: '670 × 150 × 1320 mm',
+          datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+        },
+      };
+
+      const batterySpec = battery ? batterySpecs[battery.name] || batterySpecs['Huawei LUNA2000-10-S0'] : batterySpecs['Huawei LUNA2000-10-S0'];
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Battery Technical Specification - ${state.fullName}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #1a1a2e; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 3px solid #8b5cf6; padding-bottom: 20px; }
+            .logo { font-size: 28px; font-weight: bold; color: #f59e0b; }
+            .logo span { color: #1a1a2e; }
+            .huawei-badge { display: inline-flex; align-items: center; gap: 8px; background: #c7000b; color: white; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-top: 8px; }
+            .doc-info { text-align: right; font-size: 12px; color: #666; }
+            .doc-info strong { display: block; font-size: 14px; color: #1a1a2e; }
+            h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a2e; }
+            h2 { font-size: 16px; margin: 25px 0 12px; color: #8b5cf6; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+            .site-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #8b5cf6; }
+            .site-info p { margin: 5px 0; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            th, td { padding: 10px 12px; text-align: left; border: 1px solid #e5e7eb; }
+            th { background: #f8f9fa; font-weight: 600; width: 40%; }
+            .spec-value { font-weight: 500; }
+            .highlight { background: #ede9fe; }
+            .performance-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
+            .perf-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+            .perf-item .value { font-size: 24px; font-weight: bold; color: #1a1a2e; }
+            .perf-item .label { font-size: 12px; color: #666; margin-top: 5px; }
+            .datasheet-link { display: inline-flex; align-items: center; gap: 6px; background: #8b5cf6; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin-top: 10px; }
+            .datasheet-link:hover { background: #7c3aed; }
+            .ecosystem-box { background: linear-gradient(135deg, #f5f3ff, #fff); border: 1px solid #8b5cf6; border-radius: 12px; padding: 20px; margin: 25px 0; }
+            .ecosystem-box h3 { color: #8b5cf6; font-size: 14px; margin-bottom: 15px; }
+            .ecosystem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+            .ecosystem-item { text-align: center; padding: 12px; background: white; border-radius: 8px; border: 1px solid #eee; }
+            .ecosystem-item .icon { font-size: 24px; margin-bottom: 5px; }
+            .ecosystem-item .name { font-size: 11px; color: #666; }
+            .notes { background: #ede9fe; padding: 15px; border-radius: 8px; margin-top: 25px; font-size: 12px; }
+            .notes h3 { font-size: 13px; margin-bottom: 10px; color: #6d28d9; }
+            .notes ul { padding-left: 20px; }
+            .notes li { margin: 5px 0; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+            @media print { body { padding: 20px; } .datasheet-link { background: #666; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">Ghawde<span>X</span></div>
+              <div style="font-size: 12px; color: #666;">Engineering Excellence in Energy Storage</div>
+              <div class="huawei-badge">
+                <span>HUAWEI</span> Certified Partner
+              </div>
+            </div>
+            <div class="doc-info">
+              <strong>TECHNICAL SPECIFICATION</strong>
+              Ref: ${quoteRef}<br>
+              Date: ${today}
+            </div>
+          </div>
+
+          <h1>Huawei LUNA2000 Battery System Specification</h1>
+          <p style="color: #666; margin-bottom: 20px;">Premium LiFePO4 battery storage with industry-leading safety and performance.</p>
+
+          <div class="site-info">
+            <p><strong>Customer:</strong> ${state.fullName}</p>
+            <p><strong>Installation Site:</strong> ${state.address}</p>
+            <p><strong>Location:</strong> ${state.location === 'gozo' ? 'Gozo (95% Grant Eligible)' : 'Malta'}</p>
+          </div>
+
+          <div class="performance-box">
+            <div class="perf-item">
+              <div class="value">${battery?.capacityKwh || 10} kWh</div>
+              <div class="label">Storage Capacity</div>
+            </div>
+            <div class="perf-item">
+              <div class="value">${batterySpec.maxDischarge}</div>
+              <div class="label">Max Power Output</div>
+            </div>
+            <div class="perf-item">
+              <div class="value">6,000+</div>
+              <div class="label">Cycle Life</div>
+            </div>
+            <div class="perf-item">
+              <div class="value">10</div>
+              <div class="label">Warranty (years)</div>
+            </div>
+          </div>
+
+          <div class="ecosystem-box">
+            <h3>Huawei Energy Storage System</h3>
+            <div class="ecosystem-grid">
+              <div class="ecosystem-item">
+                <div class="icon">🔋</div>
+                <div class="name">LUNA2000 Battery</div>
+              </div>
+              <div class="ecosystem-item">
+                <div class="icon">⚡</div>
+                <div class="name">Hybrid Inverter</div>
+              </div>
+              <div class="ecosystem-item">
+                <div class="icon">📱</div>
+                <div class="name">FusionSolar App</div>
+              </div>
+            </div>
+          </div>
+
+          <h2>Huawei LUNA2000 Smart Battery</h2>
+          <table>
+            <tr class="highlight">
+              <th>Model</th>
+              <td class="spec-value">${battery?.name || 'Huawei LUNA2000-10-S0'}</td>
+            </tr>
+            <tr class="highlight">
+              <th>Usable Capacity</th>
+              <td class="spec-value">${batterySpec.usableCapacity}</td>
+            </tr>
+            <tr>
+              <th>Battery Chemistry</th>
+              <td class="spec-value">Lithium Iron Phosphate (LiFePO4)</td>
+            </tr>
+            <tr>
+              <th>Operating Voltage</th>
+              <td class="spec-value">${batterySpec.voltage}</td>
+            </tr>
+            <tr>
+              <th>Max Charge Power</th>
+              <td class="spec-value">${batterySpec.maxCharge}</td>
+            </tr>
+            <tr>
+              <th>Max Discharge Power</th>
+              <td class="spec-value">${batterySpec.maxDischarge}</td>
+            </tr>
+            <tr>
+              <th>Cycle Life</th>
+              <td class="spec-value">>6,000 cycles @ 90% DoD</td>
+            </tr>
+            <tr>
+              <th>Depth of Discharge</th>
+              <td class="spec-value">100%</td>
+            </tr>
+            <tr>
+              <th>Round-Trip Efficiency</th>
+              <td class="spec-value">>95%</td>
+            </tr>
+            <tr>
+              <th>Dimensions</th>
+              <td class="spec-value">${batterySpec.dimensions}</td>
+            </tr>
+            <tr>
+              <th>Weight</th>
+              <td class="spec-value">${batterySpec.weight}</td>
+            </tr>
+            <tr>
+              <th>IP Rating</th>
+              <td class="spec-value">IP66 (outdoor installation)</td>
+            </tr>
+            <tr>
+              <th>Operating Temperature</th>
+              <td class="spec-value">-10°C to +55°C</td>
+            </tr>
+            <tr>
+              <th>Warranty</th>
+              <td class="spec-value">10 years manufacturer warranty</td>
+            </tr>
+          </table>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd;">
+            <a href="${batterySpec.datasheet}" target="_blank" class="datasheet-link">
+              📄 Download Battery Datasheet (PDF)
+            </a>
+          </div>
+
+          <h2>Hybrid Inverter (Included)</h2>
+          <table>
+            <tr>
+              <th>Type</th>
+              <td class="spec-value">Huawei SUN2000 Hybrid</td>
+            </tr>
+            <tr>
+              <th>Function</th>
+              <td class="spec-value">Battery Management + Grid Connection</td>
+            </tr>
+            <tr>
+              <th>Solar Ready</th>
+              <td class="spec-value">Yes - Add PV panels anytime</td>
+            </tr>
+            <tr>
+              <th>Monitoring</th>
+              <td class="spec-value">Huawei FusionSolar App (iOS/Android)</td>
+            </tr>
+          </table>
+
+          <h2>Safety Features</h2>
+          <table>
+            <tr>
+              <th>Battery Chemistry</th>
+              <td class="spec-value">LiFePO4 - Non-flammable, most stable lithium type</td>
+            </tr>
+            <tr>
+              <th>Thermal Runaway</th>
+              <td class="spec-value">Not possible with LiFePO4 chemistry</td>
+            </tr>
+            <tr>
+              <th>Fire Safety</th>
+              <td class="spec-value">Cannot catch fire under any conditions</td>
+            </tr>
+            <tr>
+              <th>Certifications</th>
+              <td class="spec-value">TÜV, CE, IEC 62619, UN38.3</td>
+            </tr>
+          </table>
+
+          <div class="notes">
+            <h3>Important Notes</h3>
+            <ul>
+              <li>Battery can be expanded with additional modules in the future</li>
+              <li>Solar panels can be added later using the same hybrid inverter</li>
+              <li>Final installation location subject to site survey</li>
+              <li>All equipment specifications subject to availability</li>
+              <li>Installation includes all mounting, cabling, and protection devices</li>
+              <li>Grid connection coordination with Enemalta included</li>
+            </ul>
+          </div>
+
+          <div class="footer">
+            <p><strong>GhawdeX Engineering</strong> - Huawei Certified Partner</p>
+            <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
+            <p>www.ghawdex.pro</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+      }
+      return;
+    }
+
+    // Standard solar system tech spec
     // Huawei inverter specifications
     const inverterSpecs: Record<string, { maxDcPower: string; mpptVoltage: string; maxEfficiency: string; weight: string; dimensions: string; datasheet: string }> = {
       'Huawei SUN2000-3KTL-L1': {
