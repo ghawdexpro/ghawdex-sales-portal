@@ -30,17 +30,27 @@ export default function Step3System() {
     // For battery-only mode, require a battery
     if (batteryOnlyMode && !selectedBattery) return;
 
+    // Determine battery size to save:
+    // - Battery-only mode: always save battery size
+    // - Solar mode with battery: save battery size
+    // - Solar mode without battery: save null (clear any previous battery selection)
+    const batteryToSave = batteryOnlyMode
+      ? selectedBattery?.capacityKwh || null
+      : withBattery
+        ? selectedBattery?.capacityKwh || null
+        : null;
+
     dispatch({
       type: 'SET_SYSTEM',
       payload: {
         system: batteryOnlyMode ? null : selectedSystem,
         withBattery: batteryOnlyMode ? true : withBattery,
-        batterySize: selectedBattery?.capacityKwh || null,
+        batterySize: batteryToSave,
         grantType: batteryOnlyMode ? 'battery_only' : grantType,
       },
     });
 
-    trackSystemSelected(batteryOnlyMode ? 0 : (selectedSystem?.systemSizeKw || 0), true, grantType !== 'none');
+    trackSystemSelected(batteryOnlyMode ? 0 : (selectedSystem?.systemSizeKw || 0), batteryOnlyMode || withBattery, grantType !== 'none');
     trackWizardStep(3, 'System');
     dispatch({ type: 'NEXT_STEP' });
   };
@@ -61,8 +71,9 @@ export default function Step3System() {
         setSelectedBattery(BATTERY_OPTIONS[1]); // Default to 10kWh
       }
     } else {
-      // Exiting battery-only mode
+      // Exiting battery-only mode - reset to solar-only defaults
       setGrantType('pv_only');
+      setWithBattery(false); // Reset battery toggle for solar mode
       // Re-recommend a system if we have consumption data
       if (state.consumptionKwh) {
         const recommended = recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);
