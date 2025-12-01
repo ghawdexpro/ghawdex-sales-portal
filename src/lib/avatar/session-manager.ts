@@ -1,5 +1,5 @@
 /**
- * Hayden Avatar Chat - Session Manager
+ * HeyGen Avatar Chat - Session Manager
  *
  * Handles session persistence, retrieval, and lifecycle management
  * using Supabase as the backend store.

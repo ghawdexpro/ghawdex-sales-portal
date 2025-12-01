@@ -1,5 +1,5 @@
 /**
- * Hayden Avatar Chat - Tool Implementations
+ * HeyGen Avatar Chat - Tool Implementations
  *
  * Implements all function calling tools for the conversation engine.
  * Tools handle external actions like sending SMS, calculating quotes,

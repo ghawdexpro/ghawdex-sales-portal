@@ -1,5 +1,5 @@
 /**
- * Hayden Avatar Chat - Conversation Engine
+ * HeyGen Avatar Chat - Conversation Engine
  *
  * Orchestrates the conversation flow using Google Gemini (via OpenRouter)
  * with function calling capabilities for actions like sending links,

@@ -88,7 +88,7 @@ export default function ResumeSessionPage() {
               Resuming Your Consultation
             </h1>
             <p className="text-gray-600">
-              Just a moment while we reconnect you with Hayden...
+              Just a moment while we reconnect your session...
             </p>
           </>
         )}

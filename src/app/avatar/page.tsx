@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Hayden Avatar Chat Page
+ * HeyGen Avatar Chat Page
  *
  * Main entry point for the interactive avatar consultation.
  * Handles session creation, HeyGen avatar streaming, and conversation flow.
@@ -309,7 +309,7 @@ function AvatarChatContent() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-lg text-gray-700">Connecting to Hayden...</p>
+          <p className="text-lg text-gray-700">Connecting to your solar consultant...</p>
         </div>
       </div>
     );
@@ -345,7 +345,7 @@ function AvatarChatContent() {
               className="h-8"
             />
             <span className="text-lg font-semibold text-gray-900">
-              Solar Consultation with Hayden
+              AI Solar Consultation
             </span>
           </div>
 
@@ -387,7 +387,7 @@ function AvatarChatContent() {
               {isTalking && (
                 <div className="absolute bottom-4 left-4 px-3 py-1 bg-green-500 text-white rounded-full text-sm flex items-center gap-2">
                   <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                  Hayden is speaking...
+                  Speaking...
                 </div>
               )}
 
@@ -507,7 +507,7 @@ function AvatarChatContent() {
             <div className="text-2xl mb-2">🎤</div>
             <h4 className="font-semibold text-gray-900">Voice Chat</h4>
             <p className="text-sm text-gray-600">
-              Just speak naturally - Hayden understands and responds in real-time.
+              Just speak naturally - your consultant understands and responds in real-time.
             </p>
           </div>
 
@@ -515,7 +515,7 @@ function AvatarChatContent() {
             <div className="text-2xl mb-2">📱</div>
             <h4 className="font-semibold text-gray-900">Mobile Links</h4>
             <p className="text-sm text-gray-600">
-              Hayden will send links to your phone for location sharing and bill uploads.
+              Links will be sent to your phone for location sharing and bill uploads.
             </p>
           </div>
 
@@ -523,7 +523,7 @@ function AvatarChatContent() {
             <div className="text-2xl mb-2">⏸️</div>
             <h4 className="font-semibold text-gray-900">Pause Anytime</h4>
             <p className="text-sm text-gray-600">
-              Need to step away? Hayden can save your progress and send a resume link.
+              Need to step away? Your progress can be saved with a resume link.
             </p>
           </div>
         </div>
