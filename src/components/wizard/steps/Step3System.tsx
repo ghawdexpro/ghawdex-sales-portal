@@ -480,7 +480,7 @@ export default function Step3System() {
                     : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
                 }`}
               >
-                <div className="text-xs font-medium">Solar Only</div>
+                <div className="text-xs font-medium">PV Grant</div>
                 <div className="text-[10px] text-green-400">€0.105/kWh</div>
               </button>
 
@@ -500,7 +500,7 @@ export default function Step3System() {
                     : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
                 }`}
               >
-                <div className="text-xs font-medium">+ Battery</div>
+                <div className="text-xs font-medium">PV+Battery</div>
                 <div className="text-[10px] text-green-400">€0.105/kWh</div>
               </button>
             </div>
