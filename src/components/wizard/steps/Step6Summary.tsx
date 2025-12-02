@@ -4,6 +4,7 @@ import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber, calculateCO2Offset } from '@/lib/calculations';
+import { getSessionToken } from '@/lib/wizard-session';
 import { useEffect, useState, useRef } from 'react';
 
 export default function Step6Summary() {
@@ -50,6 +51,9 @@ export default function Step6Summary() {
       leadCreatedRef.current = true;
 
       try {
+        // Get session token for linking wizard session to lead
+        const sessionToken = getSessionToken();
+
         const response = await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -77,6 +81,7 @@ export default function Step6Summary() {
             notes: isBatteryOnly ? 'Battery-only installation (no solar)' : null,
             zoho_lead_id: state.zohoLeadId,
             source: 'zoho_crm',
+            session_token: sessionToken,
           }),
         });
 
