@@ -22,15 +22,8 @@ async function supabaseFetch(
   });
 }
 
-// Calculate next reminder time (24 hours for first, 72 hours for second)
-function calculateNextReminderAt(reminderCount: number): string | null {
-  if (reminderCount >= 2) return null; // Max 2 reminders
-
-  const hoursFromNow = reminderCount === 0 ? 24 : 72;
-  const nextReminder = new Date();
-  nextReminder.setHours(nextReminder.getHours() + hoursFromNow);
-  return nextReminder.toISOString();
-}
+// NOTE: This API now uses wizard_sessions table instead of partial_leads table
+// Social login recovery data is stored alongside regular wizard session data.
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,46 +37,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if partial lead already exists for this email
+    // Check if wizard session already exists for this email (in_progress only)
     const existingResponse = await supabaseFetch(
-      `/partial_leads?email=eq.${encodeURIComponent(body.email)}&converted_to_lead=eq.false&select=id,reminder_count`
+      `/wizard_sessions?email=eq.${encodeURIComponent(body.email)}&status=eq.in_progress&select=id,session_token,current_step`
     );
 
-    let partialLeadId: string | null = null;
-    let reminderCount = 0;
+    let sessionId: string | null = null;
 
     if (existingResponse.ok) {
       const existing = await existingResponse.json();
       if (existing && existing.length > 0) {
-        // Update existing partial lead
-        partialLeadId = existing[0].id;
-        reminderCount = existing[0].reminder_count || 0;
+        // Update existing wizard session with social login data
+        sessionId = existing[0].id;
       }
     }
 
-    const nextReminderAt = calculateNextReminderAt(reminderCount);
-
-    if (partialLeadId) {
-      // Update existing partial lead
+    if (sessionId) {
+      // Update existing wizard session with social login info
       const updateResponse = await supabaseFetch(
-        `/partial_leads?id=eq.${partialLeadId}`,
+        `/wizard_sessions?id=eq.${sessionId}`,
         {
           method: 'PATCH',
           body: JSON.stringify({
-            name: body.name || null,
+            full_name: body.name || null,
+            email: body.email,
             social_provider: body.social_provider || null,
-            last_step: body.last_step || 1,
-            phone: body.phone || null,
-            wizard_state: body.wizard_state || null,
-            next_reminder_at: nextReminderAt,
+            current_step: body.last_step || 5,
+            highest_step_reached: Math.max(body.last_step || 5, 5),
+            // Store additional wizard state in device_info as a fallback
+            // (main wizard state is managed separately)
+            address: body.wizard_state?.address || null,
+            household_size: body.wizard_state?.householdSize || null,
+            monthly_bill: body.wizard_state?.monthlyBill || null,
+            selected_system: body.wizard_state?.selectedSystem || null,
+            with_battery: body.wizard_state?.withBattery || false,
+            battery_size_kwh: body.wizard_state?.batterySize || null,
+            payment_method: body.wizard_state?.paymentMethod || null,
           }),
         }
       );
 
       if (!updateResponse.ok) {
-        console.error('Failed to update partial lead:', await updateResponse.text());
+        console.error('Failed to update wizard session:', await updateResponse.text());
         return NextResponse.json(
-          { error: 'Failed to update partial lead' },
+          { error: 'Failed to update wizard session' },
           { status: 500 }
         );
       }
@@ -95,25 +92,32 @@ export async function POST(request: NextRequest) {
         action: 'updated',
       });
     } else {
-      // Create new partial lead
-      const createResponse = await supabaseFetch('/partial_leads', {
+      // Create new wizard session with social login data
+      const createResponse = await supabaseFetch('/wizard_sessions', {
         method: 'POST',
         body: JSON.stringify({
           email: body.email,
-          name: body.name || null,
+          full_name: body.name || null,
           social_provider: body.social_provider || null,
-          last_step: body.last_step || 1,
-          phone: body.phone || null,
-          wizard_state: body.wizard_state || null,
-          reminder_count: 0,
-          next_reminder_at: nextReminderAt,
+          current_step: body.last_step || 5,
+          highest_step_reached: Math.max(body.last_step || 5, 5),
+          status: 'in_progress',
+          // Store wizard state fields
+          address: body.wizard_state?.address || null,
+          coordinates: body.wizard_state?.coordinates || null,
+          household_size: body.wizard_state?.householdSize || null,
+          monthly_bill: body.wizard_state?.monthlyBill || null,
+          selected_system: body.wizard_state?.selectedSystem || null,
+          with_battery: body.wizard_state?.withBattery || false,
+          battery_size_kwh: body.wizard_state?.batterySize || null,
+          payment_method: body.wizard_state?.paymentMethod || null,
         }),
       });
 
       if (!createResponse.ok) {
-        console.error('Failed to create partial lead:', await createResponse.text());
+        console.error('Failed to create wizard session:', await createResponse.text());
         return NextResponse.json(
-          { error: 'Failed to create partial lead' },
+          { error: 'Failed to create wizard session' },
           { status: 500 }
         );
       }
@@ -126,7 +130,7 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('Partial lead error:', error);
+    console.error('Partial lead (wizard session) error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -134,7 +138,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH endpoint to mark partial lead as converted
+// PATCH endpoint to mark wizard session as converted
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
@@ -148,31 +152,30 @@ export async function PATCH(request: NextRequest) {
 
     const filter = body.id
       ? `id=eq.${body.id}`
-      : `email=eq.${encodeURIComponent(body.email)}`;
+      : `email=eq.${encodeURIComponent(body.email)}&status=eq.in_progress`;
 
     const updateResponse = await supabaseFetch(
-      `/partial_leads?${filter}`,
+      `/wizard_sessions?${filter}`,
       {
         method: 'PATCH',
         body: JSON.stringify({
-          converted_to_lead: true,
-          converted_at: new Date().toISOString(),
-          lead_id: body.lead_id || null,
+          status: 'converted_to_lead',
+          converted_lead_id: body.lead_id || null,
         }),
       }
     );
 
     if (!updateResponse.ok) {
-      console.error('Failed to mark partial lead as converted:', await updateResponse.text());
+      console.error('Failed to mark wizard session as converted:', await updateResponse.text());
       return NextResponse.json(
-        { error: 'Failed to update partial lead' },
+        { error: 'Failed to update wizard session' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Partial lead conversion error:', error);
+    console.error('Wizard session conversion error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -180,27 +183,39 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// GET endpoint to fetch partial leads needing reminders (for cron job)
+// GET endpoint to fetch abandoned sessions with social login (for reminder cron job)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
     if (action === 'pending-reminders') {
-      // Get partial leads that need reminders
-      const now = new Date().toISOString();
+      // Get abandoned wizard sessions that have social login data (email + social_provider)
+      // These are users who logged in with social but didn't complete
       const response = await supabaseFetch(
-        `/partial_leads?converted_to_lead=eq.false&next_reminder_at=lt.${now}&reminder_count=lt.2&select=*`
+        `/wizard_sessions?status=eq.abandoned&social_provider=not.is.null&email=not.is.null&select=*&order=updated_at.desc&limit=50`
       );
 
       if (!response.ok) {
         return NextResponse.json(
-          { error: 'Failed to fetch partial leads' },
+          { error: 'Failed to fetch wizard sessions' },
           { status: 500 }
         );
       }
 
-      const partialLeads = await response.json();
+      const sessions = await response.json();
+
+      // Transform to match old partial_leads format for compatibility
+      const partialLeads = sessions.map((s: Record<string, unknown>) => ({
+        id: s.id,
+        email: s.email,
+        name: s.full_name,
+        social_provider: s.social_provider,
+        last_step: s.highest_step_reached,
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+      }));
+
       return NextResponse.json({
         success: true,
         partial_leads: partialLeads,
@@ -213,7 +228,7 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error('Partial leads fetch error:', error);
+    console.error('Wizard sessions fetch error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
