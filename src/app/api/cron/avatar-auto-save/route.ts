@@ -112,6 +112,8 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     with_battery: data.with_battery || false,
     battery_size_kwh: data.selected_battery?.capacityKwh || null,
     grant_path: data.grant_type !== 'none',
+    grant_type: data.grant_type || 'pv_only',
+    grant_amount: null,
     payment_method: data.payment_method || null,
     loan_term: data.loan_term || null,
     total_price: data.total_price || null,
@@ -122,6 +124,7 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     status: 'new' as const,
     source: 'avatar-chat-auto',
     bill_file_url: null,
+    proposal_file_url: null,
     social_provider: null,
   };
 

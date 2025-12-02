@@ -54,6 +54,9 @@ export interface WizardState {
   monthlyPayment: number | null;
   annualSavings: number | null;
   paybackYears: number | null;
+
+  // Generated documents
+  proposalFileUrl: string | null;
 }
 
 export interface SolarPotential {
@@ -112,6 +115,8 @@ export interface Lead {
   with_battery: boolean;
   battery_size_kwh: number | null;
   grant_path: boolean;
+  grant_type: GrantType;
+  grant_amount: number | null;
   payment_method: string | null;
   loan_term: number | null;
   total_price: number | null;
@@ -122,6 +127,7 @@ export interface Lead {
   status: 'new' | 'contacted' | 'quoted' | 'signed' | 'installed' | 'lost';
   source: string;
   bill_file_url: string | null;
+  proposal_file_url: string | null;
   social_provider: string | null;
 }
 

@@ -5,6 +5,7 @@ import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS } from '@/lib/types';
 import { getSessionToken } from '@/lib/wizard-session';
+import { calculateTotalPriceWithGrant } from '@/lib/calculations';
 import SocialLogin from '../SocialLogin';
 
 export default function Step5Contact() {
@@ -123,6 +124,18 @@ export default function Step5Contact() {
       // Get session token for linking wizard session to lead
       const sessionToken = getSessionToken();
 
+      // Calculate grant amount for database storage
+      const priceDetails = state.selectedSystem
+        ? calculateTotalPriceWithGrant(
+            state.selectedSystem.systemSizeKw,
+            state.grantPath,
+            state.isGozo,
+            state.withBattery,
+            state.batterySize || undefined,
+            state.grantType
+          )
+        : null;
+
       const response = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,6 +154,8 @@ export default function Step5Contact() {
           with_battery: state.withBattery,
           battery_size_kwh: battery?.capacityKwh || null,
           grant_path: state.grantPath,
+          grant_type: state.grantType,
+          grant_amount: priceDetails?.grantAmount || null,
           payment_method: state.paymentMethod,
           loan_term: state.loanTerm,
           total_price: state.totalPrice,

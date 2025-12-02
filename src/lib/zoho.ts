@@ -23,6 +23,9 @@ interface ZohoLeadData {
   monthly_bill?: number | null;
   source?: string;
   zoho_lead_id?: string | null;
+  grant_type?: string;
+  grant_amount?: number | null;
+  proposal_file_url?: string | null;
 }
 
 // Cache for access token
@@ -97,6 +100,9 @@ function mapToZohoFields(lead: ZohoLeadData): Record<string, unknown> {
     Monthly_Bill: lead.monthly_bill || undefined,
     Portal_Source: lead.source || 'sales-portal',
     Lead_Source: 'Sales Portal',
+    Grant_Type: lead.grant_type || undefined,
+    Grant_Amount: lead.grant_amount || undefined,
+    Proposal_URL: lead.proposal_file_url || undefined,
   };
 }
 

@@ -107,11 +107,12 @@ ${priorityLabel}
 
 🔆 *System:* ${lead.system_size_kw || 'TBD'} kWp
 🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
-🎫 *Grant Path:* ${lead.grant_path ? 'Yes' : 'No'}
+🎫 *Grant:* ${lead.grant_type || 'pv_only'} (€${lead.grant_amount?.toLocaleString() || '0'})
 💳 *Payment:* ${lead.payment_method === 'loan' ? `Loan (${lead.loan_term ? lead.loan_term/12 : '?'} years)` : 'Cash'}
 
 💰 *Total Price:* €${lead.total_price?.toLocaleString() || 'TBD'}
 📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}
+📄 *Proposal:* ${lead.proposal_file_url ? 'PDF attached' : 'Not generated'}
 
 ⚡ *Action:* Customer completed quote from CRM link - ready for callback!
 🔗 Source: Zoho CRM`
@@ -129,7 +130,7 @@ ${priorityLabel}
 
 🔆 *System:* ${lead.system_size_kw || 'TBD'} kWp
 🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
-🎫 *Grant Path:* ${lead.grant_path ? 'Yes' : 'No'}
+🎫 *Grant:* ${lead.grant_type || 'pv_only'} (€${lead.grant_amount?.toLocaleString() || '0'})
 
 💰 *Total Price:* €${lead.total_price?.toLocaleString() || 'TBD'}
 📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}${linkSection}
@@ -207,6 +208,8 @@ export async function POST(request: NextRequest) {
       with_battery: body.with_battery || false,
       battery_size_kwh: body.battery_size_kwh || null,
       grant_path: body.grant_path !== undefined ? body.grant_path : true,
+      grant_type: body.grant_type || 'pv_only',
+      grant_amount: body.grant_amount || null,
       payment_method: body.payment_method || null,
       loan_term: body.loan_term || null,
       total_price: body.total_price || null,
@@ -217,6 +220,7 @@ export async function POST(request: NextRequest) {
       status: 'new',
       source: body.source || 'sales-portal',
       bill_file_url: body.bill_file_url || null,
+      proposal_file_url: body.proposal_file_url || null,
       social_provider: body.social_provider || null,
     };
 
@@ -246,11 +250,14 @@ export async function POST(request: NextRequest) {
           with_battery: leadData.with_battery,
           battery_size_kwh: leadData.battery_size_kwh,
           grant_path: leadData.grant_path,
+          grant_type: leadData.grant_type,
+          grant_amount: leadData.grant_amount,
           payment_method: leadData.payment_method,
           loan_term: leadData.loan_term,
           total_price: leadData.total_price,
           monthly_payment: leadData.monthly_payment,
           annual_savings: leadData.annual_savings,
+          proposal_file_url: leadData.proposal_file_url,
           status: 'quoted',
         })
       ).then(value => ({ status: 'fulfilled' as const, value }))
@@ -279,6 +286,9 @@ export async function POST(request: NextRequest) {
         monthly_bill: leadData.monthly_bill,
         source: leadData.source,
         zoho_lead_id: leadData.zoho_lead_id,
+        grant_type: leadData.grant_type,
+        grant_amount: leadData.grant_amount,
+        proposal_file_url: leadData.proposal_file_url,
       })
     ).then(value => ({ status: 'fulfilled' as const, value }))
      .catch(reason => ({ status: 'rejected' as const, reason }));
@@ -383,16 +393,48 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, email, ...updates } = body;
 
-    if (!id) {
+    if (!id && !email) {
       return NextResponse.json(
-        { error: 'Lead ID is required' },
+        { error: 'Lead ID or email is required' },
         { status: 400 }
       );
     }
 
-    const lead = await updateLead(id, updates);
+    let leadId = id;
+
+    // If no ID provided, look up by email
+    if (!leadId && email) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      const lookupResponse = await fetch(
+        `${supabaseUrl}/rest/v1/leads?email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1`,
+        {
+          headers: {
+            'apikey': supabaseKey || '',
+            'Authorization': `Bearer ${supabaseKey || ''}`,
+          },
+        }
+      );
+
+      if (lookupResponse.ok) {
+        const leads = await lookupResponse.json();
+        if (leads.length > 0) {
+          leadId = leads[0].id;
+        }
+      }
+
+      if (!leadId) {
+        return NextResponse.json(
+          { error: 'Lead not found for email' },
+          { status: 404 }
+        );
+      }
+    }
+
+    const lead = await updateLead(leadId, updates);
 
     if (!lead) {
       return NextResponse.json(

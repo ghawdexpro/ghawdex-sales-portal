@@ -5,12 +5,15 @@ import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/li
 import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber, calculateCO2Offset } from '@/lib/calculations';
 import { getSessionToken } from '@/lib/wizard-session';
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 
 export default function Step6Summary() {
-  const { state } = useWizard();
+  const { state, dispatch } = useWizard();
   const [showConfetti, setShowConfetti] = useState(true);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [pdfUploaded, setPdfUploaded] = useState(false);
   const leadCreatedRef = useRef(false);
+  const pdfUploadedRef = useRef(false);
 
   // Generate stable confetti positions (avoid Math.random() in render)
   const confettiPositions = useMemo(() =>
@@ -56,6 +59,80 @@ export default function Step6Summary() {
   // Generate quote ref once (stable across re-renders)
   const [quoteRef] = useState(() => `GHX-${Date.now().toString(36).toUpperCase()}`);
 
+  // Upload PDF to storage and update lead
+  const uploadProposalPdf = useCallback(async (htmlContent: string) => {
+    if (pdfUploadedRef.current || !state.fullName) return null;
+    pdfUploadedRef.current = true;
+    setPdfUploading(true);
+
+    try {
+      // Dynamically import html2pdf.js (client-side only)
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      // Create a temporary container for the HTML
+      const container = document.createElement('div');
+      container.innerHTML = htmlContent;
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      document.body.appendChild(container);
+
+      // Generate PDF blob
+      const pdfBlob = await html2pdf()
+        .set({
+          margin: 10,
+          filename: `proposal_${state.fullName?.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        })
+        .from(container)
+        .outputPdf('blob');
+
+      // Clean up
+      document.body.removeChild(container);
+
+      // Upload to Supabase storage
+      const formData = new FormData();
+      formData.append('file', pdfBlob, 'proposal.pdf');
+      formData.append('lead_name', state.fullName || 'customer');
+
+      const uploadResponse = await fetch('/api/upload/proposal', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload PDF');
+      }
+
+      const { url } = await uploadResponse.json();
+
+      // Save URL to context
+      dispatch({ type: 'SET_PROPOSAL_URL', payload: { proposalFileUrl: url } });
+      setPdfUploaded(true);
+
+      // Update the lead with proposal URL via PATCH
+      if (state.zohoLeadId || state.email) {
+        await fetch('/api/leads', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: state.email,
+            proposal_file_url: url,
+          }),
+        });
+      }
+
+      return url;
+    } catch (error) {
+      console.error('Failed to upload proposal PDF:', error);
+      pdfUploadedRef.current = false; // Allow retry
+      return null;
+    } finally {
+      setPdfUploading(false);
+    }
+  }, [state.fullName, state.zohoLeadId, state.email, dispatch]);
+
   useEffect(() => {
     // Track quote generation for both solar and battery-only modes
     if (state.totalPrice && (state.selectedSystem || isBatteryOnly)) {
@@ -99,6 +176,7 @@ export default function Step6Summary() {
             battery_size_kwh: battery?.capacityKwh || null,
             grant_path: state.grantPath,
             grant_type: state.grantType, // Include grant type to identify battery-only leads
+            grant_amount: displayGrantAmount, // Calculated grant amount
             payment_method: state.paymentMethod,
             loan_term: state.loanTerm,
             total_price: state.totalPrice,
@@ -324,6 +402,9 @@ export default function Step6Summary() {
         printWindow.document.write(html);
         printWindow.document.close();
       }
+
+      // Upload PDF to storage (non-blocking)
+      uploadProposalPdf(html);
       return;
     }
 
@@ -491,6 +572,9 @@ export default function Step6Summary() {
       printWindow.document.write(html);
       printWindow.document.close();
     }
+
+    // Upload PDF to storage (non-blocking)
+    uploadProposalPdf(html);
   };
 
   const generateTechSpec = () => {
