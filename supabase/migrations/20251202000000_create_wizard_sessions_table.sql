@@ -73,6 +73,9 @@ CREATE TABLE IF NOT EXISTS wizard_sessions (
   zoho_lead_id VARCHAR(50),
   is_prefilled_lead BOOLEAN DEFAULT false,
 
+  -- Social login tracking
+  social_provider TEXT CHECK (social_provider IN ('google', 'facebook') OR social_provider IS NULL),
+
   -- Conversion tracking
   converted_lead_id UUID REFERENCES leads(id),
 
