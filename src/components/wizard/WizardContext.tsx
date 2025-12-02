@@ -21,6 +21,7 @@ const initialState: WizardState = {
   householdSize: null,
   monthlyBill: null,
   consumptionKwh: null,
+  billFileUrl: null,
   selectedSystem: null,
   withBattery: false,
   batterySize: null,
@@ -34,6 +35,8 @@ const initialState: WizardState = {
   notes: '',
   zohoLeadId: null,
   isPrefilledLead: false,
+  socialProvider: null,
+  isSocialLogin: false,
   totalPrice: null,
   monthlyPayment: null,
   annualSavings: null,
@@ -47,9 +50,11 @@ type WizardAction =
   | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null; location: Location } }
   | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null; isFallback?: boolean } }
   | { type: 'SET_CONSUMPTION'; payload: { householdSize: number; monthlyBill: number; consumptionKwh: number } }
+  | { type: 'SET_BILL_FILE'; payload: { billFileUrl: string | null } }
   | { type: 'SET_SYSTEM'; payload: { system: SystemPackage | null; withBattery: boolean; batterySize: number | null; grantType: GrantType } }
   | { type: 'SET_FINANCING'; payload: { paymentMethod: 'cash' | 'loan'; loanTerm: number | null } }
   | { type: 'SET_CONTACT'; payload: { fullName: string; email: string; phone: string; notes: string } }
+  | { type: 'SET_SOCIAL_LOGIN'; payload: { fullName: string; email: string; socialProvider: 'google' | 'facebook' } }
   | { type: 'SET_CALCULATIONS'; payload: { totalPrice: number; monthlyPayment: number | null; annualSavings: number; paybackYears: number } }
   | { type: 'SET_PREFILL'; payload: { fullName: string; email: string; phone: string; zohoLeadId: string } }
   | { type: 'RESET' };
@@ -68,6 +73,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, ...action.payload, solarDataIsFallback: action.payload.isFallback || false };
     case 'SET_CONSUMPTION':
       return { ...state, ...action.payload };
+    case 'SET_BILL_FILE':
+      return { ...state, billFileUrl: action.payload.billFileUrl };
     case 'SET_SYSTEM':
       return {
         ...state,
@@ -81,6 +88,14 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, ...action.payload };
     case 'SET_CONTACT':
       return { ...state, ...action.payload };
+    case 'SET_SOCIAL_LOGIN':
+      return {
+        ...state,
+        fullName: action.payload.fullName,
+        email: action.payload.email,
+        socialProvider: action.payload.socialProvider,
+        isSocialLogin: true,
+      };
     case 'SET_CALCULATIONS':
       return { ...state, ...action.payload };
     case 'SET_PREFILL':

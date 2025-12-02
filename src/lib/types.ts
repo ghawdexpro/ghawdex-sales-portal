@@ -22,6 +22,7 @@ export interface WizardState {
   householdSize: number | null;
   monthlyBill: number | null;
   consumptionKwh: number | null;
+  billFileUrl: string | null; // Optional uploaded electricity bill
 
   // Step 4: System Selection
   selectedSystem: SystemPackage | null;
@@ -43,6 +44,10 @@ export interface WizardState {
   // CRM Pre-fill (from Zoho link)
   zohoLeadId: string | null;
   isPrefilledLead: boolean;
+
+  // Social login
+  socialProvider: 'google' | 'facebook' | null;
+  isSocialLogin: boolean;
 
   // Calculated values
   totalPrice: number | null;
@@ -116,6 +121,27 @@ export interface Lead {
   zoho_lead_id: string | null;
   status: 'new' | 'contacted' | 'quoted' | 'signed' | 'installed' | 'lost';
   source: string;
+  bill_file_url: string | null;
+  social_provider: string | null;
+}
+
+// Partial lead for abandoned/incomplete leads (social login recovery)
+export interface PartialLead {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  email: string;
+  name: string | null;
+  social_provider: 'google' | 'facebook' | null;
+  last_step: number;
+  phone: string | null;
+  wizard_state: Partial<WizardState> | null;
+  reminder_count: number;
+  last_reminder_at: string | null;
+  next_reminder_at: string | null;
+  converted_to_lead: boolean;
+  converted_at: string | null;
+  lead_id: string | null;
 }
 
 export interface WizardSession {

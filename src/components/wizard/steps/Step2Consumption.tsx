@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
 import { estimateConsumption } from '@/lib/calculations';
+import BillUpload from '../BillUpload';
 
 const RESIDENTIAL_BILL_PRESETS = [
   { label: '€50-80', value: 65, description: 'Small apartment' },
@@ -222,6 +223,11 @@ export default function Step2Consumption() {
           </div>
         </div>
       )}
+
+      {/* Optional Bill Upload */}
+      <div className="mb-6">
+        <BillUpload />
+      </div>
 
       {/* Navigation - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]">

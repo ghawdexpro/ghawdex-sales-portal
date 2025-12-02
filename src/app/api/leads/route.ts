@@ -216,6 +216,8 @@ export async function POST(request: NextRequest) {
       zoho_lead_id: body.zoho_lead_id || null,
       status: 'new',
       source: body.source || 'sales-portal',
+      bill_file_url: body.bill_file_url || null,
+      social_provider: body.social_provider || null,
     };
 
     // Check if this is a prefilled user (from Zoho CRM link)
@@ -330,7 +332,7 @@ export async function POST(request: NextRequest) {
       ]).catch(console.error);
     }
 
-    // Link wizard session to lead (if session token provided)
+// Link wizard session to lead (if session token provided)
     if (body.session_token && lead?.id) {
       try {
         const session = await getWizardSessionByToken(body.session_token);
@@ -341,6 +343,22 @@ export async function POST(request: NextRequest) {
         // Non-blocking - session linking failure shouldn't fail lead creation
         console.error('Failed to link wizard session to lead:', error);
       }
+    }
+
+    // Mark wizard session as converted by email (for social login users)
+    if (leadData.email && lead?.id) {
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}/rest/v1/wizard_sessions?email=eq.${encodeURIComponent(leadData.email)}&status=eq.in_progress`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'converted_to_lead',
+          converted_lead_id: lead.id,
+        }),
+      }).catch(err => console.error('Failed to mark wizard session as converted:', err));
     }
 
     return NextResponse.json({

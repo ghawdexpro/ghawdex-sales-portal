@@ -118,6 +118,8 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     zoho_lead_id: session.zoho_lead_id,
     status: 'new' as const,
     source: 'avatar-chat-auto',
+    bill_file_url: null,
+    social_provider: null,
   };
 
   let leadId: string | null = null;
