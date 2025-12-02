@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createLead, getLeadByZohoId } from '@/lib/supabase';
 import { createOrUpdateZohoLead } from '@/lib/zoho';
+import { GrantType } from '@/lib/types';
 
 // Cron endpoint to auto-save completed avatar sessions to CRM
 // Catches sessions where AI forgot to call save_to_crm tool
@@ -112,7 +113,7 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     with_battery: data.with_battery || false,
     battery_size_kwh: data.selected_battery?.capacityKwh || null,
     grant_path: data.grant_type !== 'none',
-    grant_type: data.grant_type || 'pv_only',
+    grant_type: (data.grant_type || 'pv_only') as GrantType,
     grant_amount: null,
     payment_method: data.payment_method || null,
     loan_term: data.loan_term || null,

@@ -125,16 +125,12 @@ export default function Step5Contact() {
       const sessionToken = getSessionToken();
 
       // Calculate grant amount for database storage
-      const priceDetails = state.selectedSystem
-        ? calculateTotalPriceWithGrant(
-            state.selectedSystem.systemSizeKw,
-            state.grantPath,
-            state.isGozo,
-            state.withBattery,
-            state.batterySize || undefined,
-            state.grantType
-          )
-        : null;
+      const priceDetails = calculateTotalPriceWithGrant(
+        state.selectedSystem,
+        battery || null,
+        state.grantType,
+        state.location || 'malta'
+      );
 
       const response = await fetch('/api/leads', {
         method: 'POST',
@@ -155,7 +151,7 @@ export default function Step5Contact() {
           battery_size_kwh: battery?.capacityKwh || null,
           grant_path: state.grantPath,
           grant_type: state.grantType,
-          grant_amount: priceDetails?.grantAmount || null,
+          grant_amount: priceDetails.grantAmount || null,
           payment_method: state.paymentMethod,
           loan_term: state.loanTerm,
           total_price: state.totalPrice,

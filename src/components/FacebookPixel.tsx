@@ -21,10 +21,10 @@ export default function FacebookPixel() {
   }, [pixelId]);
 
   useEffect(() => {
-    if (!pixelId || !(window as unknown as { fbq?: unknown }).fbq) return;
+    if (!pixelId || !(window as any).fbq) return;
 
     // Track page views on route change
-    (window as unknown as { fbq: (action: string, event: string) => void }).fbq('track', 'PageView');
+    (window as any).fbq('track', 'PageView');
   }, [pathname, searchParams, pixelId]);
 
   // Don't render script if no pixel ID
