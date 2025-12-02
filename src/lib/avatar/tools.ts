@@ -13,7 +13,6 @@ import {
   BATTERY_OPTIONS,
   Location,
   GrantType,
-  calculateGrantAmount,
 } from '../types';
 import {
   calculateTotalPriceWithGrant,
@@ -489,7 +488,7 @@ function getSystemRecommendation(
 
 async function saveToCRM(
   session: AvatarSession,
-  sendTelegramNotification?: boolean
+  _sendTelegramNotification?: boolean  // Reserved for future notification toggle
 ): Promise<{ success: boolean; lead_id?: string; zoho_id?: string }> {
   const data = session.collected_data;
 

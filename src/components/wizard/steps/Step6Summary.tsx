@@ -4,12 +4,20 @@ import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber, calculateCO2Offset } from '@/lib/calculations';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 
 export default function Step6Summary() {
   const { state } = useWizard();
   const [showConfetti, setShowConfetti] = useState(true);
   const leadCreatedRef = useRef(false);
+
+  // Generate stable confetti positions (avoid Math.random() in render)
+  const confettiPositions = useMemo(() =>
+    [...Array(20)].map((_, i) => ({
+      left: `${(i * 17 + 5) % 100}%`,  // Deterministic spread based on index
+      delay: `${(i * 0.025) % 0.5}s`,
+      color: ['#f59e0b', '#22c55e', '#3b82f6', '#ec4899'][i % 4],
+    })), []);
 
   const isBatteryOnly = state.grantType === 'battery_only';
 
@@ -27,7 +35,8 @@ export default function Step6Summary() {
     year: 'numeric',
   });
 
-  const quoteRef = `GHX-${Date.now().toString(36).toUpperCase()}`;
+  // Generate quote ref once (stable across re-renders)
+  const [quoteRef] = useState(() => `GHX-${Date.now().toString(36).toUpperCase()}`);
 
   useEffect(() => {
     // Track quote generation for both solar and battery-only modes
@@ -1147,14 +1156,14 @@ export default function Step6Summary() {
       <div className="text-center mb-8 relative">
         {showConfetti && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {[...Array(20)].map((_, i) => (
+            {confettiPositions.map((pos, i) => (
               <div
                 key={i}
                 className="absolute w-2 h-2 animate-confetti"
                 style={{
-                  left: `${Math.random() * 100}%`,
-                  backgroundColor: ['#f59e0b', '#22c55e', '#3b82f6', '#ec4899'][i % 4],
-                  animationDelay: `${Math.random() * 0.5}s`,
+                  left: pos.left,
+                  backgroundColor: pos.color,
+                  animationDelay: pos.delay,
                 }}
               />
             ))}

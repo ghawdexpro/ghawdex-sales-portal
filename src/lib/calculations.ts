@@ -3,7 +3,6 @@ import {
   RESIDENTIAL_TARIFF_BANDS,
   ECO_REDUCTION,
   FIXED_CHARGES,
-  GRANT_SCHEME_2025,
   SystemPackage,
   BatteryOption,
   FinancingOption,
@@ -157,7 +156,7 @@ export function getEffectiveRate(annualKwh: number, householdSize: number): numb
 export function calculateBatterySavings(
   batteryKwh: number,
   monthlyConsumptionKwh: number | null,
-  householdSize: number | null
+  _householdSize: number | null  // Reserved for future eco-reduction calculations
 ): { annualSavings: number; explanation: string; marginalRate: number } {
   // Battery performance constants
   const CYCLES_PER_YEAR = 300; // Conservative estimate for Malta

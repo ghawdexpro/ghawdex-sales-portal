@@ -10,7 +10,6 @@ import {
   ConversationMessage,
   ConversationPhase,
   ConversationState,
-  CollectedData,
   FunctionCall,
   FunctionResult,
   AvatarSession,
@@ -19,9 +18,7 @@ import {
 import {
   GEMINI_CONFIG,
   SYSTEM_PROMPT,
-  AVATAR_TOOLS,
   getToolsForPhase,
-  CONVERSATION_CONFIG,
 } from './config';
 import { executeToolCall } from './tools';
 

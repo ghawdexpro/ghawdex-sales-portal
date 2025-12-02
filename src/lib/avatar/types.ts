@@ -5,7 +5,7 @@
  * and Google Gemini for conversation orchestration.
  */
 
-import { WizardState, SystemPackage, BatteryOption, Location, GrantType } from '../types';
+import { SystemPackage, BatteryOption, Location, GrantType } from '../types';
 
 // ============================================================================
 // Session & Conversation Types
