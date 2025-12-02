@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Max file size: 5MB
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+// Max file size: 100MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'File too large. Maximum size is 5MB.' },
+        { error: 'File too large. Maximum size is 100MB.' },
         { status: 400 }
       );
     }

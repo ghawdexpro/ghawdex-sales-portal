@@ -178,7 +178,7 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
               <span className="text-sm text-gray-300">Drop file or </span>
               <span className="text-sm text-amber-400">browse</span>
             </div>
-            <span className="text-xs text-gray-500">JPG, PNG, or PDF (max 5MB)</span>
+            <span className="text-xs text-gray-500">JPG, PNG, or PDF (max 100MB)</span>
           </div>
         )}
       </div>
