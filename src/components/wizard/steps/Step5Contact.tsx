@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS } from '@/lib/types';
+import { getSessionToken } from '@/lib/wizard-session';
 
 export default function Step5Contact() {
   const { state, dispatch } = useWizard();
@@ -54,6 +55,9 @@ export default function Step5Contact() {
         ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize)
         : null;
 
+      // Get session token for linking wizard session to lead
+      const sessionToken = getSessionToken();
+
       const response = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,6 +84,7 @@ export default function Step5Contact() {
           notes: notes || null,
           zoho_lead_id: null,
           source: 'sales-portal',
+          session_token: sessionToken,
         }),
       });
 

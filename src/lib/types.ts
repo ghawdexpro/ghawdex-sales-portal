@@ -2,6 +2,7 @@
 
 export type Location = 'malta' | 'gozo';
 export type GrantType = 'none' | 'pv_only' | 'pv_battery' | 'battery_only';
+export type WizardSessionStatus = 'in_progress' | 'abandoned' | 'completed' | 'converted_to_lead';
 
 export interface WizardState {
   step: number;
@@ -115,6 +116,80 @@ export interface Lead {
   zoho_lead_id: string | null;
   status: 'new' | 'contacted' | 'quoted' | 'signed' | 'installed' | 'lost';
   source: string;
+}
+
+export interface WizardSession {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  last_activity_at?: string;
+  session_token: string;
+  status: WizardSessionStatus;
+  current_step: number;
+  highest_step_reached: number;
+
+  // Step 1: Location
+  address: string | null;
+  coordinates: { lat: number; lng: number } | null;
+  location: Location | null;
+
+  // Step 1→2: Solar analysis
+  roof_area: number | null;
+  max_panels: number | null;
+  annual_sunshine: number | null;
+  solar_potential: SolarPotential | null;
+  solar_data_is_fallback: boolean;
+
+  // Step 2: Consumption
+  household_size: number | null;
+  monthly_bill: number | null;
+  consumption_kwh: number | null;
+
+  // Step 3: System selection
+  selected_system: string | null;
+  system_size_kw: number | null;
+  with_battery: boolean;
+  battery_size_kwh: number | null;
+  grant_type: GrantType | null;
+
+  // Step 4: Financing
+  payment_method: 'cash' | 'loan' | null;
+  loan_term: number | null;
+  total_price: number | null;
+  monthly_payment: number | null;
+  annual_savings: number | null;
+  payback_years: number | null;
+
+  // Step 5: Contact
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+
+  // Pre-fill from Zoho
+  zoho_lead_id: string | null;
+  is_prefilled_lead: boolean;
+
+  // Conversion tracking
+  converted_lead_id: string | null;
+
+  // Analytics
+  device_info: DeviceInfo | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  step_timestamps: Record<number, string>;
+  total_duration_seconds: number;
+}
+
+export interface DeviceInfo {
+  userAgent: string;
+  screenWidth: number;
+  screenHeight: number;
+  language: string;
+  platform: string;
+  isMobile: boolean;
 }
 
 // Malta Electricity Tariff Bands (Residential) - Annual kWh thresholds

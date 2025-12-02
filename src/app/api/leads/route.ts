@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createLead, updateLead, getLeadByZohoId } from '@/lib/supabase';
 import { createOrUpdateZohoLead } from '@/lib/zoho';
 import { Lead } from '@/lib/types';
+import {
+  getWizardSessionByToken,
+  markSessionConvertedToLead,
+} from '@/lib/wizard-session';
 
 // Calculate lead priority score (0-100)
 function calculateLeadPriority(lead: Partial<Lead>): { score: number; level: 'high' | 'medium' | 'low' } {
@@ -324,6 +328,19 @@ export async function POST(request: NextRequest) {
         }),
         lead ? triggerN8nWebhook(lead) : Promise.resolve(),
       ]).catch(console.error);
+    }
+
+    // Link wizard session to lead (if session token provided)
+    if (body.session_token && lead?.id) {
+      try {
+        const session = await getWizardSessionByToken(body.session_token);
+        if (session?.id) {
+          await markSessionConvertedToLead(session.id, lead.id);
+        }
+      } catch (error) {
+        // Non-blocking - session linking failure shouldn't fail lead creation
+        console.error('Failed to link wizard session to lead:', error);
+      }
     }
 
     return NextResponse.json({

@@ -1,7 +1,12 @@
 'use client';
 
-import { createContext, useContext, useReducer, ReactNode } from 'react';
-import { WizardState, SystemPackage, SolarPotential, Location, GrantType } from '@/lib/types';
+import { createContext, useContext, useReducer, useEffect, useRef, useCallback, ReactNode } from 'react';
+import { WizardState, SystemPackage, SolarPotential, Location, GrantType, WizardSession } from '@/lib/types';
+import {
+  getSessionToken,
+  wizardStateToSessionData,
+  flushPendingSave,
+} from '@/lib/wizard-session';
 
 const initialState: WizardState = {
   step: 1,
@@ -97,15 +102,134 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
 interface WizardContextType {
   state: WizardState;
   dispatch: React.Dispatch<WizardAction>;
+  sessionId: string | null;
+  sessionToken: string | null;
 }
 
 const WizardContext = createContext<WizardContextType | null>(null);
 
+// Debounce timeout in milliseconds
+const SAVE_DEBOUNCE_MS = 1000;
+
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(wizardReducer, initialState);
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionTokenRef = useRef<string | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdatesRef = useRef<Partial<WizardSession>>({});
+  const isInitializedRef = useRef(false);
+
+  // Initialize session on mount
+  useEffect(() => {
+    if (isInitializedRef.current) return;
+    isInitializedRef.current = true;
+
+    const initSession = async () => {
+      try {
+        const token = getSessionToken();
+        sessionTokenRef.current = token;
+
+        // Try to get existing session or create new one
+        const response = await fetch('/api/wizard-sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_token: token }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.session) {
+            sessionIdRef.current = data.session.id;
+
+            // If resuming an existing session with progress, we could restore state here
+            // For now, we just track the session ID
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize wizard session:', error);
+      }
+    };
+
+    initSession();
+  }, []);
+
+  // Save session data with debouncing
+  const saveSession = useCallback(async (updates: Partial<WizardSession>) => {
+    if (!sessionIdRef.current) return;
+
+    // Merge with pending updates
+    pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(async () => {
+      if (!sessionIdRef.current || Object.keys(pendingUpdatesRef.current).length === 0) {
+        return;
+      }
+
+      try {
+        await fetch('/api/wizard-sessions', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionIdRef.current,
+            ...pendingUpdatesRef.current,
+          }),
+        });
+        pendingUpdatesRef.current = {};
+      } catch (error) {
+        console.error('Failed to save wizard session:', error);
+      }
+    }, SAVE_DEBOUNCE_MS);
+  }, []);
+
+  // Auto-save on state changes
+  useEffect(() => {
+    // Don't save on initial render or if no session
+    if (!sessionIdRef.current) return;
+
+    const sessionData = wizardStateToSessionData(state);
+    saveSession(sessionData);
+  }, [state, saveSession]);
+
+  // Flush pending saves before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Synchronously try to save (may not always work on unload)
+      if (sessionIdRef.current && Object.keys(pendingUpdatesRef.current).length > 0) {
+        const data = JSON.stringify({
+          session_id: sessionIdRef.current,
+          ...pendingUpdatesRef.current,
+        });
+
+        // Use sendBeacon for reliable delivery on page unload
+        navigator.sendBeacon('/api/wizard-sessions', data);
+      }
+
+      flushPendingSave();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   return (
-    <WizardContext.Provider value={{ state, dispatch }}>
+    <WizardContext.Provider value={{
+      state,
+      dispatch,
+      sessionId: sessionIdRef.current,
+      sessionToken: sessionTokenRef.current,
+    }}>
       {children}
     </WizardContext.Provider>
   );
