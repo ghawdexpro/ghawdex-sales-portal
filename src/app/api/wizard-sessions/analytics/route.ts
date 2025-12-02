@@ -4,10 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 // Analytics endpoint for wizard session data
 // Provides drop-off analysis, conversion rates, and session insights
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy initialization to avoid build-time errors
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 const STEP_NAMES: Record<number, string> = {
   1: 'Location',
@@ -25,6 +28,7 @@ export async function GET(request: NextRequest) {
     const detailed = searchParams.get('detailed') === 'true';
 
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const supabase = getSupabase();
 
     // Get all sessions in the date range
     const { data: sessions, error } = await supabase
