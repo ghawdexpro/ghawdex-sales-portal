@@ -186,6 +186,15 @@ export default function Step6Summary() {
             zoho_lead_id: state.zohoLeadId,
             source: 'zoho_crm',
             session_token: sessionToken,
+            // Equipment details for Zoho
+            panel_brand: isBatteryOnly ? null : 'Huawei',
+            panel_model: state.selectedSystem ? `${state.selectedSystem.panelWattage}W Mono PERC` : null,
+            panel_count: state.selectedSystem?.panels || null,
+            panel_wattage: state.selectedSystem?.panelWattage || null,
+            inverter_brand: (state.selectedSystem || isBatteryOnly) ? 'Huawei' : null,
+            inverter_model: state.selectedSystem?.inverterModel || (isBatteryOnly ? 'SUN2000 Hybrid' : null),
+            battery_brand: battery ? 'Huawei' : null,
+            battery_model: battery?.name || null,
           }),
         });
 

@@ -222,6 +222,15 @@ export async function POST(request: NextRequest) {
       bill_file_url: body.bill_file_url || null,
       proposal_file_url: body.proposal_file_url || null,
       social_provider: body.social_provider || null,
+      // Equipment details
+      panel_brand: body.panel_brand || null,
+      panel_model: body.panel_model || null,
+      panel_count: body.panel_count || null,
+      panel_wattage: body.panel_wattage || null,
+      inverter_brand: body.inverter_brand || null,
+      inverter_model: body.inverter_model || null,
+      battery_brand: body.battery_brand || null,
+      battery_model: body.battery_model || null,
     };
 
     // Check if this is a prefilled user (from Zoho CRM link)
@@ -289,6 +298,15 @@ export async function POST(request: NextRequest) {
         grant_type: leadData.grant_type,
         grant_amount: leadData.grant_amount,
         proposal_file_url: leadData.proposal_file_url,
+        // Equipment details
+        panel_brand: leadData.panel_brand,
+        panel_model: leadData.panel_model,
+        panel_count: leadData.panel_count,
+        panel_wattage: leadData.panel_wattage,
+        inverter_brand: leadData.inverter_brand,
+        inverter_model: leadData.inverter_model,
+        battery_brand: leadData.battery_brand,
+        battery_model: leadData.battery_model,
       })
     ).then(value => ({ status: 'fulfilled' as const, value }))
      .catch(reason => ({ status: 'rejected' as const, reason }));

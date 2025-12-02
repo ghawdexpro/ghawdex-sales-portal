@@ -26,6 +26,15 @@ interface ZohoLeadData {
   grant_type?: string;
   grant_amount?: number | null;
   proposal_file_url?: string | null;
+  // Equipment details
+  panel_brand?: string | null;
+  panel_model?: string | null;
+  panel_count?: number | null;
+  panel_wattage?: number | null;
+  inverter_brand?: string | null;
+  inverter_model?: string | null;
+  battery_brand?: string | null;
+  battery_model?: string | null;
 }
 
 // Cache for access token
@@ -103,6 +112,15 @@ function mapToZohoFields(lead: ZohoLeadData): Record<string, unknown> {
     Grant_Type: lead.grant_type || undefined,
     Grant_Amount: lead.grant_amount || undefined,
     Proposal_URL: lead.proposal_file_url || undefined,
+    // Equipment details
+    Panel_Brand: lead.panel_brand || undefined,
+    Panel_Model: lead.panel_model || undefined,
+    Panel_Count: lead.panel_count || undefined,
+    Panel_Wattage: lead.panel_wattage || undefined,
+    Inverter_Brand: lead.inverter_brand || undefined,
+    Inverter_Model: lead.inverter_model || undefined,
+    Battery_Brand: lead.battery_brand || undefined,
+    Battery_Model: lead.battery_model || undefined,
   };
 }
 

@@ -163,6 +163,15 @@ export default function Step5Contact() {
           session_token: sessionToken,
           bill_file_url: state.billFileUrl || null,
           social_provider: state.socialProvider || null,
+          // Equipment details for Zoho
+          panel_brand: 'Huawei',
+          panel_model: state.selectedSystem ? `${state.selectedSystem.panelWattage}W Mono PERC` : null,
+          panel_count: state.selectedSystem?.panels || null,
+          panel_wattage: state.selectedSystem?.panelWattage || null,
+          inverter_brand: 'Huawei',
+          inverter_model: state.selectedSystem?.inverterModel || null,
+          battery_brand: battery ? 'Huawei' : null,
+          battery_model: battery?.name || null,
         }),
       });
 

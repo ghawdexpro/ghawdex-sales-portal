@@ -129,6 +129,15 @@ export interface Lead {
   bill_file_url: string | null;
   proposal_file_url: string | null;
   social_provider: string | null;
+  // Equipment details
+  panel_brand: string | null;
+  panel_model: string | null;
+  panel_count: number | null;
+  panel_wattage: number | null;
+  inverter_brand: string | null;
+  inverter_model: string | null;
+  battery_brand: string | null;
+  battery_model: string | null;
 }
 
 // Partial lead for abandoned/incomplete leads (social login recovery)
