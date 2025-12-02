@@ -212,6 +212,8 @@ export async function POST(request: NextRequest) {
       zoho_lead_id: body.zoho_lead_id || null,
       status: 'new',
       source: body.source || 'sales-portal',
+      bill_file_url: body.bill_file_url || null,
+      social_provider: body.social_provider || null,
     };
 
     // Check if this is a prefilled user (from Zoho CRM link)
@@ -324,6 +326,23 @@ export async function POST(request: NextRequest) {
         }),
         lead ? triggerN8nWebhook(lead) : Promise.resolve(),
       ]).catch(console.error);
+    }
+
+    // Mark partial lead as converted (if exists)
+    if (leadData.email) {
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}/rest/v1/partial_leads?email=eq.${encodeURIComponent(leadData.email)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          converted_to_lead: true,
+          converted_at: new Date().toISOString(),
+          lead_id: lead?.id || null,
+        }),
+      }).catch(err => console.error('Failed to mark partial lead as converted:', err));
     }
 
     return NextResponse.json({

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS } from '@/lib/types';
+import SocialLogin from '../SocialLogin';
 
 export default function Step5Contact() {
   const { state, dispatch } = useWizard();
@@ -13,6 +14,61 @@ export default function Step5Contact() {
   const [notes, setNotes] = useState(state.notes);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPhonePrompt, setShowPhonePrompt] = useState(false);
+
+  // Sync state when social login populates fields
+  useEffect(() => {
+    if (state.fullName && !fullName) setFullName(state.fullName);
+    if (state.email && !email) setEmail(state.email);
+  }, [state.fullName, state.email, fullName, email]);
+
+  // Handle social login success
+  const handleSocialLogin = async (data: { name: string; email: string; provider: 'google' | 'facebook' }) => {
+    // Update local state
+    setFullName(data.name);
+    setEmail(data.email);
+    setErrors({});
+
+    // Update context
+    dispatch({
+      type: 'SET_SOCIAL_LOGIN',
+      payload: {
+        fullName: data.name,
+        email: data.email,
+        socialProvider: data.provider,
+      },
+    });
+
+    // Show phone prompt since social login doesn't provide phone
+    setShowPhonePrompt(true);
+
+    // Create partial lead for recovery (in case they abandon)
+    try {
+      await fetch('/api/partial-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          name: data.name,
+          social_provider: data.provider,
+          last_step: 5,
+          wizard_state: {
+            address: state.address,
+            coordinates: state.coordinates,
+            householdSize: state.householdSize,
+            monthlyBill: state.monthlyBill,
+            selectedSystem: state.selectedSystem?.id,
+            withBattery: state.withBattery,
+            batterySize: state.batterySize,
+            paymentMethod: state.paymentMethod,
+          },
+        }),
+      });
+    } catch (error) {
+      // Non-blocking - don't interrupt user flow
+      console.error('Failed to save partial lead:', error);
+    }
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -80,6 +136,8 @@ export default function Step5Contact() {
           notes: notes || null,
           zoho_lead_id: null,
           source: 'sales-portal',
+          bill_file_url: state.billFileUrl || null,
+          social_provider: state.socialProvider || null,
         }),
       });
 
@@ -113,6 +171,26 @@ export default function Step5Contact() {
           Enter your details to receive your personalized solar proposal
         </p>
       </div>
+
+      {/* Social Login */}
+      <SocialLogin onLogin={handleSocialLogin} />
+
+      {/* Phone prompt after social login */}
+      {showPhonePrompt && !phone && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-amber-400 font-medium text-sm">Almost there!</div>
+              <div className="text-gray-300 text-xs">Just add your phone number below to complete</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* What you'll get */}
       <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
