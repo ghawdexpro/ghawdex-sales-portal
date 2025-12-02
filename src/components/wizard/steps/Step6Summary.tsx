@@ -30,6 +30,23 @@ export default function Step6Summary() {
     ? calculateCO2Offset(state.selectedSystem.annualProductionKwh)
     : 0;
 
+  // Calculate actual grant amount (gross - net) for display
+  // This is the ACTUAL grant, not the static grantAmount field on SystemPackage
+  const displayGrantAmount = useMemo(() => {
+    if (isBatteryOnly) {
+      // Battery-only: battery price - total price
+      const batteryGrossPrice = battery?.price || 0;
+      return Math.max(0, batteryGrossPrice - (state.totalPrice || 0));
+    }
+    // PV or PV+Battery
+    const systemGrossPrice = state.withBattery
+      ? (state.selectedSystem?.priceWithBattery || 0)
+      : (state.selectedSystem?.priceWithoutGrant || 0);
+    const batteryGrossPrice = battery?.price || 0;
+    const grossPrice = systemGrossPrice + batteryGrossPrice;
+    return Math.max(0, grossPrice - (state.totalPrice || 0));
+  }, [isBatteryOnly, battery, state.withBattery, state.selectedSystem, state.totalPrice]);
+
   const today = new Date().toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
@@ -439,7 +456,7 @@ export default function Step6Summary() {
           </tr>
           <tr>
             <td><strong>Grant Amount</strong></td>
-            <td style="color: #16a34a; font-weight: bold;">${formatCurrency(state.selectedSystem?.grantAmount || 0)}</td>
+            <td style="color: #16a34a; font-weight: bold;">${formatCurrency(displayGrantAmount)}</td>
           </tr>
           <tr>
             <td><strong>Grant Status</strong></td>
@@ -1214,11 +1231,11 @@ export default function Step6Summary() {
             <div className="text-white text-3xl font-bold">
               {formatCurrency(state.totalPrice || 0)}
             </div>
-            {(state.grantPath || isBatteryOnly) && (
+            {(state.grantPath || isBatteryOnly) && displayGrantAmount > 0 && (
               <div className="text-green-400 text-sm">
                 {isBatteryOnly
                   ? `After ${state.location === 'gozo' ? '95%' : '80%'}+ grant`
-                  : state.selectedSystem ? `Includes €${state.selectedSystem.grantAmount} grant` : ''
+                  : `Includes ${formatCurrency(displayGrantAmount)} grant`
                 }
               </div>
             )}
