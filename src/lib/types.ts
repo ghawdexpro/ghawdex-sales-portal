@@ -439,7 +439,7 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
     annualProductionKwh: 4500,
     priceWithGrant: 3500,       // Standard price
     priceWithoutGrant: 3500,
-    priceWithBattery: 2000,     // PV+Battery bundle price
+    priceWithBattery: 1500,     // PV+Battery bundle price (discounted)
     grantAmount: 2250,          // 50% of €3500 capped at €750/kWp = €2250
   },
   {
@@ -452,7 +452,7 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
     annualProductionKwh: 7500,
     priceWithGrant: 5500,       // Standard price
     priceWithoutGrant: 5500,
-    priceWithBattery: 3000,     // PV+Battery bundle price
+    priceWithBattery: 2000,     // PV+Battery bundle price (discounted)
     grantAmount: 2750,          // 50% of €5500 capped at €3000 max = €2750
   },
   {
