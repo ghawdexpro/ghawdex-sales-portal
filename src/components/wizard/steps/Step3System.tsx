@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackSystemSelected } from '@/lib/analytics';
 import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType, getFitRate, GRANT_SCHEME_2025 } from '@/lib/types';
@@ -9,20 +9,19 @@ import { recommendSystem, calculateTotalPriceWithGrant, formatCurrency, formatNu
 export default function Step3System() {
   const { state, dispatch } = useWizard();
   const [batteryOnlyMode, setBatteryOnlyMode] = useState(state.grantType === 'battery_only');
-  const [selectedSystem, setSelectedSystem] = useState<SystemPackage | null>(state.selectedSystem);
+  // Initialize with existing selection or compute recommended system
+  const [selectedSystem, setSelectedSystem] = useState<SystemPackage | null>(() => {
+    if (state.selectedSystem) return state.selectedSystem;
+    if (state.grantType !== 'battery_only' && state.consumptionKwh) {
+      return recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);
+    }
+    return null;
+  });
   const [withBattery, setWithBattery] = useState(state.withBattery || state.grantType === 'battery_only');
   const [selectedBattery, setSelectedBattery] = useState<BatteryOption | null>(
     state.batterySize ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null : BATTERY_OPTIONS[1] // Default to 10kWh
   );
   const [grantType, setGrantType] = useState<GrantType>(state.grantType || 'pv_only');
-
-  // Get recommended system based on consumption (only if not battery-only mode)
-  useEffect(() => {
-    if (!batteryOnlyMode && !selectedSystem && state.consumptionKwh) {
-      const recommended = recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);
-      setSelectedSystem(recommended);
-    }
-  }, [state.consumptionKwh, selectedSystem, batteryOnlyMode]);
 
   const handleNext = () => {
     // For battery-only mode, don't require a solar system

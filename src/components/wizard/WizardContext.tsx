@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useRef, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useRef, useCallback, useState, ReactNode } from 'react';
 import { WizardState, SystemPackage, SolarPotential, Location, GrantType, WizardSession } from '@/lib/types';
 import {
   getSessionToken,
@@ -128,6 +128,10 @@ const SAVE_DEBOUNCE_MS = 1000;
 
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(wizardReducer, initialState);
+  // State for context value (used in render)
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  // Refs for use in callbacks (not accessed during render)
   const sessionIdRef = useRef<string | null>(null);
   const sessionTokenRef = useRef<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -143,6 +147,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       try {
         const token = getSessionToken();
         sessionTokenRef.current = token;
+        setSessionToken(token);
 
         // Try to get existing session or create new one
         const response = await fetch('/api/wizard-sessions', {
@@ -155,6 +160,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
           const data = await response.json();
           if (data.session) {
             sessionIdRef.current = data.session.id;
+            setSessionId(data.session.id);
 
             // If resuming an existing session with progress, we could restore state here
             // For now, we just track the session ID
@@ -242,8 +248,8 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     <WizardContext.Provider value={{
       state,
       dispatch,
-      sessionId: sessionIdRef.current,
-      sessionToken: sessionTokenRef.current,
+      sessionId,
+      sessionToken,
     }}>
       {children}
     </WizardContext.Provider>
