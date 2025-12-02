@@ -5,10 +5,13 @@ import { createClient } from '@supabase/supabase-js';
 // Should be called every 30-60 minutes
 // Identifies users who started the wizard but didn't complete (potential leads!)
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy initialization to avoid build-time errors
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 interface WizardSessionSummary {
   id: string;
@@ -115,6 +118,7 @@ export async function GET(request: NextRequest) {
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
     // Find in_progress sessions that have been idle for 30+ minutes
+    const supabase = getSupabase();
     const { data: staleSessions, error: staleError } = await supabase
       .from('wizard_sessions')
       .select(`

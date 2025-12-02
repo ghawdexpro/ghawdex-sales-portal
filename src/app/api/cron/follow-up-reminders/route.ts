@@ -4,10 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 // Cron endpoint to send follow-up reminders for leads that haven't been contacted
 // Should be called every 24 hours
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy initialization to avoid build-time errors
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 async function sendTelegramReminder(leads: Array<{ id: string; name: string; email: string; phone: string; total_price: number; created_at: string }>) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
   try {
     // Find leads older than 24 hours that are still 'new' status
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const supabase = getSupabase();
 
     const { data: staleLeads, error } = await supabase
       .from('leads')

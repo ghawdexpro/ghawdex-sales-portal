@@ -7,10 +7,13 @@ import { createOrUpdateZohoLead } from '@/lib/zoho';
 // Catches sessions where AI forgot to call save_to_crm tool
 // Should be called every 1-2 hours
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy initialization to avoid build-time errors
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 interface CollectedData {
   address?: string;
@@ -171,6 +174,7 @@ export async function GET(request: NextRequest) {
     // Find completed sessions from last 24h that might not be saved
     // Look for sessions with collected_data but check if lead exists
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const supabaseAdmin = getSupabaseAdmin();
 
     const { data: sessions, error } = await supabaseAdmin
       .from('avatar_sessions')

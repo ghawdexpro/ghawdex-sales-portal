@@ -5,10 +5,13 @@ import { createClient } from '@supabase/supabase-js';
 // Sends SMS/Telegram reminder to customers who paused and haven't returned
 // Should be called every 12-24 hours
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy initialization to avoid build-time errors
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 interface AvatarSession {
   id: string;
@@ -60,6 +63,7 @@ ${sessionList}
 
 async function markSessionsAbandoned(sessionIds: string[]) {
   // Mark sessions older than 72 hours as abandoned
+  const supabase = getSupabase();
   const { error } = await supabase
     .from('avatar_sessions')
     .update({ status: 'abandoned' })
@@ -82,6 +86,7 @@ export async function GET(request: NextRequest) {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+    const supabase = getSupabase();
 
     // Find paused sessions between 24-72 hours old (for recovery)
     const { data: pausedSessions, error: pausedError } = await supabase
