@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS } from '@/lib/types';
@@ -16,6 +16,7 @@ export default function Step5Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state when social login populates fields
   useEffect(() => {
@@ -42,6 +43,14 @@ export default function Step5Contact() {
 
     // Show phone prompt since social login doesn't provide phone
     setShowPhonePrompt(true);
+
+    // Focus phone input after a short delay (let UI update first)
+    setTimeout(() => {
+      if (phoneInputRef.current) {
+        phoneInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        phoneInputRef.current.focus();
+      }
+    }, 300);
 
     // Create partial lead for recovery (in case they abandon)
     try {
@@ -270,18 +279,22 @@ export default function Step5Contact() {
         </div>
 
         {/* Phone */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+        <div className={`mb-4 ${showPhonePrompt && !phone ? 'animate-pulse' : ''}`}>
+          <label className={`block text-sm font-medium mb-2 ${showPhonePrompt && !phone ? 'text-amber-400' : 'text-gray-300'}`}>
             Phone Number *
           </label>
           <input
+            ref={phoneInputRef}
             type="tel"
+            inputMode="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="79000000"
-            className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-1 transition-colors ${
+            className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
               errors.phone
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                : showPhonePrompt && !phone
+                ? 'border-amber-500 ring-2 ring-amber-500/50 focus:border-amber-500 focus:ring-amber-500'
                 : 'border-white/20 focus:border-amber-500 focus:ring-amber-500'
             }`}
           />
