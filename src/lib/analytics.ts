@@ -23,7 +23,16 @@ export const trackFBEvent = (
   eventParams?: Record<string, unknown>
 ) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', eventName, eventParams);
+    // Facebook standard events that use 'track'
+    const standardEvents = [
+      'PageView', 'ViewContent', 'Search', 'AddToCart',
+      'AddToWishlist', 'InitiateCheckout', 'AddPaymentInfo',
+      'Purchase', 'Lead', 'CompleteRegistration'
+    ];
+
+    // Use 'track' for standard events, 'trackCustom' for everything else
+    const method = standardEvents.includes(eventName) ? 'track' : 'trackCustom';
+    window.fbq(method, eventName, eventParams);
   }
 };
 
