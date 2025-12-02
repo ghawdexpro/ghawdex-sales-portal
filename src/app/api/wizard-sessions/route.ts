@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing session
-    let session = await getWizardSessionByToken(session_token);
+    const session = await getWizardSessionByToken(session_token);
 
     if (session) {
       // Update existing session

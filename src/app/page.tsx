@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { trackWizardStart } from '@/lib/analytics';
 import { WizardProvider } from '@/components/wizard/WizardContext';
@@ -76,28 +76,37 @@ function Wizard({ onClose, prefillData }: { onClose: () => void; prefillData: Pr
 
 function HomeContent() {
   const searchParams = useSearchParams();
-  const [showWizard, setShowWizard] = useState(false);
-  const [prefillData, setPrefillData] = useState<PrefillData | null>(null);
 
-  // Check for prefill params on mount
-  useEffect(() => {
+  // Compute prefill data from URL params (derived state, no effect needed)
+  const initialPrefillData = useMemo((): PrefillData | null => {
     const name = searchParams.get('name');
     const email = searchParams.get('email');
     const phone = searchParams.get('phone');
     const zohoId = searchParams.get('zoho_id');
 
-    // If we have prefill data from Zoho CRM, auto-start wizard
     if (name && email && zohoId) {
-      setPrefillData({
+      return {
         name: decodeURIComponent(name),
         email: decodeURIComponent(email),
         phone: phone ? decodeURIComponent(phone) : '',
         zohoId: zohoId,
-      });
-      trackWizardStart('zoho_crm');
-      setShowWizard(true);
+      };
     }
+    return null;
   }, [searchParams]);
+
+  // Initialize wizard state based on prefill
+  const [showWizard, setShowWizard] = useState(() => !!initialPrefillData);
+  const [prefillData, setPrefillData] = useState<PrefillData | null>(initialPrefillData);
+
+  // Track wizard start for prefilled users (one-time effect)
+  const hasTrackedRef = useRef(false);
+  useEffect(() => {
+    if (initialPrefillData && !hasTrackedRef.current) {
+      hasTrackedRef.current = true;
+      trackWizardStart('zoho_crm');
+    }
+  }, [initialPrefillData]);
 
   const handleStart = () => {
     trackWizardStart();
