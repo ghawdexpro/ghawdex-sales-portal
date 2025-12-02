@@ -15,8 +15,9 @@
 - [x] Update Step6Summary.tsx - Added PDF generation + upload, grant_amount to prefilled lead
 
 ### PENDING:
-- [ ] Fix avatar cron route type error (partially done - added grant_type, grant_amount, proposal_file_url)
-- [ ] Run build to verify no errors
+- [x] Fix avatar cron route type error - DONE
+- [x] Run build to verify no errors - DONE (build passes)
+- [ ] **DATABASE MIGRATION** - NEEDS MANUAL RUN (see SQL below)
 - [ ] Test all flows
 - [ ] Deploy to Railway
 
