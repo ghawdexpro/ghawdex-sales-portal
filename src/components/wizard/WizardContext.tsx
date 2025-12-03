@@ -44,6 +44,7 @@ const initialState: WizardState = {
   paybackYears: null,
   proposalFileUrl: null,
   contractSigningUrl: null,
+  leadId: null,
 };
 
 type WizardAction =
@@ -62,6 +63,7 @@ type WizardAction =
   | { type: 'SET_PREFILL'; payload: { fullName: string; email: string; phone: string; zohoLeadId: string } }
   | { type: 'SET_PROPOSAL_URL'; payload: { proposalFileUrl: string } }
   | { type: 'SET_CONTRACT_URL'; payload: { contractSigningUrl: string } }
+  | { type: 'SET_LEAD_ID'; payload: { leadId: string } }
   | { type: 'RESET' };
 
 function wizardReducer(state: WizardState, action: WizardAction): WizardState {
@@ -116,6 +118,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, proposalFileUrl: action.payload.proposalFileUrl };
     case 'SET_CONTRACT_URL':
       return { ...state, contractSigningUrl: action.payload.contractSigningUrl };
+    case 'SET_LEAD_ID':
+      return { ...state, leadId: action.payload.leadId };
     case 'RESET':
       return initialState;
     default:

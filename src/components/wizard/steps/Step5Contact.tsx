@@ -180,11 +180,21 @@ export default function Step5Contact() {
         const data = await response.json();
         trackLeadCreated(state.selectedSystem?.systemSizeKw);
 
+        // Capture lead ID for fallback signing URL
+        if (data.lead_id) {
+          dispatch({
+            type: 'SET_LEAD_ID',
+            payload: { leadId: data.lead_id }
+          });
+        }
+
         // Capture contract signing URL if returned (for streamlined checkout)
-        if (data.contract_signing_url) {
+        // Use direct URL if available, otherwise use fallback
+        const signingUrl = data.contract_signing_url || data.fallback_signing_url;
+        if (signingUrl) {
           dispatch({
             type: 'SET_CONTRACT_URL',
-            payload: { contractSigningUrl: data.contract_signing_url }
+            payload: { contractSigningUrl: signingUrl }
           });
         }
       }

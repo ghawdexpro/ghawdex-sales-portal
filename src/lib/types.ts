@@ -61,6 +61,9 @@ export interface WizardState {
 
   // Contract signing (from backoffice)
   contractSigningUrl: string | null;
+
+  // Lead ID for fallback signing URL
+  leadId: string | null;
 }
 
 export interface SolarPotential {

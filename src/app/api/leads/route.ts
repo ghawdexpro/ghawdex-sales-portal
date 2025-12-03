@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { createLead, updateLead, findExistingLead } from '@/lib/supabase';
 import { createOrUpdateZohoLead, findExistingZohoLead } from '@/lib/zoho';
 import { Lead } from '@/lib/types';
@@ -16,6 +17,31 @@ import {
   buttonRow,
   mapsButton,
 } from '@/lib/telegram';
+
+// Generate HMAC token for lead signing URL (same algorithm as backoffice)
+function generateLeadSigningToken(leadId: string): string {
+  const secret = process.env.PORTAL_CONTRACT_SECRET || process.env.CRON_SECRET || 'ghawdex-fallback';
+  const timestamp = Date.now().toString();
+  const payload = `${leadId}:${timestamp}`;
+  const hmac = crypto.createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+    .substring(0, 16);
+  const encodedPayload = Buffer.from(payload).toString('base64url');
+  return `${encodedPayload}.${hmac}`;
+}
+
+// Build fallback signing URL for lead
+function buildFallbackSigningUrl(leadId: string): string {
+  const backofficeUrl = process.env.BACKOFFICE_URL || 'https://bo.ghawdex.pro';
+  const token = generateLeadSigningToken(leadId);
+  return `${backofficeUrl}/sign/lead/${leadId}?t=${token}`;
+}
+
+// Sleep utility for retry delays
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Calculate lead priority score (0-100)
 function calculateLeadPriority(lead: Partial<Lead>): { score: number; level: 'high' | 'medium' | 'low' } {
@@ -511,57 +537,94 @@ export async function POST(request: NextRequest) {
       }).catch(err => console.error('Failed to mark wizard session as converted:', err));
     }
 
-    // Create contract via backoffice API (non-blocking)
+    // Create contract via backoffice API with retry logic
     let contractSigningUrl: string | null = null;
-    if (lead?.id && leadData.system_size_kw && leadData.total_price) {
-      try {
+    let fallbackSigningUrl: string | null = null;
+
+    // Determine if we have a valid configuration for contract creation
+    // Support battery-only (system_size_kw = 0 with battery)
+    const isBatteryOnly = !leadData.system_size_kw && leadData.with_battery && leadData.battery_size_kwh;
+    const hasValidConfig = leadData.total_price && (leadData.system_size_kw || isBatteryOnly);
+
+    if (lead?.id) {
+      // Always generate fallback URL (for button to show even if contract creation fails)
+      fallbackSigningUrl = buildFallbackSigningUrl(lead.id);
+
+      if (hasValidConfig) {
         const backofficeUrl = process.env.BACKOFFICE_URL || 'https://bo.ghawdex.pro';
         const portalSecret = process.env.PORTAL_CONTRACT_SECRET;
 
         if (portalSecret) {
-          const contractResponse = await fetch(`${backofficeUrl}/api/contracts/portal`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              leadId: lead.id,
-              systemConfig: {
-                sizeKwp: leadData.system_size_kw,
-                panelBrand: leadData.panel_brand || 'Huawei',
-                panelModel: leadData.panel_model || '',
-                panelWattage: leadData.panel_wattage || 455,
-                panelCount: leadData.panel_count || Math.ceil((leadData.system_size_kw * 1000) / 455),
-                inverterBrand: leadData.inverter_brand || 'Huawei',
-                inverterModel: leadData.inverter_model || '',
-                hasBattery: leadData.with_battery || false,
-                batteryBrand: leadData.battery_brand || undefined,
-                batteryModel: leadData.battery_model || undefined,
-                batteryKwh: leadData.battery_size_kwh || undefined,
-              },
-              pricing: {
-                totalPrice: leadData.total_price,
-                grantAmount: leadData.grant_amount || 0,
-                netCost: leadData.total_price - (leadData.grant_amount || 0),
-              },
-              portalSecret,
-            }),
-          });
+          // Retry configuration
+          const MAX_RETRIES = 3;
+          const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff
 
-          if (contractResponse.ok) {
-            const contractData = await contractResponse.json();
-            contractSigningUrl = contractData.signingUrl || null;
-            console.log('Portal contract created:', contractData.contractReference);
-          } else {
-            const errorText = await contractResponse.text();
-            console.error('Backoffice contract creation failed:', contractResponse.status, errorText);
+          for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+              const contractResponse = await fetch(`${backofficeUrl}/api/contracts/portal`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Portal-Secret': portalSecret, // Send secret in header (preferred)
+                },
+                body: JSON.stringify({
+                  leadId: lead.id,
+                  systemConfig: {
+                    sizeKwp: leadData.system_size_kw || 0, // Allow 0 for battery-only
+                    panelBrand: leadData.panel_brand || 'Huawei',
+                    panelModel: leadData.panel_model || '',
+                    panelWattage: leadData.panel_wattage || 455,
+                    panelCount: leadData.panel_count || (leadData.system_size_kw ? Math.ceil((leadData.system_size_kw * 1000) / 455) : 0),
+                    inverterBrand: leadData.inverter_brand || 'Huawei',
+                    inverterModel: leadData.inverter_model || '',
+                    hasBattery: leadData.with_battery || false,
+                    batteryBrand: leadData.battery_brand || undefined,
+                    batteryModel: leadData.battery_model || undefined,
+                    batteryKwh: leadData.battery_size_kwh || undefined,
+                  },
+                  pricing: {
+                    totalPrice: leadData.total_price || 0,
+                    grantAmount: leadData.grant_amount || 0,
+                    netCost: (leadData.total_price || 0) - (leadData.grant_amount || 0),
+                  },
+                }),
+              });
+
+              if (contractResponse.ok) {
+                const contractData = await contractResponse.json();
+                contractSigningUrl = contractData.signingUrl || null;
+                console.log('Portal contract created:', contractData.contractReference);
+                break; // Success - exit retry loop
+              }
+
+              // Don't retry on client errors (4xx) except rate limiting
+              if (contractResponse.status >= 400 && contractResponse.status < 500 && contractResponse.status !== 429) {
+                const errorText = await contractResponse.text();
+                console.error(`Backoffice contract creation failed (${contractResponse.status}):`, errorText);
+                break; // Don't retry client errors
+              }
+
+              // Server error - retry if we have attempts left
+              if (attempt < MAX_RETRIES - 1) {
+                console.log(`Contract creation attempt ${attempt + 1} failed, retrying in ${RETRY_DELAYS[attempt]}ms...`);
+                await sleep(RETRY_DELAYS[attempt]);
+              } else {
+                const errorText = await contractResponse.text();
+                console.error('All contract creation retries failed:', contractResponse.status, errorText);
+              }
+            } catch (error) {
+              // Network error - retry if we have attempts left
+              if (attempt < MAX_RETRIES - 1) {
+                console.error(`Contract creation network error (attempt ${attempt + 1}):`, error);
+                await sleep(RETRY_DELAYS[attempt]);
+              } else {
+                console.error('All contract creation retries failed due to network errors:', error);
+              }
+            }
           }
         } else {
           console.log('PORTAL_CONTRACT_SECRET not configured, skipping contract creation');
         }
-      } catch (error) {
-        // Non-blocking - contract creation failure shouldn't fail lead submission
-        console.error('Failed to create portal contract:', error);
       }
     }
 
@@ -572,12 +635,14 @@ export async function POST(request: NextRequest) {
         created_at: lead.created_at,
         contract_signing_url: contractSigningUrl,
       } : null,
+      lead_id: lead?.id || null, // Always return lead_id for fallback signing URL
       zoho_lead_id: zohoLeadId,
       supabase_success: supabaseResult.status === 'fulfilled',
       zoho_success: zohoResult.status === 'fulfilled',
       is_hot_lead: hotLead,
       is_returning_lead: isReturningLead,
       contract_signing_url: contractSigningUrl,
+      fallback_signing_url: fallbackSigningUrl, // Always available if lead was created
     });
   } catch (error) {
     console.error('Lead creation error:', error);
