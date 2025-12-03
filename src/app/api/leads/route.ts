@@ -362,6 +362,7 @@ export async function POST(request: NextRequest) {
           monthly_payment: leadData.monthly_payment,
           annual_savings: leadData.annual_savings,
           proposal_file_url: leadData.proposal_file_url,
+          bill_file_url: leadData.bill_file_url,
           notes: leadData.notes,
           status: 'quoted',
         })
@@ -403,6 +404,13 @@ export async function POST(request: NextRequest) {
         grant_amount: leadData.grant_amount,
         proposal_file_url: leadData.proposal_file_url,
         notes: leadData.notes,
+        // Additional fields for sales team
+        consumption_kwh: leadData.consumption_kwh,
+        monthly_payment: leadData.monthly_payment,
+        roof_area: leadData.roof_area,
+        household_size: leadData.household_size,
+        selected_system: leadData.selected_system,
+        bill_file_url: leadData.bill_file_url,
         // Equipment details
         panel_brand: leadData.panel_brand,
         panel_model: leadData.panel_model,

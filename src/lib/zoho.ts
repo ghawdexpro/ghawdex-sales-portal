@@ -44,6 +44,13 @@ interface ZohoLeadData {
   grant_amount?: number | null;
   proposal_file_url?: string | null;
   notes?: string | null;
+  // Additional fields for sales team
+  consumption_kwh?: number | null;
+  monthly_payment?: number | null;
+  roof_area?: number | null;
+  household_size?: number | null;
+  selected_system?: string | null;
+  bill_file_url?: string | null;
   // Equipment details
   panel_brand?: string | null;
   panel_model?: string | null;
@@ -153,6 +160,13 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Lead_Status: options?.isHotLead ? 'Hot - Qualified' : undefined,
     // Customer notes
     Description: lead.notes || undefined,
+    // Additional fields for sales team
+    Consumption_KWH: lead.consumption_kwh || undefined,
+    Monthly_Payment: lead.monthly_payment || undefined,
+    Roof_Area: lead.roof_area || undefined,
+    Household_Size: lead.household_size || undefined,
+    Selected_System: lead.selected_system || undefined,
+    Bill_URL: lead.bill_file_url || undefined,
   };
 }
 
