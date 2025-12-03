@@ -490,7 +490,7 @@ export default function Step1Location() {
                   setSelectedAddress('');
                   dispatch({
                     type: 'SET_ADDRESS',
-                    payload: { address: '', coordinates: null, location: detectLocation(coords.lat) },
+                    payload: { address: '', coordinates: null, googleMapsLink: null, location: detectLocation(coords.lat) },
                   });
                 }
               }}
