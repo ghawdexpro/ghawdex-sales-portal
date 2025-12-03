@@ -177,7 +177,16 @@ export default function Step5Contact() {
       });
 
       if (response.ok) {
+        const data = await response.json();
         trackLeadCreated(state.selectedSystem?.systemSizeKw);
+
+        // Capture contract signing URL if returned (for streamlined checkout)
+        if (data.contract_signing_url) {
+          dispatch({
+            type: 'SET_CONTRACT_URL',
+            payload: { contractSigningUrl: data.contract_signing_url }
+          });
+        }
       }
 
       trackWizardStep(5, 'Contact');
