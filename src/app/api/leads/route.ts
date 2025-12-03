@@ -6,6 +6,16 @@ import {
   getWizardSessionByToken,
   markSessionConvertedToLead,
 } from '@/lib/wizard-session';
+import {
+  notifyNewLead,
+  notifyAll,
+  notifyEvent,
+  formatCurrency,
+  zohoLeadButton,
+  createKeyboard,
+  buttonRow,
+  mapsButton,
+} from '@/lib/telegram';
 
 // Calculate lead priority score (0-100)
 function calculateLeadPriority(lead: Partial<Lead>): { score: number; level: 'high' | 'medium' | 'low' } {
@@ -69,90 +79,99 @@ function generateZohoPrefillLink(lead: Partial<Lead>, zohoLeadId: string): strin
   return `${baseUrl}/?${params.toString()}`;
 }
 
-// Telegram notification helper
-interface TelegramOptions {
+// 3-tier Telegram notification helpers using new module
+
+interface NotificationOptions {
   isQuoteCompletion?: boolean;
+  isHotLead?: boolean;
   priority?: { score: number; level: 'high' | 'medium' | 'low' };
   prefillLink?: string;
 }
 
-async function sendTelegramNotification(lead: Lead, options: TelegramOptions = {}) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+/**
+ * Send lead notification via 3-tier system
+ * - Regular leads: everything + team
+ * - Hot leads: all tiers (admin + team + everything)
+ * - Quote completions (CRM): all tiers
+ */
+async function sendLeadNotification(lead: Lead, options: NotificationOptions = {}) {
+  const { isQuoteCompletion, isHotLead, priority, prefillLink } = options;
 
-  if (!botToken || !chatId) {
-    console.log('Telegram not configured, skipping notification');
-    return;
+  // Build inline keyboard buttons
+  const buttons = [];
+  if (lead.zoho_lead_id) {
+    buttons.push(zohoLeadButton(lead.zoho_lead_id));
   }
+  if (lead.address) {
+    buttons.push(mapsButton(lead.address));
+  }
+  const keyboard = buttons.length > 0 ? createKeyboard([buttonRow(...buttons)]) : undefined;
 
-  const { isQuoteCompletion, priority, prefillLink } = options;
+  // For hot leads or quote completions, send to ALL tiers with special formatting
+  if (isHotLead || isQuoteCompletion) {
+    const priorityEmoji = priority?.level === 'high' ? '🔥' : priority?.level === 'medium' ? '⭐' : '📋';
+    const priorityLabel = priority ? `${priorityEmoji} *Priority:* ${priority.level.toUpperCase()} (${priority.score}/100)` : '';
 
-  // Priority emoji and label
-  const priorityEmoji = priority?.level === 'high' ? '🔥' : priority?.level === 'medium' ? '⭐' : '📋';
-  const priorityLabel = priority ? `${priorityEmoji} *Priority:* ${priority.level.toUpperCase()} (${priority.score}/100)` : '';
+    const message = isHotLead
+      ? `🔥🔥🔥 *HOT LEAD - PRIORITY!* 🔥🔥🔥
 
-  // Prefill link section
-  const linkSection = prefillLink ? `\n\n🔗 *Quick Quote Link:*\n\`${prefillLink}\`` : '';
+⚡ *Lead Completed Full Quote Wizard!*
 
-  // Google Maps link section
-  const mapLink = lead.google_maps_link ? `\n🗺️ *Map:* [Open in Google Maps](${lead.google_maps_link})` : '';
-
-  // Different message for quote completions (prefilled users from CRM)
-  const message = isQuoteCompletion
-    ? `✅ *Quote Completed - Needs Callback!*
-${priorityLabel}
-
-👤 *Name:* ${lead.name}
+👤 *Customer:* ${lead.name}
 📧 *Email:* ${lead.email}
 📱 *Phone:* ${lead.phone}
 
-📍 *Address:* ${lead.address}${mapLink}
+📍 *Address:* ${lead.address}
+🔆 *System:* ${lead.system_size_kw} kWp
+🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
+🎫 *Grant:* ${lead.grant_type || 'pv_only'} (${formatCurrency(lead.grant_amount || 0)})
+💳 *Payment:* ${lead.payment_method === 'loan' ? `Loan (${lead.loan_term ? lead.loan_term/12 : '?'} years)` : 'Cash'}
+
+💰 *Total Price:* ${formatCurrency(lead.total_price || 0)}
+📊 *Annual Savings:* ${formatCurrency(lead.annual_savings || 0)}
+
+🎯 *This customer:*
+✅ Showed interest (clicked ad/received email)
+✅ Came to our wizard
+✅ Completed full quote
+
+📞 *ACTION REQUIRED:* Call within 15 minutes!
+
+🔗 Source: ${lead.source || 'Sales Portal'}`
+      : `✅ *Quote Completed - Needs Callback!*
+${priorityLabel}
+
+👤 *Customer:* ${lead.name}
+📧 *Email:* ${lead.email}
+📱 *Phone:* ${lead.phone}
+
+📍 *Address:* ${lead.address}
 
 🔆 *System:* ${lead.system_size_kw || 'TBD'} kWp
 🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
-🎫 *Grant:* ${lead.grant_type || 'pv_only'} (€${lead.grant_amount?.toLocaleString() || '0'})
+🎫 *Grant:* ${lead.grant_type || 'pv_only'} (${formatCurrency(lead.grant_amount || 0)})
 💳 *Payment:* ${lead.payment_method === 'loan' ? `Loan (${lead.loan_term ? lead.loan_term/12 : '?'} years)` : 'Cash'}
 
-💰 *Total Price:* €${lead.total_price?.toLocaleString() || 'TBD'}
-📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}
+💰 *Total Price:* ${formatCurrency(lead.total_price || 0)}
+📊 *Annual Savings:* ${formatCurrency(lead.annual_savings || 0)}
 📄 *Proposal:* ${lead.proposal_file_url ? 'PDF attached' : 'Not generated'}
 
 ⚡ *Action:* Customer completed quote from CRM link - ready for callback!
-🔗 Source: Zoho CRM`
-    : `🌞 *New Solar Lead!*
-${priorityLabel}
+🔗 Source: Zoho CRM`;
 
-👤 *Name:* ${lead.name}
-📧 *Email:* ${lead.email}
-📱 *Phone:* ${lead.phone}
-
-📍 *Address:* ${lead.address}${mapLink}
-👥 *Household:* ${lead.household_size || 'N/A'} people
-💡 *Monthly Bill:* €${lead.monthly_bill || 'N/A'}
-⚡ *Consumption:* ${lead.consumption_kwh || 'N/A'} kWh/month
-
-🔆 *System:* ${lead.system_size_kw || 'TBD'} kWp
-🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
-🎫 *Grant:* ${lead.grant_type || 'pv_only'} (€${lead.grant_amount?.toLocaleString() || '0'})
-
-💰 *Total Price:* €${lead.total_price?.toLocaleString() || 'TBD'}
-📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}${linkSection}
-
-🔗 Source: get.ghawdex.pro`;
-
-  try {
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'Markdown',
-      }),
-    });
-  } catch (error) {
-    console.error('Failed to send Telegram notification:', error);
+    await notifyAll(message, keyboard);
+    return;
   }
+
+  // Regular new lead - use standard notifyNewLead (routes to everything + team)
+  await notifyNewLead({
+    customerName: lead.name || 'Unknown',
+    phone: lead.phone || undefined,
+    email: lead.email || undefined,
+    locality: lead.address || undefined,
+    source: 'sales-portal',
+    zohoLeadId: lead.zoho_lead_id || undefined,
+  });
 }
 
 // n8n webhook trigger
@@ -216,76 +235,6 @@ function isHotLead(lead: Partial<Lead>, source?: string, existingLead?: Lead | n
   return isFromExternalSource && !!hasCompletedWizard;
 }
 
-/**
- * Send priority notification for hot leads (Facebook/ad leads that complete wizard)
- * Sends to both admin and team channels
- */
-async function sendHotLeadNotification(lead: Lead) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
-  const teamChatId = process.env.TELEGRAM_TEAM_CHAT_ID;
-
-  if (!botToken || !adminChatId) {
-    console.log('Telegram not configured for hot lead notification');
-    return;
-  }
-
-  const message = `🔥🔥🔥 *HOT LEAD - PRIORITY!* 🔥🔥🔥
-
-⚡ *Lead Completed Full Quote Wizard!*
-
-👤 *Name:* ${lead.name}
-📧 *Email:* ${lead.email}
-📱 *Phone:* ${lead.phone}
-
-📍 *Address:* ${lead.address}
-🔆 *System:* ${lead.system_size_kw} kWp
-🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
-🎫 *Grant:* ${lead.grant_type || 'pv_only'} (€${lead.grant_amount?.toLocaleString() || '0'})
-💳 *Payment:* ${lead.payment_method === 'loan' ? `Loan (${lead.loan_term ? lead.loan_term/12 : '?'} years)` : 'Cash'}
-
-💰 *Total Price:* €${lead.total_price?.toLocaleString()}
-📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}
-
-🎯 *This customer:*
-✅ Showed interest (clicked ad/received email)
-✅ Came to our wizard
-✅ Completed full quote
-
-📞 *ACTION REQUIRED:* Call within 15 minutes!
-
-🔗 Source: ${lead.source || 'Sales Portal'}`;
-
-  try {
-    // Send to admin
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: adminChatId,
-        text: message,
-        parse_mode: 'Markdown',
-      }),
-    });
-
-    // Also send to team channel if configured
-    if (teamChatId) {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: teamChatId,
-          text: message,
-          parse_mode: 'Markdown',
-        }),
-      });
-    }
-
-    console.log('Hot lead notification sent successfully');
-  } catch (error) {
-    console.error('Failed to send hot lead notification:', error);
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -502,24 +451,22 @@ export async function POST(request: NextRequest) {
       ? generateZohoPrefillLink(notificationLead, finalZohoId)
       : undefined;
 
-    // Always send Telegram if at least one system succeeded
+    // Always send Telegram if at least one system succeeded (3-tier routing)
     if (lead || zohoLeadId) {
-      // For hot leads, send priority notification instead of regular notification
-      if (hotLead) {
-        Promise.all([
-          sendHotLeadNotification(notificationLead),
-          lead ? triggerN8nWebhook(lead) : Promise.resolve(),
-        ]).catch(console.error);
-      } else {
-        Promise.all([
-          sendTelegramNotification(notificationLead, {
-            isQuoteCompletion: isPrefilledUser || isReturningLead,
-            priority,
-            prefillLink,
-          }),
-          lead ? triggerN8nWebhook(lead) : Promise.resolve(),
-        ]).catch(console.error);
+      // Enrich notificationLead with zoho_lead_id for proper button links
+      if (finalZohoId && !notificationLead.zoho_lead_id) {
+        notificationLead.zoho_lead_id = finalZohoId;
       }
+
+      Promise.all([
+        sendLeadNotification(notificationLead, {
+          isHotLead: hotLead,
+          isQuoteCompletion: isPrefilledUser || isReturningLead,
+          priority,
+          prefillLink,
+        }),
+        lead ? triggerN8nWebhook(lead) : Promise.resolve(),
+      ]).catch(console.error);
     }
 
 // Link wizard session to lead (if session token provided)

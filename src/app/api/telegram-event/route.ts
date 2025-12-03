@@ -1,4 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  notifyEvent,
+  notifyPageView,
+  notifyHotLead,
+  parseDevice,
+  formatTimestamp,
+  stepIndicator,
+  type NotificationEventType,
+} from '@/lib/telegram';
 
 // Rate limiting: track recent events to avoid spam
 const recentEvents = new Map<string, number>();
@@ -31,140 +40,112 @@ interface TelegramEventPayload {
   };
 }
 
-// Emoji map for events
-const eventEmoji: Record<EventType, string> = {
-  visitor: '👁️',
-  wizard_step: '📍',
-  wizard_complete: '🎉',
-  phone_click: '📞',
-  whatsapp_click: '💬',
-  email_click: '📧',
-  time_milestone: '⏱️',
-  cta_click: '👆',
+// Map old event types to new module event types
+const eventTypeMap: Record<EventType, NotificationEventType> = {
+  visitor: 'page_view',
+  wizard_step: 'wizard_step',
+  wizard_complete: 'wizard_complete',
+  phone_click: 'phone_click',
+  whatsapp_click: 'whatsapp_click',
+  email_click: 'email_click',
+  time_milestone: 'time_milestone',
+  cta_click: 'cta_click',
 };
 
-// Event titles
-const eventTitle: Record<EventType, string> = {
-  visitor: 'New Visitor',
-  wizard_step: 'Wizard Progress',
-  wizard_complete: 'Wizard Completed!',
-  phone_click: 'Phone Click',
-  whatsapp_click: 'WhatsApp Click',
-  email_click: 'Email Click',
-  time_milestone: 'Engaged Visitor',
-  cta_click: 'CTA Click',
-};
-
-function formatMessage(payload: TelegramEventPayload, ip: string): string {
+/**
+ * Send notification using 3-tier routing
+ * Routes to appropriate tiers based on event type
+ */
+async function sendNotification(payload: TelegramEventPayload): Promise<boolean> {
   const { event, sessionId, data } = payload;
-  const emoji = eventEmoji[event] || '📌';
-  const title = eventTitle[event] || event;
+  const newEventType = eventTypeMap[event];
 
-  let message = `${emoji} *${title}*\n\n`;
-  message += `🔑 Session: \`${sessionId.slice(0, 8)}...\`\n`;
-
-  // Add event-specific details
+  // Use specialized functions for certain event types
   switch (event) {
     case 'visitor':
-      message += `🌐 URL: ${data?.url || 'N/A'}\n`;
-      if (data?.referrer) message += `↩️ Referrer: ${data.referrer}\n`;
-      if (data?.prefilled) message += `✨ *Pre-filled from CRM*\n`;
-      if (data?.name) message += `👤 Name: ${data.name}\n`;
-      message += `📱 Device: ${parseUserAgent(data?.userAgent)}\n`;
-      break;
-
-    case 'wizard_step':
-      message += `📊 Step ${data?.step}: ${data?.stepName}\n`;
-      message += getStepProgress(data?.step || 1);
-      break;
-
-    case 'wizard_complete':
-      message += `✅ Customer completed the quote wizard!\n`;
-      message += `⏳ Lead notification coming separately...\n`;
-      break;
+      // Page view - goes to 'everything' tier only
+      return await notifyPageView(
+        data?.url || 'Unknown',
+        'sales-portal',
+        sessionId,
+        parseDevice(data?.userAgent)
+      );
 
     case 'phone_click':
-      message += `📱 Customer clicked to call!\n`;
-      message += `🔥 *HOT LEAD - May be calling now*\n`;
-      break;
-
     case 'whatsapp_click':
-      message += `💬 Customer opened WhatsApp!\n`;
-      message += `🔥 *HOT LEAD - Check WhatsApp*\n`;
-      break;
+      // Hot lead actions - goes to 'everything' + 'team' tiers
+      return await notifyHotLead(
+        event === 'phone_click' ? 'phone' : 'whatsapp',
+        {
+          source: 'sales-portal',
+          page: 'wizard',
+          customerName: data?.name,
+        }
+      );
 
     case 'email_click':
-      message += `📧 Customer clicked email link\n`;
-      break;
-
-    case 'time_milestone':
-      const mins = Math.floor((data?.seconds || 0) / 60);
-      const secs = (data?.seconds || 0) % 60;
-      message += `⏱️ Time on site: ${mins > 0 ? `${mins}m ` : ''}${secs}s\n`;
-      if ((data?.seconds || 0) >= 300) {
-        message += `🔥 *Highly engaged visitor!*\n`;
-      }
-      break;
+      // Email click - goes to 'everything' + 'team'
+      return await notifyHotLead('email', {
+        source: 'sales-portal',
+        page: 'wizard',
+        customerName: data?.name,
+      });
 
     case 'cta_click':
-      message += `🔘 Button: "${data?.buttonText}"\n`;
-      message += `📍 Location: ${data?.location}\n`;
-      break;
-  }
+      // CTA click - goes to 'everything' + 'team'
+      return await notifyHotLead('cta', {
+        source: 'sales-portal',
+        page: data?.location || 'wizard',
+        element: data?.buttonText,
+        customerName: data?.name,
+      });
 
-  message += `\n🕐 ${new Date().toLocaleString('en-GB', { timeZone: 'Europe/Malta' })}`;
+    case 'wizard_step':
+      // Wizard step - goes to 'everything' only
+      const stepMessage = `📍 *Wizard Progress*
 
-  return message;
-}
+🔑 Session: \`${sessionId.slice(0, 8)}...\`
+📊 Step ${data?.step}: ${data?.stepName}
+${stepIndicator(data?.step || 1, 6)}
 
-function parseUserAgent(ua?: string): string {
-  if (!ua) return 'Unknown';
+${data?.prefilled ? '✨ *Pre-filled from CRM*\n' : ''}_${formatTimestamp()}_`;
 
-  if (ua.includes('iPhone')) return 'iPhone';
-  if (ua.includes('iPad')) return 'iPad';
-  if (ua.includes('Android')) return 'Android';
-  if (ua.includes('Mac')) return 'Mac';
-  if (ua.includes('Windows')) return 'Windows';
-  if (ua.includes('Linux')) return 'Linux';
+      return await notifyEvent('wizard_step', stepMessage);
 
-  return 'Other';
-}
+    case 'wizard_complete':
+      // Wizard complete - goes to 'everything' + 'team'
+      const completeMessage = `🎉 *Wizard Completed!*
 
-function getStepProgress(step: number): string {
-  const steps = ['Location', 'Consumption', 'System', 'Financing', 'Contact', 'Summary'];
-  const progress = steps.map((s, i) => {
-    if (i + 1 < step) return '✅';
-    if (i + 1 === step) return '👉';
-    return '⬜';
-  }).join('');
-  return `${progress}\n`;
-}
+🔑 Session: \`${sessionId.slice(0, 8)}...\`
+✅ Customer completed the quote wizard!
+⏳ Lead notification coming separately...
 
-async function sendTelegramMessage(message: string): Promise<boolean> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+_${formatTimestamp()}_`;
 
-  if (!botToken || !chatId) {
-    console.log('Telegram not configured');
-    return false;
-  }
+      return await notifyEvent('wizard_complete', completeMessage);
 
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true,
-      }),
-    });
+    case 'time_milestone':
+      // Time milestone - goes to 'everything' only
+      const mins = Math.floor((data?.seconds || 0) / 60);
+      const secs = (data?.seconds || 0) % 60;
+      const timeMessage = `⏱️ *Engaged Visitor*
 
-    return response.ok;
-  } catch (error) {
-    console.error('Telegram send error:', error);
-    return false;
+🔑 Session: \`${sessionId.slice(0, 8)}...\`
+⏱️ Time on site: ${mins > 0 ? `${mins}m ` : ''}${secs}s
+${(data?.seconds || 0) >= 300 ? '🔥 *Highly engaged visitor!*\n' : ''}
+_${formatTimestamp()}_`;
+
+      return await notifyEvent('time_milestone', timeMessage);
+
+    default:
+      // Fallback - use generic event notification
+      const genericMessage = `📌 *${event}*
+
+🔑 Session: \`${sessionId.slice(0, 8)}...\`
+
+_${formatTimestamp()}_`;
+
+      return await notifyEvent(newEventType, genericMessage);
   }
 }
 
@@ -186,14 +167,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, skipped: true });
     }
 
-    // Get client IP for logging
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
-               request.headers.get('x-real-ip') ||
-               'unknown';
-
-    // Format and send message
-    const message = formatMessage(payload, ip);
-    const sent = await sendTelegramMessage(message);
+    // Send notification using 3-tier routing
+    const sent = await sendNotification(payload);
 
     if (sent) {
       recentEvents.set(rateLimitKey, Date.now());
