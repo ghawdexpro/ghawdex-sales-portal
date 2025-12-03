@@ -160,13 +160,13 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Lead_Status: options?.isHotLead ? 'Hot - Qualified' : undefined,
     // Customer notes
     Description: lead.notes || undefined,
-    // Additional fields for sales team
-    Consumption_KWH: lead.consumption_kwh || undefined,
-    Monthly_Payment: lead.monthly_payment || undefined,
-    Roof_Area: lead.roof_area || undefined,
+    // Additional fields for sales team (mapped to existing Zoho fields)
+    Monthly_Consumption_kWh: lead.consumption_kwh || undefined,
+    Monthly_Payment_EUR: lead.monthly_payment || undefined,
+    Available_Area_sqm: lead.roof_area || undefined,
     Household_Size: lead.household_size || undefined,
-    Selected_System: lead.selected_system || undefined,
-    Bill_URL: lead.bill_file_url || undefined,
+    Recommended_Package: lead.selected_system || undefined,
+    Bill_Images_URL: lead.bill_file_url || undefined,
   };
 }
 
