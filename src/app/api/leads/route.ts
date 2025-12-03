@@ -94,6 +94,9 @@ async function sendTelegramNotification(lead: Lead, options: TelegramOptions = {
   // Prefill link section
   const linkSection = prefillLink ? `\n\n🔗 *Quick Quote Link:*\n\`${prefillLink}\`` : '';
 
+  // Google Maps link section
+  const mapLink = lead.google_maps_link ? `\n🗺️ *Map:* [Open in Google Maps](${lead.google_maps_link})` : '';
+
   // Different message for quote completions (prefilled users from CRM)
   const message = isQuoteCompletion
     ? `✅ *Quote Completed - Needs Callback!*
@@ -103,7 +106,7 @@ ${priorityLabel}
 📧 *Email:* ${lead.email}
 📱 *Phone:* ${lead.phone}
 
-📍 *Address:* ${lead.address}
+📍 *Address:* ${lead.address}${mapLink}
 
 🔆 *System:* ${lead.system_size_kw || 'TBD'} kWp
 🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
@@ -123,7 +126,7 @@ ${priorityLabel}
 📧 *Email:* ${lead.email}
 📱 *Phone:* ${lead.phone}
 
-📍 *Address:* ${lead.address}
+📍 *Address:* ${lead.address}${mapLink}
 👥 *Household:* ${lead.household_size || 'N/A'} people
 💡 *Monthly Bill:* €${lead.monthly_bill || 'N/A'}
 ⚡ *Consumption:* ${lead.consumption_kwh || 'N/A'} kWh/month
@@ -199,6 +202,7 @@ export async function POST(request: NextRequest) {
       phone: body.phone,
       address: body.address || '',
       coordinates: body.coordinates || null,
+      google_maps_link: body.google_maps_link || null,
       household_size: body.household_size || null,
       monthly_bill: body.monthly_bill || null,
       consumption_kwh: body.consumption_kwh || null,
@@ -250,6 +254,7 @@ export async function POST(request: NextRequest) {
         updateLead(existingLead.id, {
           address: leadData.address,
           coordinates: leadData.coordinates,
+          google_maps_link: leadData.google_maps_link,
           household_size: leadData.household_size,
           monthly_bill: leadData.monthly_bill,
           consumption_kwh: leadData.consumption_kwh,
@@ -285,6 +290,7 @@ export async function POST(request: NextRequest) {
         email: leadData.email,
         phone: leadData.phone,
         address: leadData.address,
+        google_maps_link: leadData.google_maps_link,
         system_size_kw: leadData.system_size_kw,
         total_price: leadData.total_price,
         annual_savings: leadData.annual_savings,

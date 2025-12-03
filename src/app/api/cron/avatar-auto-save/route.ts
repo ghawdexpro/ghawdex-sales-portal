@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createLead, getLeadByZohoId } from '@/lib/supabase';
 import { createOrUpdateZohoLead } from '@/lib/zoho';
+import { generateGoogleMapsLinkFromCoords } from '@/lib/google/maps-utils';
 import { GrantType } from '@/lib/types';
 
 // Cron endpoint to auto-save completed avatar sessions to CRM
@@ -104,6 +105,7 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     phone: session.customer_phone || '',
     address: data.address || '',
     coordinates: data.coordinates || null,
+    google_maps_link: generateGoogleMapsLinkFromCoords(data.coordinates),
     household_size: data.household_size || null,
     monthly_bill: data.monthly_bill || null,
     consumption_kwh: data.consumption_kwh || null,
@@ -127,6 +129,15 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     bill_file_url: null,
     proposal_file_url: null,
     social_provider: null,
+    // Equipment details (avatar session data doesn't include full system details)
+    panel_brand: data.selected_system ? 'Huawei' : null,
+    panel_model: null,
+    panel_count: null,
+    panel_wattage: null,
+    inverter_brand: data.selected_system ? 'Huawei' : null,
+    inverter_model: null,
+    battery_brand: data.selected_battery ? 'Huawei' : null,
+    battery_model: null,
   };
 
   let leadId: string | null = null;
@@ -147,6 +158,7 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
       email: leadData.email,
       phone: leadData.phone,
       address: leadData.address,
+      google_maps_link: leadData.google_maps_link,
       system_size_kw: leadData.system_size_kw,
       total_price: leadData.total_price,
       annual_savings: leadData.annual_savings,

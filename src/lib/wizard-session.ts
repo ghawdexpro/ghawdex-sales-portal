@@ -105,6 +105,7 @@ export function wizardStateToSessionData(state: WizardState): Partial<WizardSess
     current_step: state.step,
     address: state.address || null,
     coordinates: state.coordinates,
+    google_maps_link: state.googleMapsLink || null,
     location: state.location || null,
     roof_area: state.roofArea,
     max_panels: state.maxPanels,
