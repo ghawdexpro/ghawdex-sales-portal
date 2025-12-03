@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **CRM:** Zoho CRM (EU region) with OAuth2 token refresh
 - **Maps:** Google Maps API + Google Solar API (roof analysis)
 - **AI:** OpenRouter API (Gemini 2.0 Flash)
-- **Notifications:** Telegram Bot API (real-time lead alerts)
+- **Notifications:** Telegram Bot API (3-tier notification system)
 - **Analytics:** GA4 + Facebook Pixel
 - **Deployment:** Railway (manual push required)
 
@@ -206,6 +206,60 @@ POST /api/avatar/message
 - **Facebook Pixel:** Lead conversion tracking
 - **Session duration:** TimeTracker component monitors engagement
 
+### 8. 3-Tier Telegram Notification System
+
+Real-time notifications routed to different audiences based on event type.
+
+**Tiers:**
+| Tier | Audience | Chat ID Env Var | Purpose |
+|------|----------|-----------------|---------|
+| `admin` | CEO/CTO | `TELEGRAM_ADMIN_CHAT_ID` | Critical business events only |
+| `team` | Operations | `TELEGRAM_TEAM_CHAT_ID` | Actionable items, client progress |
+| `everything` | Developers | `TELEGRAM_EVERYTHING_CHAT_ID` | Complete audit log (every event) |
+
+**Event Routing:**
+| Event | Everything | Team | Admin |
+|-------|:----------:|:----:|:-----:|
+| Page view / visitor | ✅ | | |
+| Wizard step progress | ✅ | | |
+| Time milestone (1m, 3m, 5m) | ✅ | | |
+| Phone/WhatsApp/Email click | ✅ | ✅ | |
+| CTA button click | ✅ | ✅ | |
+| New lead submitted | ✅ | ✅ | |
+| Wizard completed | ✅ | ✅ | |
+| Hot lead (Facebook/ad conversion) | ✅ | ✅ | ✅ |
+| Quote completion from CRM | ✅ | ✅ | ✅ |
+| Error | ✅ | | ✅ |
+
+**Key Files:**
+- `src/lib/telegram/` - Unified notification module
+  - `index.ts` - Main exports
+  - `types.ts` - TypeScript types and `EVENT_TIER_ROUTING` map
+  - `client.ts` - Low-level Telegram API calls
+  - `router.ts` - 3-tier routing logic and convenience functions
+  - `formatters.ts` - Message formatting utilities
+  - `README.md` - Module documentation
+- `src/app/api/leads/route.ts` - Uses `notifyNewLead()`, `notifyAll()` for leads
+- `src/app/api/telegram-event/route.ts` - Uses module for event tracking
+- `src/lib/telegram-events.ts` - Client-side event tracking (sends to API route)
+
+**Usage:**
+```typescript
+import { notifyNewLead, notifyAll, notifyEvent, notifyHotLead } from '@/lib/telegram';
+
+// New lead (auto-routes to everything + team)
+await notifyNewLead({ customerName: 'John', phone: '+356...', source: 'sales-portal' });
+
+// Hot lead or critical event (all 3 tiers)
+await notifyAll('🔥 Hot lead message here');
+
+// Specific event type (uses EVENT_TIER_ROUTING)
+await notifyEvent('wizard_complete', 'Customer completed wizard');
+
+// Hot action (phone/whatsapp click - everything + team)
+await notifyHotLead('phone', { source: 'sales-portal', customerName: 'John' });
+```
+
 ## Database Schema (Supabase)
 
 ### leads table
@@ -336,9 +390,11 @@ See `.env.local` for all required variables.
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Maps + Solar API
 - `GOOGLE_SOLAR_API_KEY` - (may be same as above)
 
-**Telegram (optional - lead notifications):**
+**Telegram (3-tier notification system):**
 - `TELEGRAM_BOT_TOKEN` - Bot API token
-- `TELEGRAM_ADMIN_CHAT_ID` - Chat ID for admin alerts
+- `TELEGRAM_ADMIN_CHAT_ID` - Chat ID for CEO/CTO (critical events)
+- `TELEGRAM_TEAM_CHAT_ID` - Chat ID for operations team (actionable items)
+- `TELEGRAM_EVERYTHING_CHAT_ID` - Chat ID for audit log (all events)
 
 **OpenRouter (optional - AI assistant):**
 - `OPENROUTER_API_KEY` - API key for Gemini 2.0 Flash
@@ -390,10 +446,13 @@ railway variables --kv          # View all variables
 - Check API response for "converted to contact" message
 
 ### Telegram notifications not being sent
-- Verify `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ADMIN_CHAT_ID` are set
+- Verify `TELEGRAM_BOT_TOKEN` is set
+- Check which tiers are configured: `TELEGRAM_ADMIN_CHAT_ID`, `TELEGRAM_TEAM_CHAT_ID`, `TELEGRAM_EVERYTHING_CHAT_ID`
+- Module gracefully handles missing chat IDs (only sends to configured tiers)
 - Check Railway logs: `railway logs` for errors
 - Telegram API might be blocked in deployment region
 - Notifications are non-blocking - system continues even if Telegram fails
+- To test: submit a lead and check all 3 chat groups
 
 ## Malta Solar Constants
 
