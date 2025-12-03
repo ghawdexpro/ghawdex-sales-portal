@@ -4,17 +4,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
 import { loadGoogleMaps, reverseGeocode, loadPlacesLibrary } from '@/lib/google/maps-service';
+import { generateGoogleMapsLink } from '@/lib/google/maps-utils';
 import { detectLocation } from '@/lib/types';
 
 // Malta center coordinates
 const MALTA_CENTER = { lat: 35.9375, lng: 14.3754 };
 const INITIAL_ZOOM = 11;
 const MAX_ZOOM = 20;
-
-// Generate Google Maps link from coordinates
-function generateGoogleMapsLink(lat: number, lng: number): string {
-  return `https://www.google.com/maps?q=${lat},${lng}`;
-}
 
 export default function Step1Location() {
   const { state, dispatch } = useWizard();
