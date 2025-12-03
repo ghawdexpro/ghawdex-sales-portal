@@ -1,90 +1,52 @@
 # Facebook Lead Ads Integration - TODO
 
-> **Branch:** `claude/facebook-lead-form-research-01XtAcEpfHB9sgiV7obEuDc8`
-> **Created:** 2025-12-03
+> **Last Updated:** 2025-12-03
+> **Status:** Mostly Complete - One manual step remaining
 
 ---
 
-## 1. Merge to Main & Deploy
+## ✅ COMPLETED AUTOMATICALLY
 
-```bash
-git checkout main
-git merge claude/facebook-lead-form-research-01XtAcEpfHB9sgiV7obEuDc8
-git push origin main
-railway up
-```
+### 1. Code Merged & Deployed
+- [x] Branch merged to main
+- [x] Deployed to Railway
+- [x] Gozo address autocomplete fixed
+
+### 2. Zoho CRM - "Hot - Qualified" Status
+- [x] Status auto-created via API (created when first lead uses it)
+
+### 3. Email Template Created
+- [x] Template ID: `885227000000994001`
+- [x] Name: "Facebook Lead - Wizard Invitation"
+- [x] Sends wizard link with pre-filled customer data
+
+### 4. Environment Variables
+- [x] `ZOHO_REFRESH_TOKEN` updated with expanded scopes
+- [x] `TELEGRAM_TEAM_CHAT_ID` already configured (-5000982375)
 
 ---
 
-## 2. Zoho CRM Configuration
+## ⏳ MANUAL STEP REQUIRED
 
-### 2.1 Create "Hot - Qualified" Lead Status
+### Create Workflow Rule in Zoho CRM
 
-1. Go to **Zoho CRM** → **Setup** (gear icon)
-2. Navigate to **Customization** → **Modules and Fields**
-3. Click on **Leads** module
-4. Find **Lead Status** field → click to edit
-5. Add new value: `Hot - Qualified`
-6. Save changes
+The Workflow API requires additional OAuth scopes not available via API. Create manually:
 
-### 2.2 Create Email Template for Facebook Leads
-
-1. Go to **Setup** → **Automation** → **Email Templates**
-2. Click **+ New Template**
-3. Name: `Facebook Lead - Wizard Invitation`
-4. Module: Leads
-5. Use this content:
-
-```
-Subject: Your Free Solar Quote is Ready - GhawdeX
-
-Hi ${Leads.First Name},
-
-Thank you for your interest in solar power! 🌞
-
-Your personalized solar quote is just 2 minutes away.
-Click below to complete your quote:
-
-👉 https://get.ghawdex.pro/?name=${Leads.Full Name}&email=${Leads.Email}&phone=${Leads.Phone}&zoho_id=${Leads.Lead Id}
-
-What you'll get:
-✅ AI-powered roof analysis
-✅ Instant pricing with grant calculations
-✅ Monthly savings estimate
-✅ Financing options
-
-Questions? Call us at +356 xxxx xxxx
-
-Best regards,
-The GhawdeX Team
-```
-
-6. Save template
-
-### 2.3 Create Workflow Rule for Facebook Leads
-
-1. Go to **Setup** → **Automation** → **Workflow Rules**
+1. Go to **Zoho CRM** → **Setup** (⚙️) → **Automation** → **Workflow Rules**
 2. Click **+ Create Rule**
 3. Configure:
    - **Module:** Leads
    - **Rule Name:** `Send Wizard Link to Facebook Leads`
-   - **When:** On a record action → Create
-   - **Condition:** Lead Source equals "Facebook" OR "Facebook Lead Ads"
+   - **When:** On a record action → **Create**
+   - **Condition:** Lead Source **equals** "Facebook" **OR** "Facebook Lead Ads"
 4. Add **Instant Action** → **Email Notification**
-   - Select the template created above
+   - Select template: **"Facebook Lead - Wizard Invitation"**
    - Send to: Lead Email
-5. Save and activate the rule
+5. **Save and Activate** the rule
 
 ---
 
-## 3. Environment Variables (Railway)
-
-Add these to Railway if not already set:
-
-```bash
-# Team Telegram channel for hot lead notifications (optional)
-railway variables --set "TELEGRAM_TEAM_CHAT_ID=-100xxxxxxxxxx"
-```
+## 🧪 Testing Checklist
 
 To find your team chat ID:
 1. Add @userinfobot to your team group
