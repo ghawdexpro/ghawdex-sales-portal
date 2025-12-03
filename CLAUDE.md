@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Framework:** Next.js 15 (App Router, Server Components)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS v4
-- **Database:** Supabase (PostgreSQL) - project: `lccebuetwhezxpviyfrs`
+- **Database:** Supabase (PostgreSQL) - project: `epxeimwsheyttevwtjku` (unified with backoffice)
 - **CRM:** Zoho CRM (EU region) with OAuth2 token refresh
 - **Maps:** Google Maps API + Google Solar API (roof analysis)
 - **AI:** OpenRouter API (Gemini 2.0 Flash)

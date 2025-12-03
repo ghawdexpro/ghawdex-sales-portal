@@ -45,7 +45,7 @@ with_battery, zoho_lead_id
 ---
 
 ## STAGE 1: Schema Migration (Target DB)
-**Checkpoint**: [ ] Complete
+**Checkpoint**: [x] Complete (2024-12-03)
 
 Run in Supabase SQL Editor for project `epxeimwsheyttevwtjku`:
 
@@ -117,7 +117,7 @@ CREATE TRIGGER update_leads_updated_at
 ---
 
 ## STAGE 2: Create Supporting Tables (Target DB)
-**Checkpoint**: [ ] Complete
+**Checkpoint**: [x] Complete (2024-12-03)
 
 Run in Supabase SQL Editor for project `epxeimwsheyttevwtjku`:
 
@@ -208,7 +208,7 @@ USING (true);
 ---
 
 ## STAGE 3: Data Migration
-**Checkpoint**: [ ] Complete
+**Checkpoint**: [x] Complete (2024-12-03) - 17 leads migrated, 4 duplicates skipped
 
 ### 3A: Export from Sales Portal
 Run Node.js script to export all leads:
@@ -271,7 +271,7 @@ for (const lead of leads) {
 ---
 
 ## STAGE 4: Update Sales Portal
-**Checkpoint**: [ ] Complete
+**Checkpoint**: [x] Complete (2024-12-03)
 
 ### 4A: Update Environment Variables
 
