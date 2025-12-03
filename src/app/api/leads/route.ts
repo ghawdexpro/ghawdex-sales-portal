@@ -511,17 +511,73 @@ export async function POST(request: NextRequest) {
       }).catch(err => console.error('Failed to mark wizard session as converted:', err));
     }
 
+    // Create contract via backoffice API (non-blocking)
+    let contractSigningUrl: string | null = null;
+    if (lead?.id && leadData.system_size_kw && leadData.total_price) {
+      try {
+        const backofficeUrl = process.env.BACKOFFICE_URL || 'https://bo.ghawdex.pro';
+        const portalSecret = process.env.PORTAL_CONTRACT_SECRET;
+
+        if (portalSecret) {
+          const contractResponse = await fetch(`${backofficeUrl}/api/contracts/portal`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              leadId: lead.id,
+              systemConfig: {
+                sizeKwp: leadData.system_size_kw,
+                panelBrand: leadData.panel_brand || 'Huawei',
+                panelModel: leadData.panel_model || '',
+                panelWattage: leadData.panel_wattage || 455,
+                panelCount: leadData.panel_count || Math.ceil((leadData.system_size_kw * 1000) / 455),
+                inverterBrand: leadData.inverter_brand || 'Huawei',
+                inverterModel: leadData.inverter_model || '',
+                hasBattery: leadData.with_battery || false,
+                batteryBrand: leadData.battery_brand || undefined,
+                batteryModel: leadData.battery_model || undefined,
+                batteryKwh: leadData.battery_size_kwh || undefined,
+              },
+              pricing: {
+                totalPrice: leadData.total_price,
+                grantAmount: leadData.grant_amount || 0,
+                netCost: leadData.total_price - (leadData.grant_amount || 0),
+              },
+              portalSecret,
+            }),
+          });
+
+          if (contractResponse.ok) {
+            const contractData = await contractResponse.json();
+            contractSigningUrl = contractData.signingUrl || null;
+            console.log('Portal contract created:', contractData.contractReference);
+          } else {
+            const errorText = await contractResponse.text();
+            console.error('Backoffice contract creation failed:', contractResponse.status, errorText);
+          }
+        } else {
+          console.log('PORTAL_CONTRACT_SECRET not configured, skipping contract creation');
+        }
+      } catch (error) {
+        // Non-blocking - contract creation failure shouldn't fail lead submission
+        console.error('Failed to create portal contract:', error);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       lead: lead ? {
         id: lead.id,
         created_at: lead.created_at,
+        contract_signing_url: contractSigningUrl,
       } : null,
       zoho_lead_id: zohoLeadId,
       supabase_success: supabaseResult.status === 'fulfilled',
       zoho_success: zohoResult.status === 'fulfilled',
       is_hot_lead: hotLead,
       is_returning_lead: isReturningLead,
+      contract_signing_url: contractSigningUrl,
     });
   } catch (error) {
     console.error('Lead creation error:', error);

@@ -1511,6 +1511,32 @@ export default function Step6Summary() {
         </div>
       </div>
 
+      {/* Sign Contract Now - Only show if signing URL available */}
+      {state.contractSigningUrl && (
+        <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-2xl p-6 mb-6">
+          <div className="text-center mb-4">
+            <h3 className="text-white font-bold text-xl mb-2">Ready to Proceed?</h3>
+            <p className="text-gray-300 text-sm">
+              Sign your contract online and pay your deposit to secure your installation slot!
+            </p>
+          </div>
+          <a
+            href={state.contractSigningUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg hover:shadow-green-500/25 hover:scale-[1.02] transition-all"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-lg">Sign Contract Now</span>
+          </a>
+          <p className="text-gray-400 text-xs text-center mt-3">
+            30% deposit secures your installation date
+          </p>
+        </div>
+      )}
+
       {/* Primary CTA - WhatsApp */}
       <div className="bg-gradient-to-r from-[#25D366]/20 to-[#128C7E]/20 border border-[#25D366]/40 rounded-2xl p-6 mb-6">
         <div className="text-center mb-4">

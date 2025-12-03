@@ -58,6 +58,9 @@ export interface WizardState {
 
   // Generated documents
   proposalFileUrl: string | null;
+
+  // Contract signing (from backoffice)
+  contractSigningUrl: string | null;
 }
 
 export interface SolarPotential {
