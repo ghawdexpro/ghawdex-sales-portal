@@ -17,7 +17,9 @@ const LOCALITY_CENTERS: Record<string, { lat: number; lng: number }> = {
   'Sliema': { lat: 35.9125, lng: 14.5044 },
   "St Julian's": { lat: 35.9186, lng: 14.4903 },
   'Birkirkara': { lat: 35.8958, lng: 14.4611 },
-  'Gozo': { lat: 36.0444, lng: 14.2514 },
+  'Victoria (Gozo)': { lat: 36.0444, lng: 14.2397 },
+  'Marsalforn': { lat: 36.0722, lng: 14.2556 },
+  'Xlendi': { lat: 36.0283, lng: 14.2153 },
 };
 
 export default function Step1Location() {
@@ -323,7 +325,9 @@ export default function Step1Location() {
         const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
           componentRestrictions: { country: 'mt' },
           fields: ['geometry', 'formatted_address', 'name'],
-          types: ['address'],
+          // Using 'geocode' instead of 'address' to include Gozo locations
+          // which may not always be indexed as formal street addresses
+          types: ['geocode'],
         });
 
         autocomplete.addListener('place_changed', () => {
@@ -440,7 +444,7 @@ export default function Step1Location() {
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search address in Malta..."
+            placeholder="Search address in Malta or Gozo..."
             aria-label="Search for your address in Malta"
             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
           />
