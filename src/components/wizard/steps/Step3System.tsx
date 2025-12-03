@@ -9,19 +9,22 @@ import { recommendSystem, calculateTotalPriceWithGrant, formatCurrency, formatNu
 export default function Step3System() {
   const { state, dispatch } = useWizard();
   const [batteryOnlyMode, setBatteryOnlyMode] = useState(state.grantType === 'battery_only');
-  // Initialize with existing selection or compute recommended system
+  // Initialize with existing selection, recommended system, or default to 5 kWp
   const [selectedSystem, setSelectedSystem] = useState<SystemPackage | null>(() => {
     if (state.selectedSystem) return state.selectedSystem;
     if (state.grantType !== 'battery_only' && state.consumptionKwh) {
       return recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);
     }
-    return null;
+    // Default to 5 kWp Essential system
+    return SYSTEM_PACKAGES.find(s => s.id === 'essential-5kw') || SYSTEM_PACKAGES[1];
   });
-  const [withBattery, setWithBattery] = useState(state.withBattery || state.grantType === 'battery_only');
+  // Default to battery enabled with 10 kWh
+  const [withBattery, setWithBattery] = useState(state.withBattery !== undefined ? state.withBattery : true);
   const [selectedBattery, setSelectedBattery] = useState<BatteryOption | null>(
     state.batterySize ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize) || null : BATTERY_OPTIONS[1] // Default to 10kWh
   );
-  const [grantType, setGrantType] = useState<GrantType>(state.grantType || 'pv_only');
+  // Default to pv_battery grant since battery is enabled by default
+  const [grantType, setGrantType] = useState<GrantType>(state.grantType || 'pv_battery');
 
   const handleNext = () => {
     // For battery-only mode, don't require a solar system

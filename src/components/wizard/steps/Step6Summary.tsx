@@ -3,7 +3,7 @@
 import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
 import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
-import { formatCurrency, formatNumber, calculateCO2Offset } from '@/lib/calculations';
+import { formatCurrency, formatNumber } from '@/lib/calculations';
 import { getSessionToken } from '@/lib/wizard-session';
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 
@@ -29,9 +29,8 @@ export default function Step6Summary() {
     ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize)
     : null;
 
-  const co2Offset = state.selectedSystem
-    ? calculateCO2Offset(state.selectedSystem.annualProductionKwh)
-    : 0;
+  // Calculate 25-year lifetime earnings (more impactful than CO2)
+  const lifetimeEarnings = (state.annualSavings || 0) * 25;
 
   // Calculate actual grant amount (gross - net) for display
   // This is the ACTUAL grant, not the static grantAmount field on SystemPackage
@@ -599,7 +598,7 @@ export default function Step6Summary() {
           maxDischarge: '2.5 kW',
           weight: '63.8 kg',
           dimensions: '670 × 150 × 600 mm',
-          datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+          datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
         },
         'Huawei LUNA2000-10-S0': {
           usableCapacity: '10 kWh',
@@ -608,7 +607,7 @@ export default function Step6Summary() {
           maxDischarge: '5 kW',
           weight: '114 kg',
           dimensions: '670 × 150 × 960 mm',
-          datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+          datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
         },
         'Huawei LUNA2000-15-S0': {
           usableCapacity: '15 kWh',
@@ -617,7 +616,7 @@ export default function Step6Summary() {
           maxDischarge: '5 kW',
           weight: '164 kg',
           dimensions: '670 × 150 × 1320 mm',
-          datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+          datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
         },
       };
 
@@ -871,7 +870,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.4%',
         weight: '10.5 kg',
         dimensions: '365 × 365 × 156 mm',
-        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
+        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
       },
       'Huawei SUN2000-5KTL-L1': {
         maxDcPower: '7.5 kW',
@@ -879,7 +878,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.6%',
         weight: '10.5 kg',
         dimensions: '365 × 365 × 156 mm',
-        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
+        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
       },
       'Huawei SUN2000-10KTL-M1': {
         maxDcPower: '15 kW',
@@ -887,7 +886,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.6%',
         weight: '23.5 kg',
         dimensions: '525 × 470 × 262 mm',
-        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-8-20ktl-m1.pdf',
+        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-8-20ktl-m1.pdf',
       },
       'Huawei SUN2000-15KTL-M5': {
         maxDcPower: '22.5 kW',
@@ -895,7 +894,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.7%',
         weight: '27 kg',
         dimensions: '550 × 470 × 280 mm',
-        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-sun2000-12-25ktl-m5.pdf',
+        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-12-25ktl-m5.pdf',
       },
     };
 
@@ -908,7 +907,7 @@ export default function Step6Summary() {
         maxDischarge: '2.5 kW',
         weight: '63.8 kg',
         dimensions: '670 × 150 × 600 mm',
-        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
       },
       'Huawei LUNA2000-10-S0': {
         usableCapacity: '10 kWh',
@@ -917,7 +916,7 @@ export default function Step6Summary() {
         maxDischarge: '5 kW',
         weight: '114 kg',
         dimensions: '670 × 150 × 960 mm',
-        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
       },
       'Huawei LUNA2000-15-S0': {
         usableCapacity: '15 kWh',
@@ -926,7 +925,7 @@ export default function Step6Summary() {
         maxDischarge: '5 kW',
         weight: '164 kg',
         dimensions: '670 × 150 × 1320 mm',
-        datasheet: 'https://cdn.ghawdex.pro/datasheets/huawei-luna2000.pdf',
+        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
       },
     };
 
@@ -1017,8 +1016,8 @@ export default function Step6Summary() {
             <div class="label">Annual Production (kWh)</div>
           </div>
           <div class="perf-item">
-            <div class="value">${co2Offset}</div>
-            <div class="label">CO₂ Offset (tonnes/year)</div>
+            <div class="value" style="color: #22c55e;">${formatCurrency(lifetimeEarnings)}</div>
+            <div class="label">25-Year Earnings</div>
           </div>
           <div class="perf-item">
             <div class="value">25+</div>
@@ -1085,7 +1084,7 @@ export default function Step6Summary() {
           </tr>
         </table>
         <div class="datasheet-section">
-          <a href="https://cdn.ghawdex.pro/datasheets/solar-panels-450w.pdf" target="_blank" class="datasheet-link">
+          <a href="https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/solar-panels-450w.pdf" target="_blank" class="datasheet-link">
             📄 Download Panel Datasheet (PDF)
           </a>
         </div>
@@ -1386,9 +1385,9 @@ export default function Step6Summary() {
                 </div>
               </div>
               <div className="bg-white/5 rounded-xl p-4">
-                <div className="text-gray-400 text-sm">CO₂ Offset</div>
-                <div className="text-white font-semibold text-xl">
-                  {co2Offset} tonnes/year
+                <div className="text-gray-400 text-sm">25-Year Earnings</div>
+                <div className="text-green-400 font-semibold text-xl">
+                  {formatCurrency(lifetimeEarnings)}
                 </div>
               </div>
             </>

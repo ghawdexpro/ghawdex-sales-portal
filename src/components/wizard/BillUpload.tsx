@@ -12,51 +12,58 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(async (file: File) => {
+  const handleFiles = useCallback(async (files: File[]) => {
     setError(null);
     setIsUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      const uploadedUrls: string[] = [];
 
-      const response = await fetch('/api/upload/bill', {
-        method: 'POST',
-        body: formData,
-      });
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
 
-      const data = await response.json();
+        const response = await fetch('/api/upload/bill', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Upload failed');
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to upload ${file.name}`);
+        }
+
+        uploadedUrls.push(data.url);
       }
 
-      // Update state
+      // Update state with all URLs (comma-separated if multiple)
+      const allUrls = [...uploadedFiles, ...uploadedUrls];
       dispatch({
         type: 'SET_BILL_FILE',
-        payload: { billFileUrl: data.url },
+        payload: { billFileUrl: allUrls.join(',') },
       });
-      setUploadedFileName(file.name);
-      onUploadComplete?.(data.url);
+      setUploadedFiles(allUrls);
+      onUploadComplete?.(allUrls.join(','));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setIsUploading(false);
     }
-  }, [dispatch, onUploadComplete]);
+  }, [dispatch, onUploadComplete, uploadedFiles]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFiles(files);
     }
-  }, [handleFile]);
+  }, [handleFiles]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -73,9 +80,9 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFile(file);
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) {
+      handleFiles(files);
     }
   };
 
@@ -84,7 +91,7 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
       type: 'SET_BILL_FILE',
       payload: { billFileUrl: null },
     });
-    setUploadedFileName(null);
+    setUploadedFiles([]);
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -92,6 +99,7 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
   };
 
   // If already uploaded
+  const fileCount = state.billFileUrl ? state.billFileUrl.split(',').length : 0;
   if (state.billFileUrl) {
     return (
       <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
@@ -103,16 +111,18 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
               </svg>
             </div>
             <div>
-              <div className="text-white font-medium text-sm">Bill uploaded</div>
-              <div className="text-green-400 text-xs truncate max-w-[180px]">
-                {uploadedFileName || 'electricity-bill.pdf'}
+              <div className="text-white font-medium text-sm">
+                {fileCount === 1 ? 'Bill uploaded' : `${fileCount} files uploaded`}
+              </div>
+              <div className="text-green-400 text-xs">
+                {fileCount === 1 ? 'Electricity bill' : 'Electricity bills'}
               </div>
             </div>
           </div>
           <button
             onClick={handleRemove}
             className="text-gray-400 hover:text-white transition-colors p-2"
-            title="Remove file"
+            title="Remove files"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -157,6 +167,7 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
           ref={fileInputRef}
           type="file"
           accept=".jpg,.jpeg,.png,.webp,.pdf"
+          multiple
           onChange={handleInputChange}
           className="hidden"
         />
