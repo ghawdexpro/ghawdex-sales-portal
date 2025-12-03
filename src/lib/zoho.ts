@@ -43,6 +43,7 @@ interface ZohoLeadData {
   grant_type?: string;
   grant_amount?: number | null;
   proposal_file_url?: string | null;
+  notes?: string | null;
   // Equipment details
   panel_brand?: string | null;
   panel_model?: string | null;
@@ -150,6 +151,8 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Battery_Model: lead.battery_model || undefined,
     // Hot lead status - set when Facebook lead completes wizard
     Lead_Status: options?.isHotLead ? 'Hot - Qualified' : undefined,
+    // Customer notes
+    Description: lead.notes || undefined,
   };
 }
 

@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       total_price: body.total_price || null,
       monthly_payment: body.monthly_payment || null,
       annual_savings: body.annual_savings || null,
-      notes: body.notes || null,
+      notes: body.notes ? `[Customer note during application]: ${body.notes}` : null,
       zoho_lead_id: body.zoho_lead_id || null,
       status: 'new',
       source: body.source || 'sales-portal',
@@ -362,6 +362,7 @@ export async function POST(request: NextRequest) {
           monthly_payment: leadData.monthly_payment,
           annual_savings: leadData.annual_savings,
           proposal_file_url: leadData.proposal_file_url,
+          notes: leadData.notes,
           status: 'quoted',
         })
       ).then(value => ({ status: 'fulfilled' as const, value }))
@@ -401,6 +402,7 @@ export async function POST(request: NextRequest) {
         grant_type: leadData.grant_type,
         grant_amount: leadData.grant_amount,
         proposal_file_url: leadData.proposal_file_url,
+        notes: leadData.notes,
         // Equipment details
         panel_brand: leadData.panel_brand,
         panel_model: leadData.panel_model,
