@@ -411,6 +411,9 @@ export async function POST(request: NextRequest) {
         household_size: leadData.household_size,
         selected_system: leadData.selected_system,
         bill_file_url: leadData.bill_file_url,
+        grant_path: leadData.grant_path,
+        social_provider: leadData.social_provider,
+        coordinates: leadData.coordinates,
         // Equipment details
         panel_brand: leadData.panel_brand,
         panel_model: leadData.panel_model,

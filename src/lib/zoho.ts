@@ -51,6 +51,9 @@ interface ZohoLeadData {
   household_size?: number | null;
   selected_system?: string | null;
   bill_file_url?: string | null;
+  grant_path?: boolean;
+  social_provider?: string | null;
+  coordinates?: { lat: number; lng: number } | null;
   // Equipment details
   panel_brand?: string | null;
   panel_model?: string | null;
@@ -145,8 +148,11 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Portal_Source: lead.source || 'sales-portal',
     Lead_Source: 'Sales Portal',
     Grant_Type: lead.grant_type || undefined,
-    Grant_Amount: lead.grant_amount || undefined,
-    Proposal_URL: lead.proposal_file_url || undefined,
+    Grant_Amount_EUR: lead.grant_amount || undefined,
+    Quote_PDF_URL: lead.proposal_file_url || undefined,
+    Grant_Path: lead.grant_path ?? undefined,
+    Social_Provider: lead.social_provider || undefined,
+    Install_Coordinates: lead.coordinates ? `${lead.coordinates.lat},${lead.coordinates.lng}` : undefined,
     // Equipment details
     Panel_Brand: lead.panel_brand || undefined,
     Panel_Model: lead.panel_model || undefined,
