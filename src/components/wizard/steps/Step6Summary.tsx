@@ -1304,6 +1304,32 @@ export default function Step6Summary() {
 
       {/* Quote Card */}
       <div className={`bg-gradient-to-br ${isBatteryOnly ? 'from-purple-500/20 to-blue-500/20 border-purple-500/30' : 'from-amber-500/20 to-orange-500/20 border-amber-500/30'} border rounded-2xl p-6 mb-6`}>
+        {/* YOUR PRICE - Hero display at top */}
+        <div className={`bg-gradient-to-r ${isBatteryOnly ? 'from-purple-500/30 to-blue-500/30 border-purple-500/50' : 'from-amber-500/30 to-orange-500/30 border-amber-500/50'} rounded-xl p-4 mb-6 border`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`text-xs font-semibold uppercase tracking-wider ${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'} mb-1`}>Your Price</div>
+              <div className="text-white font-bold text-4xl sm:text-5xl tracking-tight">
+                {formatCurrency(state.totalPrice || 0)}
+              </div>
+              {(state.grantPath || isBatteryOnly) && displayGrantAmount > 0 && (
+                <div className="text-green-400 text-sm font-medium mt-1">
+                  <span className="inline-flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                    {formatCurrency(displayGrantAmount)} grant applied
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full ${isBatteryOnly ? 'bg-purple-500/30' : 'bg-amber-500/30'} flex items-center justify-center`}>
+              <svg className={`w-8 h-8 sm:w-10 sm:h-10 ${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* System info */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className={`${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'} text-sm font-medium mb-1`}>
@@ -1318,20 +1344,6 @@ export default function Step6Summary() {
                 : `${state.selectedSystem?.systemSizeKw} kWp • ${state.selectedSystem?.panels} panels`
               }
             </div>
-          </div>
-          <div className="text-right">
-            <div className={`${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'} text-sm font-medium mb-1`}>Total Price</div>
-            <div className="text-white text-3xl font-bold">
-              {formatCurrency(state.totalPrice || 0)}
-            </div>
-            {(state.grantPath || isBatteryOnly) && displayGrantAmount > 0 && (
-              <div className="text-green-400 text-sm">
-                {isBatteryOnly
-                  ? `After ${state.location === 'gozo' ? '95%' : '80%'}+ grant`
-                  : `Includes ${formatCurrency(displayGrantAmount)} grant`
-                }
-              </div>
-            )}
           </div>
         </div>
 

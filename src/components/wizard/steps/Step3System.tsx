@@ -423,13 +423,20 @@ export default function Step3System() {
           {/* Price Summary - show for both solar and battery-only modes */}
           {(selectedSystem || batteryOnlyMode) && (
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
-              <div>
-                <div className="text-gray-400 text-xs">Total Price</div>
-                <div className="text-white font-bold text-lg">{formatCurrency(priceDetails.totalPrice)}</div>
+              {/* YOUR PRICE - Hero display */}
+              <div className={`flex-1 bg-gradient-to-r ${batteryOnlyMode ? 'from-purple-500/20 to-blue-500/20' : 'from-amber-500/20 to-orange-500/20'} rounded-xl px-4 py-2 mr-3 border ${batteryOnlyMode ? 'border-purple-500/40' : 'border-amber-500/40'}`}>
+                <div className={`text-[10px] font-semibold uppercase tracking-wider ${batteryOnlyMode ? 'text-purple-400' : 'text-amber-400'}`}>Your Price</div>
+                <div className="text-white font-bold text-2xl sm:text-3xl tracking-tight">{formatCurrency(priceDetails.totalPrice)}</div>
                 {priceDetails.grantAmount > 0 && (
-                  <div className="text-green-400 text-[10px]">After {formatCurrency(priceDetails.grantAmount)} grant</div>
+                  <div className="text-green-400 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                      {formatCurrency(priceDetails.grantAmount)} grant applied
+                    </span>
+                  </div>
                 )}
               </div>
+              {/* Secondary info */}
               {batteryOnlyMode ? (
                 <div className="text-right">
                   <div className="text-gray-400 text-xs">Battery Storage</div>
@@ -444,11 +451,6 @@ export default function Step3System() {
                 <div className="text-green-400 font-bold text-lg">{formatCurrency(annualIncome)}/yr</div>
                 <div className="text-gray-500 text-[10px]">
                   @ €{fitRate.toFixed(3)}/kWh
-                  {grantType !== 'none' && selectedSystem && (
-                    <span className="text-amber-400/70 ml-1">
-                      (€{formatCurrency(Math.round(selectedSystem.annualProductionKwh * 0.15))} without grant)
-                    </span>
-                  )}
                 </div>
               </div>
               )}
