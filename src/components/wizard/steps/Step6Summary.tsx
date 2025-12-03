@@ -598,7 +598,7 @@ export default function Step6Summary() {
           maxDischarge: '2.5 kW',
           weight: '63.8 kg',
           dimensions: '670 × 150 × 600 mm',
-          datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
+          datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/LUNA2000-5-15-S0.pdf',
         },
         'Huawei LUNA2000-10-S0': {
           usableCapacity: '10 kWh',
@@ -607,7 +607,7 @@ export default function Step6Summary() {
           maxDischarge: '5 kW',
           weight: '114 kg',
           dimensions: '670 × 150 × 960 mm',
-          datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
+          datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/LUNA2000-5-15-S0.pdf',
         },
         'Huawei LUNA2000-15-S0': {
           usableCapacity: '15 kWh',
@@ -616,7 +616,7 @@ export default function Step6Summary() {
           maxDischarge: '5 kW',
           weight: '164 kg',
           dimensions: '670 × 150 × 1320 mm',
-          datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
+          datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/LUNA2000-5-15-S0.pdf',
         },
       };
 
@@ -870,7 +870,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.4%',
         weight: '10.5 kg',
         dimensions: '365 × 365 × 156 mm',
-        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
+        datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/SUN2000-3-10KTL-M1.pdf',
       },
       'Huawei SUN2000-5KTL-L1': {
         maxDcPower: '7.5 kW',
@@ -878,7 +878,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.6%',
         weight: '10.5 kg',
         dimensions: '365 × 365 × 156 mm',
-        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-3-6ktl-l1.pdf',
+        datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/SUN2000-3-10KTL-M1.pdf',
       },
       'Huawei SUN2000-10KTL-M1': {
         maxDcPower: '15 kW',
@@ -886,7 +886,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.6%',
         weight: '23.5 kg',
         dimensions: '525 × 470 × 262 mm',
-        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-8-20ktl-m1.pdf',
+        datasheet: 'https://solar.huawei.com/-/media/Solar/attachment/pdf/apac/datasheet/SUN2000-12-20KTL-M0.pdf',
       },
       'Huawei SUN2000-15KTL-M5': {
         maxDcPower: '22.5 kW',
@@ -894,7 +894,7 @@ export default function Step6Summary() {
         maxEfficiency: '98.7%',
         weight: '27 kg',
         dimensions: '550 × 470 × 280 mm',
-        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-sun2000-12-25ktl-m5.pdf',
+        datasheet: 'https://solar.huawei.com/-/media/Solar/attachment/pdf/apac/datasheet/SUN2000-12-20KTL-M0.pdf',
       },
     };
 
@@ -907,7 +907,7 @@ export default function Step6Summary() {
         maxDischarge: '2.5 kW',
         weight: '63.8 kg',
         dimensions: '670 × 150 × 600 mm',
-        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
+        datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/LUNA2000-5-15-S0.pdf',
       },
       'Huawei LUNA2000-10-S0': {
         usableCapacity: '10 kWh',
@@ -916,7 +916,7 @@ export default function Step6Summary() {
         maxDischarge: '5 kW',
         weight: '114 kg',
         dimensions: '670 × 150 × 960 mm',
-        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
+        datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/LUNA2000-5-15-S0.pdf',
       },
       'Huawei LUNA2000-15-S0': {
         usableCapacity: '15 kWh',
@@ -925,7 +925,7 @@ export default function Step6Summary() {
         maxDischarge: '5 kW',
         weight: '164 kg',
         dimensions: '670 × 150 × 1320 mm',
-        datasheet: 'https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/huawei-luna2000.pdf',
+        datasheet: 'https://solar.huawei.com/en-GB/download?p=/-/media/Solar/attachment/pdf/eu/datasheet/LUNA2000-5-15-S0.pdf',
       },
     };
 
@@ -1084,7 +1084,7 @@ export default function Step6Summary() {
           </tr>
         </table>
         <div class="datasheet-section">
-          <a href="https://epxeimwsheyttevwtjku.supabase.co/storage/v1/object/public/datasheets/solar-panels-450w.pdf" target="_blank" class="datasheet-link">
+          <a href="https://www.jasolar.com/uploadfile/2021/0706/20210706053524693.pdf" target="_blank" class="datasheet-link">
             📄 Download Panel Datasheet (PDF)
           </a>
         </div>
