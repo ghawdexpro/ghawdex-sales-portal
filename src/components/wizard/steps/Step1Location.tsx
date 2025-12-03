@@ -9,7 +9,15 @@ import { detectLocation } from '@/lib/types';
 // Malta center coordinates
 const MALTA_CENTER = { lat: 35.9375, lng: 14.3754 };
 const INITIAL_ZOOM = 11;
-const MAX_ZOOM = 20;
+
+// Quick-select locality centers (zoom to area, user clicks to pin exact location)
+const LOCALITY_CENTERS: Record<string, { lat: number; lng: number }> = {
+  'Valletta': { lat: 35.8989, lng: 14.5146 },
+  'Sliema': { lat: 35.9125, lng: 14.5044 },
+  "St Julian's": { lat: 35.9186, lng: 14.4903 },
+  'Birkirkara': { lat: 35.8958, lng: 14.4611 },
+  'Gozo': { lat: 36.0444, lng: 14.2514 },
+};
 
 export default function Step1Location() {
   const { state, dispatch } = useWizard();
@@ -19,7 +27,7 @@ export default function Step1Location() {
   const [selectedAddress, setSelectedAddress] = useState(state.address || '');
   const [mapZoom, setMapZoom] = useState(INITIAL_ZOOM);
   const [loadError, setLoadError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  // searchQuery state removed - Google Autocomplete manages input value directly
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
 
@@ -139,7 +147,7 @@ export default function Step1Location() {
         if (pos) {
           const address = await reverseGeocode(pos.lat(), pos.lng());
           setSelectedAddress(address);
-          setSearchQuery('');
+          if (searchInputRef.current) searchInputRef.current.value = '';
           dispatch({
             type: 'SET_ADDRESS',
             payload: {
@@ -155,7 +163,7 @@ export default function Step1Location() {
     // Get address and update state
     const address = await reverseGeocode(lat, lng);
     setSelectedAddress(address);
-    setSearchQuery('');
+    if (searchInputRef.current) searchInputRef.current.value = '';
 
     dispatch({
       type: 'SET_ADDRESS',
@@ -427,20 +435,19 @@ export default function Step1Location() {
             ref={searchInputRef}
             type="text"
             placeholder="Search address in Malta..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search for your address in Malta"
             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
           />
         </div>
         <button
           onClick={handleUseMyLocation}
           disabled={isLocating}
+          aria-label="Use my current location"
           className={`rounded-xl px-4 py-3 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap ${
             mapZoom <= INITIAL_ZOOM + 2 && !state.coordinates
               ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-500/50 hover:border-amber-500 hover:bg-amber-500/30'
               : 'bg-white/5 border border-white/10 hover:bg-white/10'
           }`}
-          title="Use my current location"
         >
           {isLocating ? (
             <svg className="animate-spin w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24">
@@ -453,25 +460,35 @@ export default function Step1Location() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
             </svg>
           )}
-          <span className="hidden sm:inline">{isLocating ? 'Locating...' : 'Use My Location'}</span>
+          <span className="text-sm">{isLocating ? 'Locating...' : <><span className="sm:hidden">Locate</span><span className="hidden sm:inline">Use My Location</span></>}</span>
         </button>
       </div>
 
       {/* Google attribution and quick-select localities */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap gap-2">
-          {['Valletta', 'Sliema', "St Julian's", 'Birkirkara', 'Gozo'].map((locality) => (
+          {Object.keys(LOCALITY_CENTERS).map((locality) => (
             <button
               key={locality}
               onClick={() => {
-                if (searchInputRef.current) {
-                  searchInputRef.current.value = locality + ', Malta';
-                  searchInputRef.current.focus();
-                  // Trigger input event for autocomplete
-                  const event = new Event('input', { bubbles: true });
-                  searchInputRef.current.dispatchEvent(event);
+                const coords = LOCALITY_CENTERS[locality];
+                if (googleMapRef.current && coords) {
+                  // Zoom to locality center at neighborhood level
+                  googleMapRef.current.panTo(coords);
+                  googleMapRef.current.setZoom(15);
+                  // Clear any existing marker so user can place new one
+                  if (markerRef.current) {
+                    markerRef.current.setMap(null);
+                    markerRef.current = null;
+                  }
+                  setSelectedAddress('');
+                  dispatch({
+                    type: 'SET_ADDRESS',
+                    payload: { address: '', coordinates: null, location: detectLocation(coords.lat) },
+                  });
                 }
               }}
+              aria-label={`Zoom to ${locality}`}
               className="text-xs px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
             >
               {locality}
@@ -508,10 +525,15 @@ export default function Step1Location() {
         />
 
         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2">
-          <div className="text-white text-sm">
-            Zoom: {mapZoom}/{MAX_ZOOM}
-            {mapZoom < 16 && (
-              <span className="text-amber-400 ml-2">Zoom in more</span>
+          <div className="text-sm">
+            {state.coordinates ? (
+              <span className="text-green-400">Location selected</span>
+            ) : mapZoom >= 19 ? (
+              <span className="text-green-400">Click to place pin</span>
+            ) : mapZoom >= 16 ? (
+              <span className="text-amber-400">Almost there - zoom in a bit more</span>
+            ) : (
+              <span className="text-gray-400">Click or search to find your property</span>
             )}
           </div>
         </div>
