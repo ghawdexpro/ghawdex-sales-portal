@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createLead, updateLead, getLeadByZohoId } from '@/lib/supabase';
-import { createOrUpdateZohoLead } from '@/lib/zoho';
+import { createLead, updateLead, findExistingLead } from '@/lib/supabase';
+import { createOrUpdateZohoLead, findExistingZohoLead } from '@/lib/zoho';
 import { Lead } from '@/lib/types';
 import {
   getWizardSessionByToken,
@@ -180,6 +180,110 @@ async function triggerN8nWebhook(lead: Lead) {
   }
 }
 
+/**
+ * Detect if this is a "hot lead" - came from Facebook/external source AND completed wizard
+ * Hot leads are high priority because they:
+ * 1. Clicked on an ad (showed initial interest)
+ * 2. Received our email with wizard link
+ * 3. Completed the full quote wizard (high intent)
+ */
+function isHotLead(lead: Partial<Lead>, source?: string, existingLead?: Lead | null): boolean {
+  const leadSource = source?.toLowerCase() || lead.source?.toLowerCase() || '';
+
+  // Check if lead came from Facebook or other external ad sources
+  const isFromExternalSource =
+    leadSource.includes('facebook') ||
+    leadSource.includes('fb') ||
+    leadSource.includes('instagram') ||
+    leadSource.includes('ig') ||
+    leadSource.includes('meta') ||
+    leadSource.includes('google_ads') ||
+    leadSource.includes('ad_') ||
+    existingLead !== null; // If we found an existing lead, they came back to complete
+
+  // Check if wizard was completed (has system selection and price)
+  const hasCompletedWizard =
+    lead.address &&
+    lead.address.length > 5 &&
+    lead.system_size_kw &&
+    lead.system_size_kw > 0 &&
+    lead.total_price &&
+    lead.total_price > 0;
+
+  return isFromExternalSource && !!hasCompletedWizard;
+}
+
+/**
+ * Send priority notification for hot leads (Facebook/ad leads that complete wizard)
+ * Sends to both admin and team channels
+ */
+async function sendHotLeadNotification(lead: Lead) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  const teamChatId = process.env.TELEGRAM_TEAM_CHAT_ID;
+
+  if (!botToken || !adminChatId) {
+    console.log('Telegram not configured for hot lead notification');
+    return;
+  }
+
+  const message = `🔥🔥🔥 *HOT LEAD - PRIORITY!* 🔥🔥🔥
+
+⚡ *Lead Completed Full Quote Wizard!*
+
+👤 *Name:* ${lead.name}
+📧 *Email:* ${lead.email}
+📱 *Phone:* ${lead.phone}
+
+📍 *Address:* ${lead.address}
+🔆 *System:* ${lead.system_size_kw} kWp
+🔋 *Battery:* ${lead.with_battery ? `${lead.battery_size_kwh} kWh` : 'No'}
+🎫 *Grant:* ${lead.grant_type || 'pv_only'} (€${lead.grant_amount?.toLocaleString() || '0'})
+💳 *Payment:* ${lead.payment_method === 'loan' ? `Loan (${lead.loan_term ? lead.loan_term/12 : '?'} years)` : 'Cash'}
+
+💰 *Total Price:* €${lead.total_price?.toLocaleString()}
+📊 *Annual Savings:* €${lead.annual_savings?.toLocaleString() || 'TBD'}
+
+🎯 *This customer:*
+✅ Showed interest (clicked ad/received email)
+✅ Came to our wizard
+✅ Completed full quote
+
+📞 *ACTION REQUIRED:* Call within 15 minutes!
+
+🔗 Source: ${lead.source || 'Sales Portal'}`;
+
+  try {
+    // Send to admin
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: message,
+        parse_mode: 'Markdown',
+      }),
+    });
+
+    // Also send to team channel if configured
+    if (teamChatId) {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: teamChatId,
+          text: message,
+          parse_mode: 'Markdown',
+        }),
+      });
+    }
+
+    console.log('Hot lead notification sent successfully');
+  } catch (error) {
+    console.error('Failed to send hot lead notification:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -236,11 +340,48 @@ export async function POST(request: NextRequest) {
     // Check if this is a prefilled user (from Zoho CRM link)
     const isPrefilledUser = !!body.zoho_lead_id;
     let existingLead: Lead | null = null;
+    let foundZohoLeadId: string | null = body.zoho_lead_id || null;
 
-    // For prefilled users, find existing lead in Supabase
-    if (isPrefilledUser) {
-      existingLead = await getLeadByZohoId(body.zoho_lead_id);
+    // Enhanced lead matching: search by zoho_id, email, phone, or name
+    // This prevents duplicates when a Facebook lead fills out the wizard
+    console.log('Searching for existing lead by multiple criteria...');
+
+    // First, try to find in Supabase
+    existingLead = await findExistingLead({
+      zoho_lead_id: body.zoho_lead_id,
+      email: body.email,
+      phone: body.phone,
+      name: body.name,
+    });
+
+    // If not found by zoho_id but found by other criteria, get the zoho_lead_id from existing lead
+    if (existingLead && existingLead.zoho_lead_id && !foundZohoLeadId) {
+      foundZohoLeadId = existingLead.zoho_lead_id;
+      console.log('Found existing Supabase lead, using its zoho_lead_id:', foundZohoLeadId);
     }
+
+    // If still no zoho_lead_id, search in Zoho CRM
+    if (!foundZohoLeadId) {
+      const zohoSearchResult = await findExistingZohoLead({
+        zoho_lead_id: body.zoho_lead_id,
+        email: body.email,
+        phone: body.phone,
+        name: body.name,
+      });
+
+      if (zohoSearchResult) {
+        foundZohoLeadId = zohoSearchResult.id;
+        console.log(`Found existing Zoho ${zohoSearchResult.type}:`, foundZohoLeadId);
+      }
+    }
+
+    // Update leadData with found zoho_lead_id for proper CRM sync
+    if (foundZohoLeadId && !leadData.zoho_lead_id) {
+      leadData.zoho_lead_id = foundZohoLeadId;
+    }
+
+    // Determine if this is a returning lead (found existing record)
+    const isReturningLead = existingLead !== null || isPrefilledUser;
 
     // Handle Supabase: UPDATE existing or CREATE new
     let supabaseResult: PromiseSettledResult<Lead | null>;
@@ -278,7 +419,14 @@ export async function POST(request: NextRequest) {
         .catch(reason => ({ status: 'rejected' as const, reason }));
     }
 
+    // Detect if this is a hot lead (came from Facebook/ad + completed wizard)
+    const hotLead = isHotLead(leadData, body.source, existingLead);
+    if (hotLead) {
+      console.log('🔥 Hot lead detected! Will set Lead_Status to Hot - Qualified');
+    }
+
     // Update Zoho CRM (createOrUpdateZohoLead handles both create/update)
+    // Pass isHotLead option to set Lead_Status for high-intent leads
     const zohoResult = await Promise.resolve(
       createOrUpdateZohoLead({
         name: leadData.name,
@@ -307,7 +455,7 @@ export async function POST(request: NextRequest) {
         inverter_model: leadData.inverter_model,
         battery_brand: leadData.battery_brand,
         battery_model: leadData.battery_model,
-      })
+      }, { isHotLead: hotLead })
     ).then(value => ({ status: 'fulfilled' as const, value }))
      .catch(reason => ({ status: 'rejected' as const, reason }));
 
@@ -350,14 +498,22 @@ export async function POST(request: NextRequest) {
 
     // Always send Telegram if at least one system succeeded
     if (lead || zohoLeadId) {
-      Promise.all([
-        sendTelegramNotification(notificationLead, {
-          isQuoteCompletion: isPrefilledUser,
-          priority,
-          prefillLink,
-        }),
-        lead ? triggerN8nWebhook(lead) : Promise.resolve(),
-      ]).catch(console.error);
+      // For hot leads, send priority notification instead of regular notification
+      if (hotLead) {
+        Promise.all([
+          sendHotLeadNotification(notificationLead),
+          lead ? triggerN8nWebhook(lead) : Promise.resolve(),
+        ]).catch(console.error);
+      } else {
+        Promise.all([
+          sendTelegramNotification(notificationLead, {
+            isQuoteCompletion: isPrefilledUser || isReturningLead,
+            priority,
+            prefillLink,
+          }),
+          lead ? triggerN8nWebhook(lead) : Promise.resolve(),
+        ]).catch(console.error);
+      }
     }
 
 // Link wizard session to lead (if session token provided)
@@ -398,6 +554,8 @@ export async function POST(request: NextRequest) {
       zoho_lead_id: zohoLeadId,
       supabase_success: supabaseResult.status === 'fulfilled',
       zoho_success: zohoResult.status === 'fulfilled',
+      is_hot_lead: hotLead,
+      is_returning_lead: isReturningLead,
     });
   } catch (error) {
     console.error('Lead creation error:', error);
