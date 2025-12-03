@@ -306,7 +306,7 @@ git commit -m "chore: migrate to unified Supabase database (epxeimwsheyttevwtjku
 ---
 
 ## STAGE 5: Update Backoffice
-**Checkpoint**: [ ] Complete
+**Checkpoint**: [x] Complete (2024-12-03) - Removed portal-sync cron, updated docs
 
 ### 5A: Disable Portal Sync Cron
 In `/Users/maciejpopiel/ghawdex-backoffice`:
@@ -318,7 +318,7 @@ Document the unified database architecture.
 ---
 
 ## STAGE 6: Verification & Cleanup
-**Checkpoint**: [ ] Complete
+**Checkpoint**: [x] Complete (2024-12-03)
 
 ### 6A: Verify Migration
 ```bash
