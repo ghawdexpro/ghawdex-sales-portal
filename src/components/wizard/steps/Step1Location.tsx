@@ -336,7 +336,25 @@ export default function Step1Location() {
           if (place.geometry?.location) {
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
-            placeMarkerAt(lat, lng, 19);
+
+            // Use viewport for areas (localities), fixed zoom for addresses
+            if (place.geometry.viewport && googleMapRef.current) {
+              // Fit to the place's suggested viewport (great for localities)
+              googleMapRef.current.fitBounds(place.geometry.viewport);
+              // Clear any existing marker - let user click to pin exact location
+              if (markerRef.current) {
+                markerRef.current.setMap(null);
+                markerRef.current = null;
+              }
+              setSelectedAddress('');
+              dispatch({
+                type: 'SET_ADDRESS',
+                payload: { address: '', coordinates: null, googleMapsLink: null, location: detectLocation(lat) },
+              });
+            } else {
+              // Specific address - zoom in and place marker
+              placeMarkerAt(lat, lng, 19);
+            }
           }
         });
 
