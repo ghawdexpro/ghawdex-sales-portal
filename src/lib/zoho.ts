@@ -13,6 +13,7 @@ interface ZohoLeadData {
   email: string;
   phone: string;
   address?: string;
+  google_maps_link?: string | null;
   system_size_kw?: number | null;
   total_price?: number | null;
   annual_savings?: number | null;
@@ -99,6 +100,7 @@ function mapToZohoFields(lead: ZohoLeadData): Record<string, unknown> {
     Email: lead.email,
     Phone: lead.phone,
     Street: lead.address || undefined,
+    Google_Maps_Link: lead.google_maps_link || undefined,
     System_Size: lead.system_size_kw || undefined,
     Quote_Amount: lead.total_price || undefined,
     Annual_Savings: lead.annual_savings || undefined,

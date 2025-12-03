@@ -9,6 +9,7 @@ export interface WizardState {
   // Step 1: Address
   address: string;
   coordinates: { lat: number; lng: number } | null;
+  googleMapsLink: string | null;
   location: Location;
 
   // Step 2: Roof Analysis
@@ -106,6 +107,7 @@ export interface Lead {
   phone: string;
   address: string;
   coordinates: { lat: number; lng: number } | null;
+  google_maps_link: string | null;
   household_size: number | null;
   monthly_bill: number | null;
   consumption_kwh: number | null;
@@ -172,6 +174,7 @@ export interface WizardSession {
   // Step 1: Location
   address: string | null;
   coordinates: { lat: number; lng: number } | null;
+  google_maps_link: string | null;
   location: Location | null;
 
   // Step 1→2: Solar analysis

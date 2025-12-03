@@ -12,6 +12,7 @@ const initialState: WizardState = {
   step: 1,
   address: '',
   coordinates: null,
+  googleMapsLink: null,
   location: 'malta',
   roofArea: null,
   maxPanels: null,
@@ -48,7 +49,7 @@ type WizardAction =
   | { type: 'SET_STEP'; payload: number }
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
-  | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null; location: Location } }
+  | { type: 'SET_ADDRESS'; payload: { address: string; coordinates: { lat: number; lng: number } | null; googleMapsLink: string | null; location: Location } }
   | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null; isFallback?: boolean } }
   | { type: 'SET_CONSUMPTION'; payload: { householdSize: number; monthlyBill: number; consumptionKwh: number } }
   | { type: 'SET_BILL_FILE'; payload: { billFileUrl: string | null } }

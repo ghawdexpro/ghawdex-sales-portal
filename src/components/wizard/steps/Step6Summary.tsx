@@ -166,6 +166,7 @@ export default function Step6Summary() {
             phone: state.phone,
             address: state.address,
             coordinates: state.coordinates,
+            google_maps_link: state.googleMapsLink,
             household_size: state.householdSize,
             monthly_bill: state.monthlyBill,
             consumption_kwh: state.consumptionKwh,
@@ -209,7 +210,7 @@ export default function Step6Summary() {
     };
 
     createLeadForPrefilledUser();
-  }, [state.isPrefilledLead, state.fullName, state.email, state.phone, state.address, state.coordinates, state.householdSize, state.monthlyBill, state.consumptionKwh, state.roofArea, state.selectedSystem, state.withBattery, battery, state.grantPath, state.grantType, state.paymentMethod, state.loanTerm, state.totalPrice, state.monthlyPayment, state.annualSavings, state.zohoLeadId, isBatteryOnly]);
+  }, [state.isPrefilledLead, state.fullName, state.email, state.phone, state.address, state.coordinates, state.googleMapsLink, state.householdSize, state.monthlyBill, state.consumptionKwh, state.roofArea, state.selectedSystem, state.withBattery, battery, state.grantPath, state.grantType, state.paymentMethod, state.loanTerm, state.totalPrice, state.monthlyPayment, state.annualSavings, state.zohoLeadId, isBatteryOnly]);
 
   const handleWhatsApp = () => {
     const message = encodeURIComponent(

@@ -11,6 +11,11 @@ const MALTA_CENTER = { lat: 35.9375, lng: 14.3754 };
 const INITIAL_ZOOM = 11;
 const MAX_ZOOM = 20;
 
+// Generate Google Maps link from coordinates
+function generateGoogleMapsLink(lat: number, lng: number): string {
+  return `https://www.google.com/maps?q=${lat},${lng}`;
+}
+
 export default function Step1Location() {
   const { state, dispatch } = useWizard();
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +70,7 @@ export default function Step1Location() {
             payload: {
               address,
               coordinates: { lat: pos.lat(), lng: pos.lng() },
+              googleMapsLink: generateGoogleMapsLink(pos.lat(), pos.lng()),
               location: detectLocation(pos.lat()),
             },
           });
@@ -81,6 +87,7 @@ export default function Step1Location() {
       payload: {
         address,
         coordinates: { lat, lng },
+        googleMapsLink: generateGoogleMapsLink(lat, lng),
         location: detectLocation(lat),
       },
     });
@@ -103,7 +110,7 @@ export default function Step1Location() {
       setSelectedAddress('');
       dispatch({
         type: 'SET_ADDRESS',
-        payload: { address: '', coordinates: null, location: 'malta' },
+        payload: { address: '', coordinates: null, googleMapsLink: null, location: 'malta' },
       });
       return;
     }
@@ -145,6 +152,7 @@ export default function Step1Location() {
             payload: {
               address,
               coordinates: { lat: pos.lat(), lng: pos.lng() },
+              googleMapsLink: generateGoogleMapsLink(pos.lat(), pos.lng()),
               location: detectLocation(pos.lat()),
             },
           });
@@ -162,6 +170,7 @@ export default function Step1Location() {
       payload: {
         address,
         coordinates: { lat, lng },
+        googleMapsLink: generateGoogleMapsLink(lat, lng),
         location: detectLocation(lat),
       },
     });
@@ -283,6 +292,7 @@ export default function Step1Location() {
                 payload: {
                   address,
                   coordinates: { lat: pos.lat(), lng: pos.lng() },
+                  googleMapsLink: generateGoogleMapsLink(pos.lat(), pos.lng()),
                   location: detectLocation(pos.lat()),
                 },
               });
@@ -396,7 +406,7 @@ export default function Step1Location() {
     setSelectedAddress('');
     dispatch({
       type: 'SET_ADDRESS',
-      payload: { address: '', coordinates: null, location: 'malta' },
+      payload: { address: '', coordinates: null, googleMapsLink: null, location: 'malta' },
     });
     if (googleMapRef.current) {
       googleMapRef.current.setCenter(MALTA_CENTER);
