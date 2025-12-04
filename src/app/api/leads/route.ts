@@ -19,8 +19,12 @@ import {
 } from '@/lib/telegram';
 
 // Generate HMAC token for lead signing URL (same algorithm as backoffice)
-function generateLeadSigningToken(leadId: string): string {
-  const secret = process.env.PORTAL_CONTRACT_SECRET || process.env.CRON_SECRET || 'ghawdex-fallback';
+function generateLeadSigningToken(leadId: string): string | null {
+  const secret = process.env.PORTAL_CONTRACT_SECRET || process.env.CRON_SECRET;
+  if (!secret) {
+    console.error('PORTAL_CONTRACT_SECRET or CRON_SECRET not configured - fallback URLs disabled');
+    return null;
+  }
   const timestamp = Date.now().toString();
   const payload = `${leadId}:${timestamp}`;
   const hmac = crypto.createHmac('sha256', secret)
@@ -32,9 +36,10 @@ function generateLeadSigningToken(leadId: string): string {
 }
 
 // Build fallback signing URL for lead
-function buildFallbackSigningUrl(leadId: string): string {
+function buildFallbackSigningUrl(leadId: string): string | null {
   const backofficeUrl = process.env.BACKOFFICE_URL || 'https://bo.ghawdex.pro';
   const token = generateLeadSigningToken(leadId);
+  if (!token) return null;
   return `${backofficeUrl}/sign/lead/${leadId}?t=${token}`;
 }
 
@@ -390,7 +395,7 @@ export async function POST(request: NextRequest) {
           proposal_file_url: leadData.proposal_file_url,
           bill_file_url: leadData.bill_file_url,
           notes: leadData.notes,
-          status: 'quoted',
+          status: 'qualified',
         })
       ).then(value => ({ status: 'fulfilled' as const, value }))
        .catch(reason => ({ status: 'rejected' as const, reason }));

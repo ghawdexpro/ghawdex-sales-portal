@@ -1324,11 +1324,11 @@ export default function Step6Summary() {
       {/* Quote Card */}
       <div className={`bg-gradient-to-br ${isBatteryOnly ? 'from-purple-500/20 to-blue-500/20 border-purple-500/30' : 'from-amber-500/20 to-orange-500/20 border-amber-500/30'} border rounded-2xl p-6 mb-6`}>
         {/* YOUR PRICE - Hero display at top */}
-        <div className={`bg-gradient-to-r ${isBatteryOnly ? 'from-purple-500/30 to-blue-500/30 border-purple-500/50' : 'from-amber-500/30 to-orange-500/30 border-amber-500/50'} rounded-xl p-4 mb-6 border`}>
+        <div className={`bg-gradient-to-r ${isBatteryOnly ? 'from-purple-500/40 to-blue-500/40 border-purple-400' : 'from-amber-500/40 to-orange-500/40 border-amber-400'} rounded-xl p-5 mb-6 border-2 ${isBatteryOnly ? 'shadow-xl shadow-purple-500/30' : 'shadow-xl shadow-amber-500/30'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <div className={`text-xs font-semibold uppercase tracking-wider ${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'} mb-1`}>Your Price</div>
-              <div className="text-white font-bold text-4xl sm:text-5xl tracking-tight">
+              <div className={`text-xs font-semibold uppercase tracking-wider ${isBatteryOnly ? 'text-purple-300' : 'text-amber-300'} mb-1`}>Your Price</div>
+              <div className={`font-bold text-4xl sm:text-5xl tracking-tight ${isBatteryOnly ? 'text-purple-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400'}`}>
                 {formatCurrency(state.totalPrice || 0)}
               </div>
               {(state.grantPath || isBatteryOnly) && displayGrantAmount > 0 && (

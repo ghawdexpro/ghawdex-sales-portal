@@ -444,10 +444,10 @@ export default function Step1Location() {
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-4 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">
-          Find your property
+          Pin Your Exact Roof
         </h1>
         <p className="text-gray-400 text-sm mt-2">
-          Search for your address, use your location, or click on the map
+          Click directly on your roof for accurate solar analysis
         </p>
       </div>
 
@@ -473,12 +473,12 @@ export default function Step1Location() {
           aria-label="Use my current location"
           className={`rounded-xl px-4 py-3 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap ${
             mapZoom <= INITIAL_ZOOM + 2 && !state.coordinates
-              ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-500/50 hover:border-amber-500 hover:bg-amber-500/30'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-amber-500/25'
               : 'bg-white/5 border border-white/10 hover:bg-white/10'
           }`}
         >
           {isLocating ? (
-            <svg className="animate-spin w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
@@ -488,13 +488,13 @@ export default function Step1Location() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
             </svg>
           )}
-          <span className="text-sm">{isLocating ? 'Locating...' : <><span className="sm:hidden">Locate</span><span className="hidden sm:inline">Use My Location</span></>}</span>
+          <span className="text-sm font-medium">{isLocating ? 'Finding you...' : <><span className="sm:hidden">Find Me</span><span className="hidden sm:inline">Find My Location</span></>}</span>
         </button>
       </div>
 
       {/* Google attribution and quick-select localities */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="hidden sm:flex flex-wrap gap-2">
           {Object.keys(LOCALITY_CENTERS).map((locality) => (
             <button
               key={locality}

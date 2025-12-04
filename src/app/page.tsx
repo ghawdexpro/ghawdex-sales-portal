@@ -76,6 +76,24 @@ function Wizard({ onClose, prefillData }: { onClose: () => void; prefillData: Pr
 
 function HomeContent() {
   const searchParams = useSearchParams();
+  const ctaButtonRef = useRef<HTMLButtonElement>(null);
+  const [showStickyBtn, setShowStickyBtn] = useState(false);
+
+  // Intersection Observer for sticky CTA
+  useEffect(() => {
+    if (!ctaButtonRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show sticky button when hero CTA is not visible
+        setShowStickyBtn(!entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+
+    observer.observe(ctaButtonRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Compute prefill data from URL params (derived state, no effect needed)
   const initialPrefillData = useMemo((): PrefillData | null => {
@@ -153,9 +171,9 @@ function HomeContent() {
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-              Get Your Free Solar Quote
+              Stop Feeding Enemalta
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
-                In Under 2 Minutes
+                Calculate Your Savings Now
               </span>
             </h1>
 
@@ -166,10 +184,11 @@ function HomeContent() {
 
             {/* CTA Button */}
             <button
+              ref={ctaButtonRef}
               onClick={handleStart}
               className="group relative inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 hover:scale-105"
             >
-              <span>Get My Free Quote</span>
+              <span>Calculate My Savings</span>
               <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -262,6 +281,28 @@ function HomeContent() {
               <p className="text-gray-400 text-sm sm:text-base">Sign digitally and we&apos;ll schedule your installation</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sticky CTA Bar */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0a0a0a]/95 to-[#1a1a2e]/95 backdrop-blur-md border-t border-white/10 p-4 transition-all duration-300 ${
+          showStickyBtn ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+        }`}
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <p className="hidden sm:block text-white text-sm">
+            Stop paying too much for electricity
+          </p>
+          <button
+            onClick={handleStart}
+            className="flex-1 sm:flex-none group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold text-sm sm:text-base px-6 py-3 rounded-full hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300"
+          >
+            <span>Calculate My Savings</span>
+            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

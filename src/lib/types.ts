@@ -132,7 +132,7 @@ export interface Lead {
   annual_savings: number | null;
   notes: string | null;
   zoho_lead_id: string | null;
-  status: 'new' | 'contacted' | 'quoted' | 'signed' | 'installed' | 'lost';
+  status: 'new' | 'contacted' | 'qualified' | 'signed' | 'installed' | 'lost';
   source: string;
   bill_file_url: string | null;
   proposal_file_url: string | null;

@@ -1,115 +1,230 @@
 # Facebook Lead Ads Integration - TODO
 
-> **Last Updated:** 2025-12-03
-> **Status:** Mostly Complete - One manual step remaining
+> **Last Updated:** 2025-12-04
+> **Status:** Code Complete - Manual Zoho setup + testing required
 
 ---
 
-## ✅ COMPLETED AUTOMATICALLY
+## SYSTEM STATUS
 
-### 1. Code Merged & Deployed
-- [x] Branch merged to main
-- [x] Deployed to Railway
-- [x] Gozo address autocomplete fixed
+### Code Implementation (All Complete)
 
-### 2. Zoho CRM - "Hot - Qualified" Status
-- [x] Status auto-created via API (created when first lead uses it)
+| Component | Status | Location |
+|-----------|--------|----------|
+| Hot lead detection | ✅ Done | `src/app/api/leads/route.ts:243-267` |
+| Lead deduplication (Supabase) | ✅ Done | `src/lib/supabase.ts:120-222` |
+| Lead deduplication (Zoho) | ✅ Done | `src/lib/zoho.ts` - `findExistingZohoLead()` |
+| Lead_Status "Hot - Qualified" | ✅ Done | `src/lib/zoho.ts:166` |
+| 3-tier Telegram notifications | ✅ Done | `src/lib/telegram/router.ts` |
+| Phone normalization (Malta) | ✅ Done | Both `supabase.ts` and `zoho.ts` |
 
-### 3. Email Template Created
-- [x] Template ID: `885227000000994001`
-- [x] Name: "Facebook Lead - Wizard Invitation"
-- [x] Sends wizard link with pre-filled customer data
+### Database Verification (Just Tested)
 
-### 4. Environment Variables
-- [x] `ZOHO_REFRESH_TOKEN` updated with expanded scopes
-- [x] `TELEGRAM_TEAM_CHAT_ID` already configured (-5000982375)
+| Check | Result |
+|-------|--------|
+| No duplicate emails | ✅ Verified |
+| Zoho sync working | ✅ Leads have `zoho_lead_id` |
+| Facebook leads exist | ❌ None yet (no FB ads running) |
 
 ---
 
-## ⏳ MANUAL STEP REQUIRED
+## MANUAL SETUP REQUIRED
 
-### Create Workflow Rule in Zoho CRM
+### 1. Zoho CRM Workflow Rule (ONE-TIME)
 
-The Workflow API requires additional OAuth scopes not available via API. Create manually:
+The Workflow API requires OAuth scopes we don't have. Create manually:
 
-1. Go to **Zoho CRM** → **Setup** (⚙️) → **Automation** → **Workflow Rules**
+1. **Zoho CRM** → **Setup** (⚙️) → **Automation** → **Workflow Rules**
 2. Click **+ Create Rule**
 3. Configure:
    - **Module:** Leads
    - **Rule Name:** `Send Wizard Link to Facebook Leads`
    - **When:** On a record action → **Create**
-   - **Condition:** Lead Source **equals** "Facebook" **OR** "Facebook Lead Ads"
+   - **Condition:**
+     ```
+     Lead Source equals "Facebook"
+     OR Lead Source equals "Facebook Lead Ads"
+     OR Portal_Source contains "facebook"
+     ```
 4. Add **Instant Action** → **Email Notification**
-   - Select template: **"Facebook Lead - Wizard Invitation"**
+   - Template: **"Facebook Lead - Wizard Invitation"** (ID: `885227000000994001`)
    - Send to: Lead Email
-5. **Save and Activate** the rule
+5. **Save and Activate**
+
+### 2. Facebook Lead Ads Connection
+
+Choose one:
+
+**Option A: Zoho Native Integration**
+- Zoho CRM → Marketplace → "Facebook Lead Ads"
+- Connect Facebook account
+- Map fields: Name, Email, Phone
+- Set Lead Source = "Facebook Lead Ads"
+
+**Option B: Make.com/Zapier**
+- Trigger: Facebook Lead Ads → New Lead
+- Action: Zoho CRM → Create Lead
+- Field mapping + Lead Source = "Facebook"
 
 ---
 
-## 🧪 Testing Checklist
+## TESTING CHECKLIST
 
-To find your team chat ID:
-1. Add @userinfobot to your team group
-2. Send any message in the group
-3. The bot will reply with the chat ID (negative number for groups)
+### Phase 1: Unit Test - Hot Lead Detection
+
+Run this in the dev console or create a test file:
+
+```bash
+# Test the hot lead detection logic
+cd /Users/maciejpopiel/ghawdex-sales-portal
+node -e "
+const sources = ['facebook', 'Facebook Lead Ads', 'fb_campaign_123', 'instagram', 'meta', 'google_ads', 'sales-portal', 'website'];
+sources.forEach(src => {
+  const isHot = src.toLowerCase().includes('facebook') ||
+                src.toLowerCase().includes('fb') ||
+                src.toLowerCase().includes('instagram') ||
+                src.toLowerCase().includes('meta') ||
+                src.toLowerCase().includes('google_ads');
+  console.log(src.padEnd(20), '→', isHot ? '🔥 HOT' : '   normal');
+});
+"
+```
+
+Expected output:
+- facebook, Facebook Lead Ads, fb_*, instagram, meta, google_ads → 🔥 HOT
+- sales-portal, website → normal
+
+### Phase 2: API Test - Lead Creation with Facebook Source
+
+```bash
+# Create a test lead with Facebook source
+curl -X POST https://get.ghawdex.pro/api/leads \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "FB Test User",
+    "email": "fbtest-'$(date +%s)'@test.ghawdex.pro",
+    "phone": "79999999",
+    "source": "facebook",
+    "address": "Test Address, Malta"
+  }'
+```
+
+**Verify response includes:**
+- `"is_hot_lead": true`
+- `"zoho_success": true`
+
+### Phase 3: Deduplication Test
+
+```bash
+# Create lead with same email but different source
+curl -X POST https://get.ghawdex.pro/api/leads \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "FB Test User Updated",
+    "email": "fbtest-SAME_TIMESTAMP@test.ghawdex.pro",
+    "phone": "79999999",
+    "source": "sales-portal",
+    "system_size_kw": 5,
+    "total_price": 8000
+  }'
+```
+
+**Verify:**
+- `"is_returning_lead": true`
+- Same `zoho_lead_id` as first request
+- Lead updated, not duplicated
+
+### Phase 4: Full Flow Test (Manual)
+
+1. **Create lead in Zoho CRM:**
+   - First Name: Test
+   - Last Name: Facebook
+   - Email: your-email@gmail.com
+   - Phone: 79123456
+   - Lead Source: Facebook Lead Ads
+
+2. **Check email** (if workflow rule is active):
+   - Should receive wizard link within 1-2 minutes
+
+3. **Click wizard link and complete:**
+   - Pre-filled name/email should appear
+   - Complete all steps through Summary
+
+4. **Verify in Zoho:**
+   - Lead Status = "Hot - Qualified"
+   - Quote_Amount populated
+   - System_Size populated
+
+5. **Check Telegram:**
+   - 🔥 HOT LEAD notification in team + admin channels
+
+6. **Check Supabase:**
+   - Single lead record (not duplicate)
+   - `status` = "quoted"
 
 ---
 
-## 4. Facebook Lead Ads Setup (if not done)
-
-### Option A: Native Zoho Integration
-
-1. Go to **Zoho Social** or **Zoho CRM** → **Marketplace**
-2. Search for "Facebook Lead Ads"
-3. Install and connect your Facebook account
-4. Map Facebook form fields to Zoho Lead fields
-5. Set Lead Source to "Facebook Lead Ads"
-
-### Option B: Third-Party (Make/Zapier)
-
-1. Create integration: Facebook Lead Ads → Zoho CRM
-2. Set up field mapping
-3. Ensure Lead Source is set to "Facebook" or "Facebook Lead Ads"
-
----
-
-## 5. Testing Checklist
-
-- [ ] Create test lead in Zoho with source "Facebook"
-- [ ] Verify email is sent with correct wizard link
-- [ ] Click wizard link and complete quote
-- [ ] Verify lead is updated (not duplicated) in Zoho
-- [ ] Check Lead Status is set to "Hot - Qualified"
-- [ ] Verify Telegram hot lead notification received
-- [ ] Check Supabase for lead update (not duplicate)
-
----
-
-## 6. Verification Commands
+## VERIFICATION COMMANDS
 
 ```bash
 # Check Railway logs for hot lead detection
-railway logs | grep "Hot lead"
+railway logs --tail 50 | grep -i "hot lead"
 
-# Check for lead matching logs
-railway logs | grep "Found existing"
+# Check for lead matching in logs
+railway logs --tail 50 | grep -i "found existing"
+
+# Check Supabase for recent leads
+curl -s "https://epxeimwsheyttevwtjku.supabase.co/rest/v1/leads?select=id,name,source,status,zoho_lead_id&order=created_at.desc&limit=5" \
+  -H "apikey: $ANON_KEY" | jq '.'
+
+# Check for Facebook-source leads
+curl -s "https://epxeimwsheyttevwtjku.supabase.co/rest/v1/leads?source=ilike.*facebook*" \
+  -H "apikey: $ANON_KEY" | jq '.'
 ```
 
 ---
 
-## Notes
+## HOT LEAD DETECTION LOGIC
 
-- Hot leads are detected when: source contains "facebook/fb/instagram/meta/google_ads" AND wizard is completed
-- Phone matching handles Malta formats: +356 7912 3456, 79123456, etc.
-- If lead was converted to Contact in Zoho, system will find and update the Contact instead
+Leads are marked as "hot" when:
+
+```javascript
+// From src/app/api/leads/route.ts
+const isFromExternalSource =
+  source.includes('facebook') ||
+  source.includes('fb') ||
+  source.includes('instagram') ||
+  source.includes('ig') ||
+  source.includes('meta') ||
+  source.includes('google_ads') ||
+  source.includes('ad_') ||
+  existingLead !== null;  // Returning leads also qualify
+
+const hasCompletedWizard =
+  lead.address?.length > 5 &&
+  lead.system_size_kw > 0 &&
+  lead.total_price > 0;
+
+isHotLead = isFromExternalSource && hasCompletedWizard;
+```
 
 ---
 
-## Files Changed
+## FILES REFERENCE
 
-| File | Changes |
+| File | Purpose |
 |------|---------|
-| `src/lib/zoho.ts` | `findExistingZohoLead()`, `normalizePhone()`, Lead_Status support |
+| `src/lib/zoho.ts` | Zoho API, `findExistingZohoLead()`, Lead_Status |
 | `src/lib/supabase.ts` | `findExistingLead()` with multi-criteria search |
-| `src/app/api/leads/route.ts` | Enhanced matching, hot lead detection, priority notifications |
+| `src/app/api/leads/route.ts` | Hot lead detection, priority notifications |
+| `src/lib/telegram/router.ts` | 3-tier notification system |
 | `docs/FACEBOOK_LEAD_INTEGRATION_RESEARCH.md` | Full research document |
+
+---
+
+## NOTES
+
+- Hot leads trigger notifications to ALL 3 Telegram tiers (admin + team + everything)
+- Phone matching handles Malta formats: +356 7912 3456, 79123456, etc.
+- If a lead was converted to Contact in Zoho, system finds and updates the Contact
+- Deduplication priority: zoho_lead_id > email > phone > name

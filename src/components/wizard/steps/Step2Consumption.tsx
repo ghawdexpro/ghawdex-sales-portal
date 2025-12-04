@@ -99,12 +99,9 @@ export default function Step2Consumption() {
               </svg>
             </div>
             <div>
-              <div className="text-white font-medium">Roof Estimate</div>
+              <div className="text-white font-medium">Roof Analysis Complete</div>
               <div className="text-amber-400 text-sm">
-                ~{state.maxPanels} panels ({state.roofArea}m² estimated)
-              </div>
-              <div className="text-gray-400 text-xs mt-1">
-                Rough satellite estimate - we&apos;ll confirm during site visit
+                ~{state.maxPanels} panels fit on your roof ({state.roofArea}m²)
               </div>
             </div>
           </div>

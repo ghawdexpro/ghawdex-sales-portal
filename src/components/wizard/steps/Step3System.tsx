@@ -424,9 +424,9 @@ export default function Step3System() {
           {(selectedSystem || batteryOnlyMode) && (
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
               {/* YOUR PRICE - Hero display */}
-              <div className={`flex-1 bg-gradient-to-r ${batteryOnlyMode ? 'from-purple-500/20 to-blue-500/20' : 'from-amber-500/20 to-orange-500/20'} rounded-xl px-4 py-2 mr-3 border ${batteryOnlyMode ? 'border-purple-500/40' : 'border-amber-500/40'}`}>
-                <div className={`text-[10px] font-semibold uppercase tracking-wider ${batteryOnlyMode ? 'text-purple-400' : 'text-amber-400'}`}>Your Price</div>
-                <div className="text-white font-bold text-2xl sm:text-3xl tracking-tight">{formatCurrency(priceDetails.totalPrice)}</div>
+              <div className={`flex-1 bg-gradient-to-r ${batteryOnlyMode ? 'from-purple-500/30 to-blue-500/30' : 'from-amber-500/30 to-orange-500/30'} rounded-xl px-4 py-3 mr-3 border-2 ${batteryOnlyMode ? 'border-purple-400 shadow-lg shadow-purple-500/20' : 'border-amber-400 shadow-lg shadow-amber-500/20'}`}>
+                <div className={`text-[10px] font-semibold uppercase tracking-wider ${batteryOnlyMode ? 'text-purple-300' : 'text-amber-300'}`}>Your Price</div>
+                <div className={`font-bold text-2xl sm:text-3xl tracking-tight ${batteryOnlyMode ? 'text-purple-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400'}`}>{formatCurrency(priceDetails.totalPrice)}</div>
                 {priceDetails.grantAmount > 0 && (
                   <div className="text-green-400 text-xs font-medium">
                     <span className="inline-flex items-center gap-1">
