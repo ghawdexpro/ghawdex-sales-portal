@@ -1508,40 +1508,6 @@ export default function Step6Summary() {
         </p>
       </div>
 
-      {/* What's Next */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-        <h3 className="text-white font-semibold text-lg mb-4">What&apos;s Next?</h3>
-        <div className="space-y-4">
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-amber-400 font-semibold">1</span>
-            </div>
-            <div>
-              <div className="text-white font-medium">We&apos;ll Call You</div>
-              <div className="text-gray-400 text-sm">Our team will contact you within 24 hours to discuss your quote</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-amber-400 font-semibold">2</span>
-            </div>
-            <div>
-              <div className="text-white font-medium">Site Visit</div>
-              <div className="text-gray-400 text-sm">We&apos;ll schedule a free site visit to finalize the design</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-amber-400 font-semibold">3</span>
-            </div>
-            <div>
-              <div className="text-white font-medium">Installation in 14 Days</div>
-              <div className="text-gray-400 text-sm">Once approved, installation takes just 1-2 days</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* PRIMARY CTA - Sign Contract Now (only when signing URL available) */}
       {state.contractSigningUrl && (
         <div className="relative bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-green-500/20 border-2 border-green-500/60 rounded-2xl p-8 mb-6 overflow-hidden">
@@ -1594,6 +1560,40 @@ export default function Step6Summary() {
           </div>
         </div>
       )}
+
+      {/* What's Next */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+        <h3 className="text-white font-semibold text-lg mb-4">What&apos;s Next?</h3>
+        <div className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-amber-400 font-semibold">1</span>
+            </div>
+            <div>
+              <div className="text-white font-medium">We&apos;ll Call You</div>
+              <div className="text-gray-400 text-sm">Our team will contact you within 24 hours to discuss your quote</div>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-amber-400 font-semibold">2</span>
+            </div>
+            <div>
+              <div className="text-white font-medium">Site Visit</div>
+              <div className="text-gray-400 text-sm">We&apos;ll schedule a free site visit to finalize the design</div>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-amber-400 font-semibold">3</span>
+            </div>
+            <div>
+              <div className="text-white font-medium">Installation in 14 Days</div>
+              <div className="text-gray-400 text-sm">Once approved, installation takes just 1-2 days</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Secondary CTA - WhatsApp (for questions/support) */}
       <div className={`bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 ${state.contractSigningUrl ? '' : 'bg-gradient-to-r from-[#25D366]/20 to-[#128C7E]/20 border-[#25D366]/40 p-6'}`}>
