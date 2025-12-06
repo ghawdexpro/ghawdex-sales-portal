@@ -12,6 +12,8 @@ export default function Step6Summary() {
   const [showConfetti, setShowConfetti] = useState(true);
   const [pdfUploading, setPdfUploading] = useState(false);
   const [pdfUploaded, setPdfUploaded] = useState(false);
+  const [modalOpen, setModalOpen] = useState<'proposal' | 'techspec' | null>(null);
+  const [modalContent, setModalContent] = useState('');
   const leadCreatedRef = useRef(false);
   const pdfUploadedRef = useRef(false);
 
@@ -252,14 +254,31 @@ export default function Step6Summary() {
     window.location.href = 'tel:+35679055156';
   };
 
-  const generateProposal = () => {
+  const openProposalModal = async () => {
+    const html = generateProposalHtml();
+    setModalContent(html);
+    setModalOpen('proposal');
+  };
+
+  const openTechSpecModal = async () => {
+    const html = generateTechSpecHtml();
+    setModalContent(html);
+    setModalOpen('techspec');
+  };
+
+  const closeModal = () => {
+    setModalOpen(null);
+    setModalContent('');
+  };
+
+  const generateProposalHtml = (): string => {
     // Battery-only has different PDF structure
     if (isBatteryOnly) {
       const grantPercentage = state.location === 'gozo' ? 95 : 80;
       const batteryGrossPrice = battery ? battery.price : 0;
       const grantAmount = batteryGrossPrice - (state.totalPrice || 0);
 
-      const html = `
+      return `
         <!DOCTYPE html>
         <html>
         <head>
@@ -424,16 +443,6 @@ export default function Step6Summary() {
         </body>
         </html>
       `;
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-      }
-
-      // Upload PDF to storage (non-blocking)
-      uploadProposalPdf(html);
-      return;
     }
 
     // Standard solar system proposal
@@ -595,17 +604,16 @@ export default function Step6Summary() {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-    }
+    return html;
+  };
 
+  const generateProposal = () => {
+    const html = generateProposalHtml();
     // Upload PDF to storage (non-blocking)
     uploadProposalPdf(html);
   };
 
-  const generateTechSpec = () => {
+  const generateTechSpecHtml = (): string => {
     // Battery-only has different tech spec structure
     if (isBatteryOnly) {
       // Huawei battery specifications for battery-only
@@ -871,13 +879,7 @@ export default function Step6Summary() {
         </body>
         </html>
       `;
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-      }
-      return;
+      return html;
     }
 
     // Standard solar system tech spec
@@ -1277,11 +1279,11 @@ export default function Step6Summary() {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-    }
+    return html;
+  };
+
+  const generateTechSpec = () => {
+    const html = generateTechSpecHtml();
   };
 
   return (
@@ -1479,7 +1481,7 @@ export default function Step6Summary() {
         <h3 className="text-white font-semibold text-lg mb-4">Your Documents</h3>
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={generateProposal}
+            onClick={openProposalModal}
             className="flex flex-col items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl p-4 transition-all hover:scale-[1.02]"
           >
             <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
@@ -1491,7 +1493,7 @@ export default function Step6Summary() {
             <div className="text-gray-400 text-xs">Pricing & Terms</div>
           </button>
           <button
-            onClick={generateTechSpec}
+            onClick={openTechSpecModal}
             className="flex flex-col items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 transition-all hover:scale-[1.02]"
           >
             <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
@@ -1641,6 +1643,51 @@ export default function Step6Summary() {
       <div className="text-center text-gray-400 text-sm">
         A copy of this quote has been sent to <span className="text-white">{state.email}</span>
       </div>
+
+      {/* Document Modal */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-4xl max-h-[90vh] overflow-auto w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <div className="sticky top-0 flex items-center justify-between bg-white border-b border-gray-200 p-4 z-10">
+              <h2 className="text-xl font-bold text-gray-900">
+                {modalOpen === 'proposal' ? 'Contract Proposal' : 'Technical Specifications'}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="Close modal"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Document Content */}
+            <div className="p-6">
+              <iframe
+                srcDoc={modalContent}
+                className="w-full h-[70vh] border-0"
+                title="Document"
+              />
+            </div>
+
+            {/* Footer with Print/Download hint */}
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 text-center">
+              <p className="text-gray-600 text-sm">
+                💡 Use Ctrl+P / Cmd+P or the print button above to save as PDF
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes confetti {
