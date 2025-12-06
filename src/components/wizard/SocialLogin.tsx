@@ -258,7 +258,7 @@ export default function SocialLogin({ onLogin, onError }: SocialLoginProps) {
         <div className="space-y-3">
           {/* Google Sign-In Button */}
           {hasGoogle && (
-            <div className="flex justify-center">
+            <div className="flex justify-center min-h-[50px] items-center overflow-hidden">
               {googleLoaded ? (
                 <div id="google-signin-btn" className="flex justify-center" />
               ) : (
