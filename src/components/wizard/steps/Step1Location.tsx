@@ -345,28 +345,40 @@ export default function Step1Location() {
           // Fetch the fields we need
           await place.fetchFields({ fields: ['location', 'viewport', 'formattedAddress', 'displayName'] });
 
-          if (place.location) {
+          if (place.location && googleMapRef.current) {
             const lat = place.location.lat();
             const lng = place.location.lng();
 
-            // Use viewport for areas (localities), fixed zoom for addresses
-            if (place.viewport && googleMapRef.current) {
-              // Fit to the place's suggested viewport (great for localities)
-              googleMapRef.current.fitBounds(place.viewport);
-              // Clear any existing marker - let user click to pin exact location
-              if (markerRef.current) {
-                markerRef.current.setMap(null);
-                markerRef.current = null;
-              }
-              setSelectedAddress('');
-              dispatch({
-                type: 'SET_ADDRESS',
-                payload: { address: '', coordinates: null, googleMapsLink: null, location: detectLocation(lat) },
-              });
-            } else {
-              // Specific address - zoom in and place marker
-              placeMarkerAt(lat, lng, 19);
+            // Clear any existing marker first
+            if (markerRef.current) {
+              markerRef.current.setMap(null);
+              markerRef.current = null;
             }
+
+            // Try to use viewport for localities, fallback to center + zoom
+            let fitWorked = false;
+            if (place.viewport) {
+              try {
+                googleMapRef.current.fitBounds(place.viewport);
+                fitWorked = true;
+              } catch (e) {
+                console.warn('fitBounds failed:', e);
+              }
+            }
+
+            // Fallback: center on location with appropriate zoom
+            if (!fitWorked) {
+              googleMapRef.current.setCenter({ lat, lng });
+              // Use zoom 15 for localities, gives neighborhood-level view
+              googleMapRef.current.setZoom(15);
+            }
+
+            // Clear address state - let user click to pin exact location
+            setSelectedAddress('');
+            dispatch({
+              type: 'SET_ADDRESS',
+              payload: { address: '', coordinates: null, googleMapsLink: null, location: detectLocation(lat) },
+            });
           }
         });
 
