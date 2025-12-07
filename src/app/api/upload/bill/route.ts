@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PDFDocument } from 'pdf-lib';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 // Use service role key to bypass RLS for storage uploads
@@ -7,14 +8,39 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.en
 // Max file size: 100MB
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-// Allowed file types
+// Allowed file types (WebP removed - pdf-lib doesn't support it)
 const ALLOWED_TYPES = [
   'image/jpeg',
   'image/jpg',
   'image/png',
-  'image/webp',
   'application/pdf',
 ];
+
+/**
+ * Convert an image to PDF format (1:1 quality - image embedded at original dimensions)
+ */
+async function convertImageToPdf(
+  imageBuffer: ArrayBuffer,
+  mimeType: string
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+
+  // Embed image based on type
+  const image = mimeType === 'image/png'
+    ? await pdfDoc.embedPng(imageBuffer)
+    : await pdfDoc.embedJpg(imageBuffer);
+
+  // Create page at exact image dimensions (1:1 quality)
+  const page = pdfDoc.addPage([image.width, image.height]);
+  page.drawImage(image, {
+    x: 0,
+    y: 0,
+    width: image.width,
+    height: image.height,
+  });
+
+  return pdfDoc.save();
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Please upload JPG, PNG, WebP, or PDF.' },
+        { error: 'Invalid file type. Please upload JPG, PNG, or PDF.' },
         { status: 400 }
       );
     }
@@ -44,14 +70,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 8);
-    const extension = file.name.split('.').pop() || 'jpg';
-    const filename = `bill_${timestamp}_${randomId}.${extension}`;
-
     // Read file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
+
+    // Prepare final upload data
+    let finalMimeType = file.type;
+    let finalExtension = 'pdf';
+    let uploadBody: Blob;
+
+    // Convert images to PDF for unified format
+    if (file.type.startsWith('image/')) {
+      const pdfBytes = await convertImageToPdf(arrayBuffer, file.type);
+      // Copy to new ArrayBuffer to ensure type compatibility
+      const pdfBuffer = new ArrayBuffer(pdfBytes.length);
+      new Uint8Array(pdfBuffer).set(pdfBytes);
+      uploadBody = new Blob([pdfBuffer], { type: 'application/pdf' });
+      finalMimeType = 'application/pdf';
+    } else {
+      // PDF pass-through
+      uploadBody = new Blob([arrayBuffer], { type: file.type });
+    }
+
+    // Generate unique filename (always .pdf now)
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const filename = `bill_${timestamp}_${randomId}.${finalExtension}`;
 
     // Upload to Supabase Storage
     const uploadResponse = await fetch(
@@ -61,10 +104,10 @@ export async function POST(request: NextRequest) {
         headers: {
           'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
           'apikey': SUPABASE_SERVICE_KEY,
-          'Content-Type': file.type,
+          'Content-Type': finalMimeType,
           'x-upsert': 'true',
         },
-        body: arrayBuffer,
+        body: uploadBody,
       }
     );
 

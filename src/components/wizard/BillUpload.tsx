@@ -166,7 +166,7 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".jpg,.jpeg,.png,.webp,.pdf"
+          accept=".jpg,.jpeg,.png,.pdf"
           multiple
           onChange={handleInputChange}
           className="hidden"
