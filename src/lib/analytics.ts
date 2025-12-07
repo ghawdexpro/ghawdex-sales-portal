@@ -147,6 +147,8 @@ export const trackPhoneClick = () => {
     event_label: 'Call +356 7905 5156',
     value: 1,
   });
+  // FB Standard Event: Contact
+  trackFBEvent('Contact', { content_name: 'phone' });
 };
 
 export const trackWhatsAppClick = () => {
@@ -155,6 +157,8 @@ export const trackWhatsAppClick = () => {
     event_label: 'WhatsApp Chat',
     value: 1,
   });
+  // FB Standard Event: Contact
+  trackFBEvent('Contact', { content_name: 'whatsapp' });
 };
 
 export const trackEmailClick = () => {
@@ -163,6 +167,8 @@ export const trackEmailClick = () => {
     event_label: 'Email info@ghawdex.pro',
     value: 1,
   });
+  // FB Standard Event: Contact
+  trackFBEvent('Contact', { content_name: 'email' });
 };
 
 export const trackCTAClick = (buttonText: string, location: string) => {
