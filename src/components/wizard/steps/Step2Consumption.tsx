@@ -73,6 +73,7 @@ export default function Step2Consumption() {
       monthlyBill: selectedBill,
       consumptionKwh,
       hasBillUpload: !!state.billFileUrl,
+      billFileUrl: state.billFileUrl || undefined,
     });
     dispatch({ type: 'NEXT_STEP' });
   };

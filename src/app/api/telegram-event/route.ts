@@ -33,6 +33,7 @@ interface WizardStepData {
   monthlyBill?: number;
   consumptionKwh?: number;
   hasBillUpload?: boolean;
+  billFileUrl?: string;
   systemName?: string;
   systemSizeKw?: number;
   withBattery?: boolean;
@@ -147,16 +148,22 @@ _${formatTimestamp()}_`;
           break;
 
         case 2:
+          const hasBill = wd?.hasBillUpload && wd?.billFileUrl;
           stepMessage = `⚡ *Step 2: Consumption Entered*
 
 👥 Household: ${wd?.householdSize || '?'} ${wd?.householdSize === 1 ? 'person' : 'people'}
 💶 Monthly Bill: €${wd?.monthlyBill || '?'}
 📊 Annual kWh: ${wd?.consumptionKwh ? wd.consumptionKwh.toLocaleString() : '?'}
-📄 Bill Uploaded: ${wd?.hasBillUpload ? 'Yes ✅' : 'No'}
+📄 Bill Uploaded: ${hasBill ? 'Yes ✅' : 'No'}${hasBill ? `\n\n📎 [View Bill](${wd?.billFileUrl})` : ''}
 
 🔑 Session: \`${sessionId.slice(0, 8)}...\`
 ${stepIndicator(2, 6)}
 _${formatTimestamp()}_`;
+
+          // If bill uploaded, route to 'bill_received' which goes to everything + team
+          if (hasBill) {
+            return await notifyEvent('bill_received', stepMessage);
+          }
           break;
 
         case 3:

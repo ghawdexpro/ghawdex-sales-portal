@@ -23,6 +23,7 @@ export interface WizardStepData {
   monthlyBill?: number;
   consumptionKwh?: number;
   hasBillUpload?: boolean;
+  billFileUrl?: string;
 
   // Step 3 - System
   systemName?: string;
