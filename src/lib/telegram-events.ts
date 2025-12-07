@@ -10,6 +10,40 @@ type EventType =
   | 'time_milestone'
   | 'cta_click';
 
+// Wizard step data for rich notifications
+export interface WizardStepData {
+  // Step 1 - Location
+  address?: string;
+  region?: 'malta' | 'gozo';
+  roofArea?: number;
+  maxPanels?: number;
+
+  // Step 2 - Consumption
+  householdSize?: number;
+  monthlyBill?: number;
+  consumptionKwh?: number;
+  hasBillUpload?: boolean;
+
+  // Step 3 - System
+  systemName?: string;
+  systemSizeKw?: number;
+  withBattery?: boolean;
+  batterySize?: number;
+  grantType?: string;
+  estimatedPrice?: number;
+
+  // Step 4 - Financing
+  paymentMethod?: 'cash' | 'loan';
+  loanTerm?: number;
+  totalPrice?: number;
+  monthlyPayment?: number;
+
+  // Step 5 - Contact
+  fullName?: string;
+  email?: string;
+  phone?: string;
+}
+
 interface EventData {
   step?: number;
   stepName?: string;
@@ -21,6 +55,7 @@ interface EventData {
   url?: string;
   prefilled?: boolean;
   name?: string;
+  wizardData?: WizardStepData;
 }
 
 // Generate or retrieve session ID
@@ -116,13 +151,17 @@ export function trackTelegramVisitor(prefilled?: boolean, name?: string): void {
 }
 
 /**
- * Track wizard step progression
+ * Track wizard step progression with rich data
  */
-export function trackTelegramWizardStep(step: number, stepName: string): void {
-  // Only notify for steps 2+ (step 1 is covered by visitor notification)
-  if (step < 2 || hasStepNotified(step)) return;
+export function trackTelegramWizardStep(
+  step: number,
+  stepName: string,
+  wizardData?: WizardStepData
+): void {
+  // Notify for all steps (including step 1 now for rich data)
+  if (hasStepNotified(step)) return;
 
-  sendTelegramEvent('wizard_step', { step, stepName });
+  sendTelegramEvent('wizard_step', { step, stepName, wizardData });
   setStepNotified(step);
 }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
+import { trackTelegramWizardStep } from '@/lib/telegram-events';
 import { loadGoogleMaps, reverseGeocode, loadPlacesLibrary } from '@/lib/google/maps-service';
 import { generateGoogleMapsLink } from '@/lib/google/maps-utils';
 import { detectLocation } from '@/lib/types';
@@ -404,6 +405,12 @@ export default function Step1Location() {
       });
 
       trackWizardStep(1, 'Location');
+      trackTelegramWizardStep(1, 'Location', {
+        address: state.address,
+        region: state.location,
+        roofArea: solarData.roofArea || 50,
+        maxPanels: solarData.maxPanels || 20,
+      });
       dispatch({ type: 'NEXT_STEP' });
     } catch (err) {
       console.warn('Solar API error, using defaults:', err);
@@ -418,6 +425,12 @@ export default function Step1Location() {
         },
       });
       trackWizardStep(1, 'Location');
+      trackTelegramWizardStep(1, 'Location', {
+        address: state.address,
+        region: state.location,
+        roofArea: 60,
+        maxPanels: 24,
+      });
       dispatch({ type: 'NEXT_STEP' });
     } finally {
       setIsLoading(false);

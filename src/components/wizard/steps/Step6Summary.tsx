@@ -2,6 +2,7 @@
 
 import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
+import { trackTelegramWizardStep, trackTelegramWizardComplete } from '@/lib/telegram-events';
 import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber } from '@/lib/calculations';
 import { getSessionToken } from '@/lib/wizard-session';
@@ -139,11 +140,34 @@ export default function Step6Summary() {
     if (state.totalPrice && (state.selectedSystem || isBatteryOnly)) {
       trackQuoteGenerated(state.totalPrice, state.selectedSystem?.systemSizeKw || 0);
       trackWizardComplete();
+
+      // Send rich summary to Telegram
+      trackTelegramWizardStep(6, 'Summary', {
+        address: state.address,
+        region: state.location,
+        householdSize: state.householdSize,
+        monthlyBill: state.monthlyBill,
+        consumptionKwh: state.consumptionKwh,
+        systemName: isBatteryOnly ? 'Battery Only' : state.selectedSystem?.name,
+        systemSizeKw: state.selectedSystem?.systemSizeKw,
+        withBattery: state.withBattery,
+        batterySize: state.batterySize || undefined,
+        grantType: state.grantType,
+        estimatedPrice: state.totalPrice,
+        paymentMethod: state.paymentMethod,
+        loanTerm: state.loanTerm || undefined,
+        totalPrice: state.totalPrice,
+        monthlyPayment: state.monthlyPayment || undefined,
+        fullName: state.fullName,
+        email: state.email,
+        phone: state.phone,
+      });
+      trackTelegramWizardComplete();
     }
 
     const timer = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(timer);
-  }, [state.totalPrice, state.selectedSystem, isBatteryOnly]);
+  }, [state.totalPrice, state.selectedSystem, isBatteryOnly, state.address, state.location, state.householdSize, state.monthlyBill, state.consumptionKwh, state.withBattery, state.batterySize, state.grantType, state.paymentMethod, state.loanTerm, state.monthlyPayment, state.fullName, state.email, state.phone]);
 
   // Create lead for prefilled users (they skip Step5 which normally creates the lead)
   // Uses the API route to ensure dual-write to Supabase AND Zoho CRM

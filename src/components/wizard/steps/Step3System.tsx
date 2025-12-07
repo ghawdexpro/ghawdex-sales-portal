@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackSystemSelected } from '@/lib/analytics';
+import { trackTelegramWizardStep } from '@/lib/telegram-events';
 import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType, getFitRate, GRANT_SCHEME_2025 } from '@/lib/types';
 import { recommendSystem, calculateTotalPriceWithGrant, formatCurrency, formatNumber } from '@/lib/calculations';
 
@@ -51,6 +52,17 @@ export default function Step3System() {
 
     trackSystemSelected(batteryOnlyMode ? 0 : (selectedSystem?.systemSizeKw || 0), batteryOnlyMode || withBattery, grantType !== 'none');
     trackWizardStep(3, 'System');
+
+    // Send rich data to Telegram
+    trackTelegramWizardStep(3, 'System', {
+      systemName: batteryOnlyMode ? 'Battery Only' : selectedSystem?.name,
+      systemSizeKw: batteryOnlyMode ? 0 : selectedSystem?.systemSizeKw,
+      withBattery: batteryOnlyMode || withBattery,
+      batterySize: batteryToSave || undefined,
+      grantType: batteryOnlyMode ? 'battery_only' : grantType,
+      estimatedPrice: priceDetails.totalPrice,
+    });
+
     dispatch({ type: 'NEXT_STEP' });
   };
 

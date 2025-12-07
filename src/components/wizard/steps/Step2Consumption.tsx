@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
+import { trackTelegramWizardStep } from '@/lib/telegram-events';
 import { estimateConsumption } from '@/lib/calculations';
 import BillUpload from '../BillUpload';
 
@@ -67,6 +68,12 @@ export default function Step2Consumption() {
     });
 
     trackWizardStep(2, 'Consumption');
+    trackTelegramWizardStep(2, 'Consumption', {
+      householdSize: effectiveHouseholdSize,
+      monthlyBill: selectedBill,
+      consumptionKwh,
+      hasBillUpload: !!state.billFileUrl,
+    });
     dispatch({ type: 'NEXT_STEP' });
   };
 

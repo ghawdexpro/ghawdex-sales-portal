@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackLeadCreated } from '@/lib/analytics';
+import { trackTelegramWizardStep } from '@/lib/telegram-events';
 import { BATTERY_OPTIONS } from '@/lib/types';
 import { getSessionToken } from '@/lib/wizard-session';
 import { calculateTotalPriceWithGrant } from '@/lib/calculations';
@@ -200,11 +201,27 @@ export default function Step5Contact() {
       }
 
       trackWizardStep(5, 'Contact');
+
+      // Send rich data to Telegram
+      trackTelegramWizardStep(5, 'Contact', {
+        fullName,
+        email,
+        phone,
+      });
+
       dispatch({ type: 'NEXT_STEP' });
     } catch (error) {
       console.error('Error creating lead:', error);
       // Continue anyway - don't block the user
       trackWizardStep(5, 'Contact');
+
+      // Send rich data to Telegram (even on error)
+      trackTelegramWizardStep(5, 'Contact', {
+        fullName,
+        email,
+        phone,
+      });
+
       dispatch({ type: 'NEXT_STEP' });
     } finally {
       setIsSubmitting(false);

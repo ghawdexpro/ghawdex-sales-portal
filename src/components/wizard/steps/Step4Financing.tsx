@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep } from '@/lib/analytics';
+import { trackTelegramWizardStep } from '@/lib/telegram-events';
 import { BATTERY_OPTIONS } from '@/lib/types';
 import {
   getFinancingOptions,
@@ -77,6 +78,14 @@ export default function Step4Financing() {
     });
 
     trackWizardStep(4, 'Financing');
+
+    // Send rich data to Telegram
+    trackTelegramWizardStep(4, 'Financing', {
+      paymentMethod,
+      loanTerm: paymentMethod === 'loan' ? selectedTerm : undefined,
+      totalPrice,
+      monthlyPayment: monthlyPayment || undefined,
+    });
 
     // Skip Step 5 (Contact) if user came from Zoho CRM link (already has contact info)
     if (state.isPrefilledLead) {
