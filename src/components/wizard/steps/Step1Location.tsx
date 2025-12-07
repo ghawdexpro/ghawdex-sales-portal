@@ -38,8 +38,8 @@ export default function Step1Location() {
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const autocompleteElementRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
 
   // Handle map click
   const handleMapClick = useCallback(async (e: google.maps.MapMouseEvent) => {
@@ -153,7 +153,6 @@ export default function Step1Location() {
         if (pos) {
           const address = await reverseGeocode(pos.lat(), pos.lng());
           setSelectedAddress(address);
-          if (searchInputRef.current) searchInputRef.current.value = '';
           dispatch({
             type: 'SET_ADDRESS',
             payload: {
@@ -170,7 +169,6 @@ export default function Step1Location() {
     // Get address and update state
     const address = await reverseGeocode(lat, lng);
     setSelectedAddress(address);
-    if (searchInputRef.current) searchInputRef.current.value = '';
 
     dispatch({
       type: 'SET_ADDRESS',
@@ -315,33 +313,46 @@ export default function Step1Location() {
     initMap();
   }, [state.coordinates, handleMapClick, dispatch]);
 
-  // Initialize Places Autocomplete
+  // Initialize Places Autocomplete (new PlaceAutocompleteElement API)
   useEffect(() => {
     const initAutocomplete = async () => {
-      if (!searchInputRef.current || autocompleteRef.current || !mapsLoaded) return;
+      if (!searchContainerRef.current || autocompleteElementRef.current || !mapsLoaded) return;
 
       try {
         await loadPlacesLibrary();
 
-        const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
+        // Create the new PlaceAutocompleteElement web component
+        const autocompleteElement = new google.maps.places.PlaceAutocompleteElement({
           componentRestrictions: { country: 'mt' },
-          fields: ['geometry', 'formatted_address', 'name'],
           // Using 'geocode' instead of 'address' to include Gozo locations
-          // which may not always be indexed as formal street addresses
           types: ['geocode'],
         });
 
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
+        // Style the web component to match our dark theme
+        autocompleteElement.style.cssText = `
+          width: 100%;
+          --gmpx-color-surface: rgba(255, 255, 255, 0.05);
+          --gmpx-color-on-surface: white;
+          --gmpx-color-on-surface-variant: rgb(156, 163, 175);
+          --gmpx-color-outline: rgba(255, 255, 255, 0.1);
+          --gmpx-color-primary: rgb(245, 158, 11);
+        `;
 
-          if (place.geometry?.location) {
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
+        // Listen for place selection using the new event
+        autocompleteElement.addEventListener('gmp-placeselect', async (event) => {
+          const place = (event as CustomEvent).detail.place;
+
+          // Fetch the fields we need
+          await place.fetchFields({ fields: ['location', 'viewport', 'formattedAddress', 'displayName'] });
+
+          if (place.location) {
+            const lat = place.location.lat();
+            const lng = place.location.lng();
 
             // Use viewport for areas (localities), fixed zoom for addresses
-            if (place.geometry.viewport && googleMapRef.current) {
+            if (place.viewport && googleMapRef.current) {
               // Fit to the place's suggested viewport (great for localities)
-              googleMapRef.current.fitBounds(place.geometry.viewport);
+              googleMapRef.current.fitBounds(place.viewport);
               // Clear any existing marker - let user click to pin exact location
               if (markerRef.current) {
                 markerRef.current.setMap(null);
@@ -359,14 +370,28 @@ export default function Step1Location() {
           }
         });
 
-        autocompleteRef.current = autocomplete;
+        // Append to container
+        searchContainerRef.current.appendChild(autocompleteElement);
+        autocompleteElementRef.current = autocompleteElement;
       } catch (err) {
         console.error('Failed to initialize autocomplete:', err);
       }
     };
 
     initAutocomplete();
-  }, [mapsLoaded, placeMarkerAt]);
+
+    // Cleanup on unmount
+    return () => {
+      if (autocompleteElementRef.current && searchContainerRef.current) {
+        try {
+          searchContainerRef.current.removeChild(autocompleteElementRef.current);
+        } catch {
+          // Element may already be removed
+        }
+        autocompleteElementRef.current = null;
+      }
+    };
+  }, [mapsLoaded, placeMarkerAt, dispatch]);
 
   const handleNext = async () => {
     if (!state.coordinates) {
@@ -466,20 +491,11 @@ export default function Step1Location() {
 
       {/* Search bar and location button */}
       <div className="flex gap-2 mb-4">
-        <div className="flex-1 relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search address in Malta or Gozo..."
-            aria-label="Search for your address in Malta"
-            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
-          />
-        </div>
+        {/* Container for Google Places Autocomplete web component */}
+        <div
+          ref={searchContainerRef}
+          className="flex-1 [&_gmp-place-autocomplete]:w-full [&_input]:w-full [&_input]:bg-white/5 [&_input]:border [&_input]:border-white/10 [&_input]:rounded-xl [&_input]:py-3 [&_input]:px-4 [&_input]:text-white [&_input]:placeholder-gray-500 [&_input]:focus:outline-none [&_input]:focus:ring-2 [&_input]:focus:ring-amber-500/50 [&_input]:focus:border-amber-500/50 [&_input]:transition-all"
+        />
         <button
           onClick={handleUseMyLocation}
           disabled={isLocating}

@@ -136,7 +136,7 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Email: lead.email,
     Phone: lead.phone,
     Street: lead.address || undefined,
-    Google_Maps_Link: lead.google_maps_link || undefined,
+    Google_Maps_URL: lead.google_maps_link || undefined,
     System_Size: lead.system_size_kw || undefined,
     Quote_Amount: lead.total_price || undefined,
     Annual_Savings: lead.annual_savings || undefined,
