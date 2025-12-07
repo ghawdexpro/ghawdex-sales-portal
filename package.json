@@ -18,8 +18,7 @@
     "pdf-lib": "^1.17.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "react-facebook-pixel": "^1.0.4",
-    "resend": "^6.5.2"
+    "react-facebook-pixel": "^1.0.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
