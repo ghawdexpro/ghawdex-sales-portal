@@ -12,6 +12,7 @@ import Step4Financing from '@/components/wizard/steps/Step4Financing';
 import Step5Contact from '@/components/wizard/steps/Step5Contact';
 import Step6Summary from '@/components/wizard/steps/Step6Summary';
 import { useWizard } from '@/components/wizard/WizardContext';
+import { TestimonialCarouselDark, GrantCountdownDark } from '@/components/trust';
 
 // Location-based grant data
 const GRANT_DATA = {
@@ -347,6 +348,11 @@ function HomeContent() {
               <p className="text-gray-400 text-sm sm:text-base">Sign digitally and we&apos;ll schedule your installation</p>
             </div>
           </div>
+
+          {/* Grant Countdown Timer */}
+          <div className="mt-12 sm:mt-16 max-w-2xl mx-auto">
+            <GrantCountdownDark />
+          </div>
         </div>
       </div>
 
@@ -360,76 +366,11 @@ function HomeContent() {
             <p className="text-gray-400">Join 2,000+ happy homeowners who made the switch</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {/* Testimonial 1 - Gozo */}
-            <div className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl p-6">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-300 mb-4 text-sm sm:text-base">
-                &quot;Incredible service! From first contact to installation took only 12 days. The 95% battery grant in Gozo made it almost free. Best decision we ever made.&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                  JC
-                </div>
-                <div>
-                  <div className="text-white font-medium">Joseph C.</div>
-                  <div className="text-gray-500 text-sm">Xewkija, Gozo</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 2 - Malta */}
-            <div className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl p-6">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-300 mb-4 text-sm sm:text-base">
-                &quot;My electricity bill went from €180/month to practically zero. The team handled all the grant paperwork. I got €10,200 back! Professional from start to finish.&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                  MC
-                </div>
-                <div>
-                  <div className="text-white font-medium">Maria C.</div>
-                  <div className="text-gray-500 text-sm">Mosta, Malta</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 - Recent */}
-            <div className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl p-6">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-300 mb-4 text-sm sm:text-base">
-                &quot;They said 14 days, they delivered in 11. Now I&apos;m selling electricity back to the grid! The calculator on the website was spot-on with the estimates.&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                  PV
-                </div>
-                <div>
-                  <div className="text-white font-medium">Paul V.</div>
-                  <div className="text-gray-500 text-sm">Naxxar, Malta</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Dynamic Testimonial Carousel with Photos */}
+          <TestimonialCarouselDark
+            gozoOnly={location === 'gozo'}
+            autoRotateInterval={6000}
+          />
 
           {/* Social Proof Stats */}
           <div className="mt-12 sm:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
