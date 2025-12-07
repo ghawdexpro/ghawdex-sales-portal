@@ -135,6 +135,36 @@ export default function Step6Summary() {
     }
   }, [state.fullName, state.zohoLeadId, state.email, dispatch]);
 
+  // Auto-open Proposal PDF after page load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      openProposalModal();
+    }, 1500); // Open after 1.5s for better UX
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle browser back button - close modal instead of leaving page
+  useEffect(() => {
+    // Push a state when entering Step 6
+    window.history.pushState({ step6: true }, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      // If modal is open, close it and stay on page
+      if (modalOpen) {
+        event.preventDefault();
+        setModalOpen(null);
+        setModalContent('');
+        // Re-push state so user can press back again
+        window.history.pushState({ step6: true }, '', window.location.href);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [modalOpen]);
+
   useEffect(() => {
     // Track quote generation for both solar and battery-only modes
     if (state.totalPrice && (state.selectedSystem || isBatteryOnly)) {
@@ -1671,43 +1701,58 @@ export default function Step6Summary() {
       {/* Document Modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4"
           onClick={closeModal}
         >
+          {/* Big Close Button at top - always visible */}
+          <button
+            onClick={closeModal}
+            className="absolute top-4 right-4 z-[60] bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-all hover:scale-110"
+            aria-label="Close"
+          >
+            <svg className="w-8 h-8 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Tap anywhere hint */}
+          <div className="absolute top-4 left-4 z-[60] bg-black/60 text-white text-sm px-3 py-2 rounded-lg backdrop-blur-sm">
+            Tap outside to close
+          </div>
+
           <div
-            className="bg-white rounded-2xl max-w-4xl max-h-[90vh] overflow-auto w-full"
+            className="bg-white rounded-2xl max-w-4xl max-h-[85vh] overflow-auto w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
+            {/* Header */}
             <div className="sticky top-0 flex items-center justify-between bg-white border-b border-gray-200 p-4 z-10">
               <h2 className="text-xl font-bold text-gray-900">
-                {modalOpen === 'proposal' ? 'Contract Proposal' : 'Technical Specifications'}
+                {modalOpen === 'proposal' ? '📄 Contract Proposal' : '📋 Technical Specifications'}
               </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-                aria-label="Close modal"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
 
             {/* Document Content */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <iframe
                 srcDoc={modalContent}
-                className="w-full h-[70vh] border-0"
+                className="w-full h-[60vh] sm:h-[65vh] border-0"
                 title="Document"
               />
             </div>
 
             {/* Footer with Print/Download hint */}
-            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 text-center">
-              <p className="text-gray-600 text-sm">
-                💡 Use Ctrl+P / Cmd+P or the print button above to save as PDF
-              </p>
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                <p className="text-gray-600 text-sm">
+                  💡 Use Ctrl+P / Cmd+P to save as PDF
+                </p>
+                <button
+                  onClick={closeModal}
+                  className="bg-gray-900 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                >
+                  Close Preview
+                </button>
+              </div>
             </div>
           </div>
         </div>
