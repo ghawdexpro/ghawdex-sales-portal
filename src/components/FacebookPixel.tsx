@@ -9,6 +9,7 @@ const FB_PIXELS = [
   '780274077714265',  // Primary
   '809814008544994',
   '1315803266494960',
+  '1965135381010308',
 ];
 
 export default function FacebookPixel() {
@@ -38,6 +39,7 @@ export default function FacebookPixel() {
           fbq('init', '780274077714265');
           fbq('init', '809814008544994');
           fbq('init', '1315803266494960');
+          fbq('init', '1965135381010308');
           fbq('track', 'PageView');
         `}
       </Script>
@@ -49,6 +51,8 @@ export default function FacebookPixel() {
           src="https://www.facebook.com/tr?id=809814008544994&ev=PageView&noscript=1" alt="" />
         <img height="1" width="1" style={{ display: 'none' }}
           src="https://www.facebook.com/tr?id=1315803266494960&ev=PageView&noscript=1" alt="" />
+        <img height="1" width="1" style={{ display: 'none' }}
+          src="https://www.facebook.com/tr?id=1965135381010308&ev=PageView&noscript=1" alt="" />
       </noscript>
       {/* End Meta Pixel Code */}
     </>
