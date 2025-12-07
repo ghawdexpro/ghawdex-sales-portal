@@ -1,6 +1,11 @@
 /**
  * GhawdeX Unified Telegram Notifications
  * Low-level Telegram API client
+ *
+ * Supports 3 separate bots for different notification tiers:
+ * - Team: Operations team notifications
+ * - Everything: Developer audit log (all events)
+ * - Admin: CEO/CTO critical alerts
  */
 
 import type {
@@ -15,17 +20,29 @@ import type {
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
 
+export type NotificationTier = 'admin' | 'everything' | 'team';
+
 /**
- * Get bot token from environment
+ * Get bot token for a specific tier
+ * Each tier has its own dedicated bot for access control
  */
-function getBotToken(): string | undefined {
-  return process.env.TELEGRAM_BOT_TOKEN;
+export function getBotTokenForTier(tier: NotificationTier): string | undefined {
+  switch (tier) {
+    case 'admin':
+      return process.env.TELEGRAM_ADMIN_BOT_TOKEN;
+    case 'everything':
+      return process.env.TELEGRAM_EVERYTHING_BOT_TOKEN;
+    case 'team':
+      return process.env.TELEGRAM_TEAM_BOT_TOKEN;
+    default:
+      return undefined;
+  }
 }
 
 /**
  * Get chat ID for a specific tier
  */
-export function getChatIdForTier(tier: 'admin' | 'everything' | 'team'): string | undefined {
+export function getChatIdForTier(tier: NotificationTier): string | undefined {
   switch (tier) {
     case 'admin':
       return process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -39,31 +56,36 @@ export function getChatIdForTier(tier: 'admin' | 'everything' | 'team'): string 
 }
 
 /**
- * Check if Telegram is properly configured
+ * Check if a specific tier is properly configured
+ */
+export function isTierConfigured(tier: NotificationTier): boolean {
+  const token = getBotTokenForTier(tier);
+  const chatId = getChatIdForTier(tier);
+
+  if (!token || token.includes('PLACEHOLDER')) return false;
+  if (!chatId || chatId.includes('PLACEHOLDER')) return false;
+
+  return true;
+}
+
+/**
+ * Check if Telegram is properly configured (at least one tier)
  */
 export function isTelegramConfigured(): boolean {
-  const token = getBotToken();
-  if (!token || token.includes('PLACEHOLDER')) {
-    return false;
-  }
-
-  // At least one chat ID must be configured
-  const adminChat = getChatIdForTier('admin');
-  const everythingChat = getChatIdForTier('everything');
-  const teamChat = getChatIdForTier('team');
-
-  return !!(adminChat || everythingChat || teamChat);
+  return isTierConfigured('admin') ||
+         isTierConfigured('everything') ||
+         isTierConfigured('team');
 }
 
 /**
  * Check which tiers are configured
  */
-export function getConfiguredTiers(): ('admin' | 'everything' | 'team')[] {
-  const tiers: ('admin' | 'everything' | 'team')[] = [];
+export function getConfiguredTiers(): NotificationTier[] {
+  const tiers: NotificationTier[] = [];
 
-  if (getChatIdForTier('admin')) tiers.push('admin');
-  if (getChatIdForTier('everything')) tiers.push('everything');
-  if (getChatIdForTier('team')) tiers.push('team');
+  if (isTierConfigured('admin')) tiers.push('admin');
+  if (isTierConfigured('everything')) tiers.push('everything');
+  if (isTierConfigured('team')) tiers.push('team');
 
   return tiers;
 }
@@ -73,20 +95,39 @@ export function getConfiguredTiers(): ('admin' | 'everything' | 'team')[] {
 // =============================================================================
 
 /**
- * Send a message to Telegram
+ * Determine tier from chat ID (for backward compatibility)
  */
-export async function sendMessage(options: SendMessageOptions): Promise<boolean> {
-  const token = getBotToken();
+function getTierFromChatId(chatId: string): NotificationTier | undefined {
+  if (chatId === process.env.TELEGRAM_ADMIN_CHAT_ID) return 'admin';
+  if (chatId === process.env.TELEGRAM_EVERYTHING_CHAT_ID) return 'everything';
+  if (chatId === process.env.TELEGRAM_TEAM_CHAT_ID) return 'team';
+  return undefined;
+}
 
-  if (!token) {
-    console.warn('[Telegram] Bot token not configured');
-    return false;
-  }
-
-  const { chatId, text, parseMode = 'Markdown', replyMarkup, disablePreview = true } = options;
+/**
+ * Send a message to Telegram
+ * Uses tier-specific bot token based on chatId or explicit tier parameter
+ */
+export async function sendMessage(options: SendMessageOptions & { tier?: NotificationTier }): Promise<boolean> {
+  const { chatId, text, parseMode = 'Markdown', replyMarkup, disablePreview = true, tier } = options;
 
   if (!chatId) {
     console.warn('[Telegram] No chat ID provided');
+    return false;
+  }
+
+  // Determine which tier/bot to use
+  const targetTier = tier || getTierFromChatId(chatId);
+
+  if (!targetTier) {
+    console.warn('[Telegram] Could not determine tier for chat ID:', chatId);
+    return false;
+  }
+
+  const token = getBotTokenForTier(targetTier);
+
+  if (!token) {
+    console.warn(`[Telegram] Bot token not configured for tier: ${targetTier}`);
     return false;
   }
 
@@ -106,13 +147,13 @@ export async function sendMessage(options: SendMessageOptions): Promise<boolean>
     const data: TelegramResponse = await response.json();
 
     if (!data.ok) {
-      console.error('[Telegram] API error:', data.description);
+      console.error(`[Telegram] API error (${targetTier}):`, data.description);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[Telegram] Send error:', error);
+    console.error(`[Telegram] Send error (${targetTier}):`, error);
     return false;
   }
 }
@@ -124,12 +165,20 @@ export async function editMessage(
   chatId: string,
   messageId: number,
   text: string,
-  replyMarkup?: InlineKeyboard
+  replyMarkup?: InlineKeyboard,
+  tier?: NotificationTier
 ): Promise<boolean> {
-  const token = getBotToken();
+  const targetTier = tier || getTierFromChatId(chatId);
+
+  if (!targetTier) {
+    console.warn('[Telegram] Could not determine tier for chat ID:', chatId);
+    return false;
+  }
+
+  const token = getBotTokenForTier(targetTier);
 
   if (!token) {
-    console.warn('[Telegram] Bot token not configured');
+    console.warn(`[Telegram] Bot token not configured for tier: ${targetTier}`);
     return false;
   }
 
@@ -150,29 +199,31 @@ export async function editMessage(
     const data: TelegramResponse = await response.json();
 
     if (!data.ok) {
-      console.error('[Telegram] Edit error:', data.description);
+      console.error(`[Telegram] Edit error (${targetTier}):`, data.description);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[Telegram] Edit error:', error);
+    console.error(`[Telegram] Edit error (${targetTier}):`, error);
     return false;
   }
 }
 
 /**
  * Answer a callback query (button click)
+ * Note: Uses admin bot by default since callbacks typically come from admin actions
  */
 export async function answerCallbackQuery(
   callbackQueryId: string,
   text?: string,
-  showAlert = false
+  showAlert = false,
+  tier: NotificationTier = 'admin'
 ): Promise<boolean> {
-  const token = getBotToken();
+  const token = getBotTokenForTier(tier);
 
   if (!token) {
-    console.warn('[Telegram] Bot token not configured');
+    console.warn(`[Telegram] Bot token not configured for tier: ${tier}`);
     return false;
   }
 
@@ -190,13 +241,13 @@ export async function answerCallbackQuery(
     const data: TelegramResponse = await response.json();
 
     if (!data.ok) {
-      console.error('[Telegram] Callback answer error:', data.description);
+      console.error(`[Telegram] Callback answer error (${tier}):`, data.description);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[Telegram] Callback answer error:', error);
+    console.error(`[Telegram] Callback answer error (${tier}):`, error);
     return false;
   }
 }
@@ -204,11 +255,22 @@ export async function answerCallbackQuery(
 /**
  * Delete a message
  */
-export async function deleteMessage(chatId: string, messageId: number): Promise<boolean> {
-  const token = getBotToken();
+export async function deleteMessage(
+  chatId: string,
+  messageId: number,
+  tier?: NotificationTier
+): Promise<boolean> {
+  const targetTier = tier || getTierFromChatId(chatId);
+
+  if (!targetTier) {
+    console.warn('[Telegram] Could not determine tier for chat ID:', chatId);
+    return false;
+  }
+
+  const token = getBotTokenForTier(targetTier);
 
   if (!token) {
-    console.warn('[Telegram] Bot token not configured');
+    console.warn(`[Telegram] Bot token not configured for tier: ${targetTier}`);
     return false;
   }
 
@@ -225,7 +287,7 @@ export async function deleteMessage(chatId: string, messageId: number): Promise<
     const data: TelegramResponse = await response.json();
     return data.ok;
   } catch (error) {
-    console.error('[Telegram] Delete error:', error);
+    console.error(`[Telegram] Delete error (${targetTier}):`, error);
     return false;
   }
 }
@@ -237,12 +299,20 @@ export async function sendPhoto(
   chatId: string,
   photoUrl: string,
   caption?: string,
-  replyMarkup?: InlineKeyboard
+  replyMarkup?: InlineKeyboard,
+  tier?: NotificationTier
 ): Promise<boolean> {
-  const token = getBotToken();
+  const targetTier = tier || getTierFromChatId(chatId);
+
+  if (!targetTier) {
+    console.warn('[Telegram] Could not determine tier for chat ID:', chatId);
+    return false;
+  }
+
+  const token = getBotTokenForTier(targetTier);
 
   if (!token) {
-    console.warn('[Telegram] Bot token not configured');
+    console.warn(`[Telegram] Bot token not configured for tier: ${targetTier}`);
     return false;
   }
 
@@ -261,13 +331,13 @@ export async function sendPhoto(
     const data: TelegramResponse = await response.json();
 
     if (!data.ok) {
-      console.error('[Telegram] Photo send error:', data.description);
+      console.error(`[Telegram] Photo send error (${targetTier}):`, data.description);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[Telegram] Photo send error:', error);
+    console.error(`[Telegram] Photo send error (${targetTier}):`, error);
     return false;
   }
 }
@@ -279,12 +349,20 @@ export async function sendDocument(
   chatId: string,
   documentUrl: string,
   caption?: string,
-  filename?: string
+  filename?: string,
+  tier?: NotificationTier
 ): Promise<boolean> {
-  const token = getBotToken();
+  const targetTier = tier || getTierFromChatId(chatId);
+
+  if (!targetTier) {
+    console.warn('[Telegram] Could not determine tier for chat ID:', chatId);
+    return false;
+  }
+
+  const token = getBotTokenForTier(targetTier);
 
   if (!token) {
-    console.warn('[Telegram] Bot token not configured');
+    console.warn(`[Telegram] Bot token not configured for tier: ${targetTier}`);
     return false;
   }
 
@@ -303,13 +381,13 @@ export async function sendDocument(
     const data: TelegramResponse = await response.json();
 
     if (!data.ok) {
-      console.error('[Telegram] Document send error:', data.description);
+      console.error(`[Telegram] Document send error (${targetTier}):`, data.description);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[Telegram] Document send error:', error);
+    console.error(`[Telegram] Document send error (${targetTier}):`, error);
     return false;
   }
 }
