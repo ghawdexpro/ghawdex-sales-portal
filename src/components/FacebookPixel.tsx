@@ -4,8 +4,12 @@ import Script from 'next/script';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-// Primary Facebook Pixel ID - DO NOT CHANGE without user permission
-const FB_PIXEL_ID = '780274077714265';
+// Facebook Pixel IDs - DO NOT CHANGE without user permission
+const FB_PIXELS = [
+  '780274077714265',  // Primary
+  '809814008544994',
+  '1315803266494960',
+];
 
 export default function FacebookPixel() {
   const pathname = usePathname();
@@ -20,7 +24,7 @@ export default function FacebookPixel() {
 
   return (
     <>
-      {/* Meta Pixel Code */}
+      {/* Meta Pixel Code - All 3 pixels */}
       <Script id="facebook-pixel-init" strategy="afterInteractive">
         {`
           !function(f,b,e,v,n,t,s)
@@ -31,18 +35,20 @@ export default function FacebookPixel() {
           t.src=v;s=b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t,s)}(window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '${FB_PIXEL_ID}');
+          fbq('init', '780274077714265');
+          fbq('init', '809814008544994');
+          fbq('init', '1315803266494960');
           fbq('track', 'PageView');
         `}
       </Script>
+      {/* Noscript fallbacks for all pixels */}
       <noscript>
-        <img
-          height="1"
-          width="1"
-          style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
-          alt=""
-        />
+        <img height="1" width="1" style={{ display: 'none' }}
+          src="https://www.facebook.com/tr?id=780274077714265&ev=PageView&noscript=1" alt="" />
+        <img height="1" width="1" style={{ display: 'none' }}
+          src="https://www.facebook.com/tr?id=809814008544994&ev=PageView&noscript=1" alt="" />
+        <img height="1" width="1" style={{ display: 'none' }}
+          src="https://www.facebook.com/tr?id=1315803266494960&ev=PageView&noscript=1" alt="" />
       </noscript>
       {/* End Meta Pixel Code */}
     </>
