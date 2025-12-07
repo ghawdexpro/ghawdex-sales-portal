@@ -13,6 +13,32 @@ import Step5Contact from '@/components/wizard/steps/Step5Contact';
 import Step6Summary from '@/components/wizard/steps/Step6Summary';
 import { useWizard } from '@/components/wizard/WizardContext';
 
+// Location-based grant data
+const GRANT_DATA = {
+  gozo: {
+    name: 'Gozo',
+    solarGrant: 3000,
+    solarPercent: 50,
+    batteryGrant: 8550,
+    batteryPercent: 95,
+    totalGrant: 11550,
+    customerCost: 499,
+    headline: 'Gozo Residents: €499 Battery with 95% Grant',
+    subheadline: 'Up to €11,550 in grants available - Limited time offer',
+  },
+  malta: {
+    name: 'Malta',
+    solarGrant: 3000,
+    solarPercent: 50,
+    batteryGrant: 7200,
+    batteryPercent: 80,
+    totalGrant: 10200,
+    customerCost: 1800,
+    headline: 'Get Up to €10,200 in Solar Grants',
+    subheadline: '50% Solar + 80% Battery grants - Don\'t miss out',
+  },
+};
+
 // Prefill data from URL params (Zoho CRM links)
 interface PrefillData {
   name: string;
@@ -79,6 +105,20 @@ function HomeContent() {
   const ctaButtonRef = useRef<HTMLButtonElement>(null);
   const [showStickyBtn, setShowStickyBtn] = useState(false);
 
+  // Detect location from UTM campaign parameter or default to Malta
+  const location = useMemo(() => {
+    const campaign = searchParams.get('utm_campaign')?.toLowerCase() || '';
+    const content = searchParams.get('utm_content')?.toLowerCase() || '';
+    const source = searchParams.get('location')?.toLowerCase() || '';
+
+    if (campaign.includes('gozo') || content.includes('gozo') || source === 'gozo') {
+      return 'gozo';
+    }
+    return 'malta';
+  }, [searchParams]);
+
+  const grantInfo = GRANT_DATA[location];
+
   // Intersection Observer for sticky CTA
   useEffect(() => {
     if (!ctaButtonRef.current) return;
@@ -143,13 +183,25 @@ function HomeContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e]">
+      {/* Urgency Banner */}
+      <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white text-center py-2 px-4">
+        <p className="text-sm font-medium">
+          <span className="animate-pulse inline-block mr-2">🔥</span>
+          {location === 'gozo'
+            ? 'Gozo 95% Battery Grant ending soon - Only 12 installation slots left for December!'
+            : 'Malta 80% Battery Grant limited - Book your free assessment today!'
+          }
+          <span className="animate-pulse inline-block ml-2">🔥</span>
+        </p>
+      </div>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Background glow effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[128px]" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[128px]" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-16 sm:pb-32">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-16 sm:pb-24">
           {/* Hero Logo - Big and Bold (hidden on mobile) */}
           <div className="hidden sm:flex items-center justify-center mb-8 sm:mb-12">
             <div className="relative">
@@ -165,22 +217,44 @@ function HomeContent() {
 
           {/* Main Content */}
           <div className="text-center max-w-4xl mx-auto px-2">
-            <div className="hidden sm:inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 mb-6 sm:mb-8">
+            {/* Location Badge */}
+            <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 mb-6 sm:mb-8">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-amber-200 text-xs sm:text-sm font-medium">Malta&apos;s #1 Solar Installer</span>
+              <span className="text-amber-200 text-xs sm:text-sm font-medium">
+                {location === 'gozo' ? '🏝️ Gozo Exclusive Offer' : '☀️ Malta\'s #1 Solar Installer'}
+              </span>
             </div>
 
+            {/* Dynamic Headline based on location */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-              Stop Feeding Enemalta
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
-                Calculate Your Savings Now
+              {grantInfo.headline}
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 mt-2">
+                {location === 'gozo'
+                  ? 'Full System from €499!'
+                  : 'Save Thousands on Solar'
+                }
               </span>
             </h1>
 
-            <p className="text-base sm:text-xl text-gray-400 mb-8 sm:mb-10 max-w-2xl mx-auto">
-              AI-powered roof analysis, instant pricing, and flexible financing options.
-              Professional installation in just 14 days.
+            <p className="text-base sm:text-xl text-gray-400 mb-6 sm:mb-8 max-w-2xl mx-auto">
+              {grantInfo.subheadline}
             </p>
+
+            {/* Grant Breakdown Mini Cards */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8">
+              <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
+                <div className="text-amber-400 font-bold text-lg sm:text-xl">€{grantInfo.solarGrant.toLocaleString()}</div>
+                <div className="text-gray-400 text-xs sm:text-sm">{grantInfo.solarPercent}% Solar Grant</div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
+                <div className="text-amber-400 font-bold text-lg sm:text-xl">€{grantInfo.batteryGrant.toLocaleString()}</div>
+                <div className="text-gray-400 text-xs sm:text-sm">{grantInfo.batteryPercent}% Battery Grant</div>
+              </div>
+              <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl px-4 py-3">
+                <div className="text-white font-bold text-lg sm:text-xl">€{grantInfo.totalGrant.toLocaleString()}</div>
+                <div className="text-amber-200 text-xs sm:text-sm">Total Available</div>
+              </div>
+            </div>
 
             {/* CTA Button */}
             <button
@@ -188,45 +262,37 @@ function HomeContent() {
               onClick={handleStart}
               className="group relative inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 hover:scale-105"
             >
-              <span>Calculate My Savings</span>
+              <span>Calculate My Savings Now</span>
               <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </button>
 
             <p className="text-gray-500 text-xs sm:text-sm mt-4">
-              No commitment required • Takes less than 2 minutes
+              Free assessment • No commitment • Results in 2 minutes
             </p>
-
-            <a
-              href="/products"
-              className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 mt-4 text-sm"
-            >
-              <span>Browse all products</span>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </a>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-3xl mx-auto mt-12 sm:mt-20">
+          {/* Stats - Updated to match ads */}
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-3xl mx-auto mt-12 sm:mt-16">
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 mb-1">
+                €{grantInfo.totalGrant.toLocaleString()}
+              </div>
+              <div className="text-gray-500 text-xs sm:text-sm">Max Grant</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-white mb-1">14 Days</div>
+              <div className="text-gray-500 text-xs sm:text-sm">Guaranteed Install</div>
+            </div>
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-white mb-1">2,000+</div>
-              <div className="text-gray-500 text-xs sm:text-sm">Installations</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-white mb-1">14</div>
-              <div className="text-gray-500 text-xs sm:text-sm">Days to Install</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-white mb-1">25yr</div>
-              <div className="text-gray-500 text-xs sm:text-sm">Warranty</div>
+              <div className="text-gray-500 text-xs sm:text-sm">Happy Customers</div>
             </div>
           </div>
 
           {/* Trust badges */}
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mt-10 sm:mt-16 opacity-60">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mt-10 sm:mt-12 opacity-70">
             <div className="flex items-center gap-1.5 sm:gap-2 text-gray-400">
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -237,13 +303,13 @@ function HomeContent() {
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span className="text-xs sm:text-sm">Grant Eligible</span>
+              <span className="text-xs sm:text-sm">ARMS Grant Certified</span>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2 text-gray-400">
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
               </svg>
-              <span className="text-xs sm:text-sm">BOV Financing</span>
+              <span className="text-xs sm:text-sm">0% BOV Financing</span>
             </div>
           </div>
         </div>
@@ -284,6 +350,196 @@ function HomeContent() {
         </div>
       </div>
 
+      {/* Testimonials Section */}
+      <div className="bg-[#0a0a0a] py-12 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              What Our Customers Say
+            </h2>
+            <p className="text-gray-400">Join 2,000+ happy homeowners who made the switch</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            {/* Testimonial 1 - Gozo */}
+            <div className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl p-6">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-300 mb-4 text-sm sm:text-base">
+                &quot;Incredible service! From first contact to installation took only 12 days. The 95% battery grant in Gozo made it almost free. Best decision we ever made.&quot;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                  JC
+                </div>
+                <div>
+                  <div className="text-white font-medium">Joseph C.</div>
+                  <div className="text-gray-500 text-sm">Xewkija, Gozo</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 - Malta */}
+            <div className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl p-6">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-300 mb-4 text-sm sm:text-base">
+                &quot;My electricity bill went from €180/month to practically zero. The team handled all the grant paperwork. I got €10,200 back! Professional from start to finish.&quot;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                  MC
+                </div>
+                <div>
+                  <div className="text-white font-medium">Maria C.</div>
+                  <div className="text-gray-500 text-sm">Mosta, Malta</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 - Recent */}
+            <div className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl p-6">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-300 mb-4 text-sm sm:text-base">
+                &quot;They said 14 days, they delivered in 11. Now I&apos;m selling electricity back to the grid! The calculator on the website was spot-on with the estimates.&quot;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                  PV
+                </div>
+                <div>
+                  <div className="text-white font-medium">Paul V.</div>
+                  <div className="text-gray-500 text-sm">Naxxar, Malta</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Social Proof Stats */}
+          <div className="mt-12 sm:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold text-amber-400">4.9/5</div>
+              <div className="text-gray-500 text-sm mt-1">Google Reviews</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold text-amber-400">98%</div>
+              <div className="text-gray-500 text-sm mt-1">Recommend Us</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold text-amber-400">€8M+</div>
+              <div className="text-gray-500 text-sm mt-1">Grants Secured</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold text-amber-400">14 Days</div>
+              <div className="text-gray-500 text-sm mt-1">Avg. Install Time</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Grant Breakdown Section */}
+      <div className="bg-[#111827] py-12 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              {location === 'gozo' ? 'Gozo Exclusive Grant Breakdown' : 'Your Grant Breakdown'}
+            </h2>
+            <p className="text-gray-400">See exactly how much you can save with government grants</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Grant Visualization */}
+            <div className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-2xl p-6 sm:p-8">
+              <h3 className="text-xl font-semibold text-white mb-6">Typical Full System Cost</h3>
+
+              {/* Solar Grant Bar */}
+              <div className="mb-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-400">Solar Panels ({grantInfo.solarPercent}% Grant)</span>
+                  <span className="text-amber-400 font-medium">-€{grantInfo.solarGrant.toLocaleString()}</span>
+                </div>
+                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full" style={{ width: `${grantInfo.solarPercent}%` }} />
+                </div>
+              </div>
+
+              {/* Battery Grant Bar */}
+              <div className="mb-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-400">Battery Storage ({grantInfo.batteryPercent}% Grant)</span>
+                  <span className="text-amber-400 font-medium">-€{grantInfo.batteryGrant.toLocaleString()}</span>
+                </div>
+                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" style={{ width: `${grantInfo.batteryPercent}%` }} />
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="border-t border-white/10 pt-6 mt-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-semibold">Total Grant Value</span>
+                  <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
+                    €{grantInfo.totalGrant.toLocaleString()}
+                  </span>
+                </div>
+                {location === 'gozo' && (
+                  <p className="text-green-400 text-sm mt-3">
+                    *Gozo residents get 95% battery grant vs 80% in Malta!
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Example Calculation */}
+            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6 sm:p-8">
+              <h3 className="text-xl font-semibold text-white mb-6">Your Estimated Cost</h3>
+
+              <div className="space-y-4">
+                <div className="flex justify-between py-3 border-b border-white/10">
+                  <span className="text-gray-400">Full System Value</span>
+                  <span className="text-white">€{(grantInfo.totalGrant + grantInfo.customerCost).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-white/10">
+                  <span className="text-gray-400">Solar Grant ({grantInfo.solarPercent}%)</span>
+                  <span className="text-green-400">-€{grantInfo.solarGrant.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-white/10">
+                  <span className="text-gray-400">Battery Grant ({grantInfo.batteryPercent}%)</span>
+                  <span className="text-green-400">-€{grantInfo.batteryGrant.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between py-4 mt-4 bg-white/5 rounded-xl px-4">
+                  <span className="text-white font-semibold">You Pay Only</span>
+                  <span className="text-2xl font-bold text-amber-400">€{grantInfo.customerCost.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleStart}
+                className="w-full mt-6 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-3 rounded-full hover:shadow-lg hover:shadow-amber-500/25 transition-all"
+              >
+                Get My Exact Quote
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Sticky CTA Bar */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0a0a0a]/95 to-[#1a1a2e]/95 backdrop-blur-md border-t border-white/10 p-4 transition-all duration-300 ${
@@ -291,14 +547,19 @@ function HomeContent() {
         }`}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <p className="hidden sm:block text-white text-sm">
-            Stop paying too much for electricity
-          </p>
+          <div className="hidden sm:block">
+            <p className="text-white text-sm font-medium">
+              {location === 'gozo'
+                ? `€${grantInfo.totalGrant.toLocaleString()} in grants available - Only €${grantInfo.customerCost} out of pocket!`
+                : `Save up to €${grantInfo.totalGrant.toLocaleString()} with government grants`
+              }
+            </p>
+          </div>
           <button
             onClick={handleStart}
             className="flex-1 sm:flex-none group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold text-sm sm:text-base px-6 py-3 rounded-full hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300"
           >
-            <span>Calculate My Savings</span>
+            <span>Get My Quote Now</span>
             <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
