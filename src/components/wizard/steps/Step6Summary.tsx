@@ -1740,12 +1740,45 @@ export default function Step6Summary() {
               />
             </div>
 
-            {/* Footer with Print/Download hint */}
+            {/* Footer with Save/Close buttons */}
             <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-                <p className="text-gray-600 text-sm">
-                  💡 Use Ctrl+P / Cmd+P to save as PDF
-                </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+                <button
+                  onClick={async () => {
+                    try {
+                      const html2pdf = (await import('html2pdf.js')).default;
+                      const container = document.createElement('div');
+                      container.innerHTML = modalContent;
+                      container.style.position = 'absolute';
+                      container.style.left = '-9999px';
+                      document.body.appendChild(container);
+
+                      const docType = modalOpen === 'proposal' ? 'proposal' : 'tech_spec';
+                      const filename = `${docType}_${state.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'ghawdex'}.pdf`;
+
+                      await html2pdf()
+                        .set({
+                          margin: 10,
+                          filename,
+                          image: { type: 'jpeg', quality: 0.98 },
+                          html2canvas: { scale: 2, useCORS: true },
+                          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        })
+                        .from(container)
+                        .save();
+
+                      document.body.removeChild(container);
+                    } catch (e) {
+                      console.error('PDF download failed:', e);
+                    }
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-black px-6 py-2 rounded-lg transition-colors font-semibold flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Save PDF
+                </button>
                 <button
                   onClick={closeModal}
                   className="bg-gray-900 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
