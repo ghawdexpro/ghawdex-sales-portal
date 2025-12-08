@@ -197,7 +197,7 @@ function HomeContent() {
       </div>
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden snap-section">
         {/* Background glow effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[128px]" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[128px]" />
@@ -317,7 +317,8 @@ function HomeContent() {
       </div>
 
       {/* How it works section */}
-      <div className="bg-[#111827] py-12 sm:py-20">
+      <div className="relative bg-[#111827] py-12 sm:py-20 snap-section">
+        <div className="section-divider"></div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-8 sm:mb-12">
             How It Works
@@ -357,7 +358,8 @@ function HomeContent() {
       </div>
 
       {/* Testimonials Section */}
-      <div className="bg-[#0a0a0a] py-12 sm:py-20">
+      <div className="relative bg-[#0a0a0a] py-12 sm:py-20 snap-section">
+        <div className="section-divider"></div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
@@ -395,7 +397,8 @@ function HomeContent() {
       </div>
 
       {/* Grant Breakdown Section */}
-      <div className="bg-[#111827] py-12 sm:py-20">
+      <div className="relative bg-[#111827] py-12 sm:py-20 snap-section">
+        <div className="section-divider"></div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
