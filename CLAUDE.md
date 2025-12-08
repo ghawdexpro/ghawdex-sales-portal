@@ -454,6 +454,86 @@ railway variables --kv          # View all variables
 - Notifications are non-blocking - system continues even if Telegram fails
 - To test: submit a lead and check all 3 chat groups
 
+## Pricing Rules (SOURCE OF TRUTH - All Projects Must Follow)
+
+**⚠️ CRITICAL: This project (sales-portal) is the SOURCE OF TRUTH for all GhawdeX pricing.**
+
+### Core Pricing Principles
+
+1. **ALL prices are GROSS** (VAT included) - Never add VAT to displayed prices
+2. **VAT Rate**: 18% Malta standard - NO reduced rates apply to solar installations
+3. **Inverter cost**: ALWAYS included in package OR battery price - NEVER separate
+4. **Bundle discount**: When buying PV + Battery, use `priceWithBattery` field
+
+### Package Pricing (GROSS - VAT Included)
+
+| Package | System | PV Only | With Battery |
+|---------|--------|---------|--------------|
+| 3 kWp | 3.08 kWp | €4,250 | €4,000 |
+| 4 kWp | 4.00 kWp | €4,800 | €4,500 |
+| 5 kWp | 5.00 kWp | €5,700 | €5,400 |
+| 6 kWp | 6.00 kWp | €6,600 | €6,250 |
+| 8 kWp | 8.00 kWp | €8,400 | €8,000 |
+| 10 kWp | 10.00 kWp | €10,200 | €9,700 |
+
+### Battery Pricing (GROSS - VAT Included)
+
+| Size | Price | Notes |
+|------|-------|-------|
+| 5 kWh | €4,000 | Includes hybrid inverter |
+| 10 kWh | €7,500 | Includes hybrid inverter |
+| 15 kWh | €10,500 | Includes hybrid inverter |
+
+### Battery-Only Pricing (GROSS - VAT Included)
+
+When customer already has PV system and wants only battery:
+
+| Size | Price | Notes |
+|------|-------|-------|
+| 5 kWh | €4,500 | Includes hybrid inverter upgrade |
+| 10 kWh | €8,000 | Includes hybrid inverter upgrade |
+| 15 kWh | €11,000 | Includes hybrid inverter upgrade |
+
+### Grant Calculations (REWS 2025)
+
+**PV Grant:**
+- €300/kWp (first 4 kWp), €150/kWp (remaining)
+- Cap: €2,400 (Malta) / €3,600 (Gozo)
+
+**Battery Grant:**
+- €200/kWh (Malta) / €190/kWh (Gozo)
+- Cap: €2,500 (Malta) / €4,750 (Gozo - 95% of €5,000)
+
+**Customer Pays** = Gross Price - Total Grant (PV + Battery only, NO inverter grant)
+
+### Price Calculation Formula
+
+```typescript
+// 1. Get package price (already GROSS)
+const pvPrice = hasBattery ? pkg.priceWithBattery : pkg.priceEur;
+const batteryPrice = battery.priceEur;
+const grossTotal = pvPrice + batteryPrice;
+
+// 2. Extract VAT from GROSS price (NOT add to it!)
+const vatAmount = grossTotal - (grossTotal / 1.18);
+const netPrice = grossTotal / 1.18;
+
+// 3. Calculate grants
+const pvGrant = calculatePvGrant(systemKwp, isGozo);
+const batteryGrant = calculateBatteryGrant(batteryKwh, isGozo);
+const totalGrant = pvGrant + batteryGrant;  // NO inverter grant!
+
+// 4. Customer pays
+const customerPays = grossTotal - totalGrant;
+```
+
+### Key Files (Source of Truth)
+
+- `src/lib/types.ts` - `SYSTEM_PACKAGES`, `BATTERY_OPTIONS`, `GRANT_SCHEME_2025`
+- `src/lib/calculations.ts` - `calculateGrantAmount()`, ROI calculations
+
+---
+
 ## Malta Solar Constants
 
 Reference values in `src/lib/calculations.ts`:
