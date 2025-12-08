@@ -137,6 +137,9 @@ export interface Lead {
   bill_file_url: string | null;
   proposal_file_url: string | null;
   social_provider: string | null;
+  // Location - Gozo vs Malta (from campaign UTM or coordinates)
+  is_gozo: boolean;
+  locality: string | null;
   // Equipment details
   panel_brand: string | null;
   panel_model: string | null;

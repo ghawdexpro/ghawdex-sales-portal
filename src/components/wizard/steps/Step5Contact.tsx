@@ -165,6 +165,9 @@ export default function Step5Contact() {
           session_token: sessionToken,
           bill_file_url: state.billFileUrl || null,
           social_provider: state.socialProvider || null,
+          // Location - Gozo vs Malta (from UTM params or coordinates)
+          is_gozo: state.location === 'gozo',
+          location: state.location || 'malta',
           // Equipment details for Zoho
           panel_brand: 'Huawei',
           panel_model: state.selectedSystem ? `${state.selectedSystem.panelWattage}W Mono PERC` : null,

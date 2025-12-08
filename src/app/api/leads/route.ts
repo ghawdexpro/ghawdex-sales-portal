@@ -281,6 +281,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Detect is_gozo from: explicit param, utm_campaign, location param, or coordinates
+    let isGozo = body.is_gozo;
+    if (isGozo === undefined) {
+      // Check utm_campaign for gozo/malta keywords
+      const utmCampaign = (body.utm_campaign || '').toLowerCase();
+      const utmContent = (body.utm_content || '').toLowerCase();
+      const locationParam = (body.location || '').toLowerCase();
+
+      if (utmCampaign.includes('gozo') || utmContent.includes('gozo') || locationParam === 'gozo') {
+        isGozo = true;
+      } else if (utmCampaign.includes('malta') || utmContent.includes('malta') || locationParam === 'malta') {
+        isGozo = false;
+      } else if (body.coordinates?.lat) {
+        // Fallback to coordinates (Gozo is north of 36.0°N)
+        isGozo = body.coordinates.lat >= 36.0;
+      } else {
+        // Default to false (Malta) if no indicators
+        isGozo = false;
+      }
+    }
+
     // Prepare lead data
     const leadData: Omit<Lead, 'id' | 'created_at'> = {
       name: body.name,
@@ -312,6 +333,9 @@ export async function POST(request: NextRequest) {
       bill_file_url: body.bill_file_url || null,
       proposal_file_url: body.proposal_file_url || null,
       social_provider: body.social_provider || null,
+      // Location - Gozo vs Malta
+      is_gozo: isGozo,
+      locality: body.locality || null,
       // Equipment details
       panel_brand: body.panel_brand || null,
       panel_model: body.panel_model || null,
@@ -397,6 +421,8 @@ export async function POST(request: NextRequest) {
           proposal_file_url: leadData.proposal_file_url,
           bill_file_url: leadData.bill_file_url,
           notes: leadData.notes,
+          is_gozo: leadData.is_gozo,
+          locality: leadData.locality,
           status: 'qualified',
         })
       ).then(value => ({ status: 'fulfilled' as const, value }))
