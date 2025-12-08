@@ -20,7 +20,7 @@ interface Testimonial {
   isGozo?: boolean;
 }
 
-// Customer testimonials with installation photos
+// Customer testimonials with installation photos (AI-generated for Xewkija/Mosta)
 const TESTIMONIALS: Testimonial[] = [
   {
     id: '1',
@@ -29,7 +29,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '10 kWp + 10 kWh Battery',
     savings: '€320/month',
     quote: 'With the 95% battery grant in Gozo, I paid only €499 for a full system worth €12,000! The team handled all paperwork with ARMS. My electricity bill went from €280 to practically zero.',
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-xewkija.jpg',
     isGozo: true,
   },
   {
@@ -39,7 +39,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '12 kWp + 12 kWh Battery',
     savings: '€380/month',
     quote: 'The calculator on the website was incredibly accurate. They quoted €350/month savings and I\'m actually saving more! Installation was done in 11 days, even faster than promised.',
-    image: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-mosta.jpg',
   },
   {
     id: '3',
@@ -48,7 +48,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '15 kWp + 15 kWh Battery',
     savings: '€450/month',
     quote: 'Running a business from home, my bills were crazy. Now I\'m selling electricity back to the grid! The €10,200 grant made this a no-brainer. Professional team, no hidden costs.',
-    image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-naxxar.jpg',
   },
   {
     id: '4',
@@ -57,7 +57,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '8 kWp + 8 kWh Battery',
     savings: '€245/month',
     quote: 'As a pensioner, I was worried about the investment. But with BOV 0% financing and the grants, my monthly payment is less than what I was paying Enemalta! Wish I did this sooner.',
-    image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-rabat.jpg',
   },
   {
     id: '5',
@@ -66,7 +66,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '6 kWp + 10 kWh Battery',
     savings: '€195/month',
     quote: 'The Gozo 95% battery grant is amazing! Paid almost nothing out of pocket. The team came from Malta but were very professional. System working perfectly for 8 months now.',
-    image: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-victoria.jpg',
     isGozo: true,
   },
   {
@@ -76,7 +76,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '10 kWp + 10 kWh Battery',
     savings: '€310/month',
     quote: 'Living in an apartment, I thought solar wasn\'t possible. GhawdeX found roof space and now my family of 5 has near-zero electricity costs. The digital contract signing was so convenient!',
-    image: 'https://images.unsplash.com/photo-1624397640148-949b1732bb0a?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-sliema.jpg',
   },
   {
     id: '7',
@@ -85,7 +85,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '20 kWp + 20 kWh Battery',
     savings: '€580/month',
     quote: 'I have a pool and AC running most of the year. My bills were €600+! Now I generate more than I use. The 14-day installation guarantee was met exactly. Very impressed.',
-    image: 'https://images.unsplash.com/photo-1595437193398-f24279553f4f?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-qormi.jpg',
   },
   {
     id: '8',
@@ -94,7 +94,7 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '8 kWp',
     savings: '€210/month',
     quote: 'Started without battery, planning to add one next year. Even solar-only with the 50% grant is fantastic. Already saving over €200 monthly. The online quote matched exactly.',
-    image: 'https://images.unsplash.com/photo-1611365892117-00ac5ef43c90?w=400&h=250&fit=crop',
+    image: '/testimonials/testimonial-stjulians.jpg',
   },
 ];
 
