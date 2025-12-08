@@ -63,6 +63,15 @@ interface ZohoLeadData {
   inverter_model?: string | null;
   battery_brand?: string | null;
   battery_model?: string | null;
+  // Sales system fields (synced with Supabase)
+  lead_score?: number | null;
+  quality_score?: number | null;
+  first_contact_at?: string | null;
+  last_contact_at?: string | null;
+  converted_at?: string | null;
+  source_campaign?: string | null;
+  source_medium?: string | null;
+  source_content?: string | null;
 }
 
 interface ZohoUpdateOptions {
@@ -173,6 +182,15 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Household_Size: lead.household_size || undefined,
     Recommended_Package: lead.selected_system || undefined,
     Bill_Images_URL: lead.bill_file_url || undefined,
+    // Sales system fields (synced with Supabase)
+    Portal_Lead_Score: lead.lead_score || undefined,
+    Portal_Quality_Score: lead.quality_score || undefined,
+    First_Contact_Date: lead.first_contact_at || undefined,
+    Last_Contact_Date: lead.last_contact_at || undefined,
+    Converted_Date: lead.converted_at || undefined,
+    Campaign_Source: lead.source_campaign || undefined,  // Already exists in Zoho
+    UTM_Medium: lead.source_medium || undefined,
+    UTM_Content: lead.source_content || undefined,
   };
 }
 

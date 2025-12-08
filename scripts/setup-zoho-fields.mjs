@@ -138,7 +138,51 @@ async function main() {
     'Monthly_Bill',
     'Panel_Brand',
     'Battery_Size',
+    // NEW: Sales system fields
+    'Lead_Score',
+    'Quality_Score',
+    'First_Contact_Date',
+    'Last_Contact_Date',
+    'Converted_Date',
+    'Campaign_Source',
+    'UTM_Medium',
+    'UTM_Content',
   ];
+
+  // Define fields to create if missing
+  // Note: "Lead Score" is reserved keyword, use "Portal Lead Score"
+  // Note: "Campaign Source" already exists in Zoho as Campaign_Source
+  const fieldsToCreate = [
+    { field_label: 'Portal Lead Score', api_name: 'Portal_Lead_Score', data_type: 'integer', visible: true },
+    { field_label: 'Portal Quality Score', api_name: 'Portal_Quality_Score', data_type: 'integer', visible: true },
+    { field_label: 'First Contact Date', api_name: 'First_Contact_Date', data_type: 'datetime', visible: true },
+    { field_label: 'Last Contact Date', api_name: 'Last_Contact_Date', data_type: 'datetime', visible: true },
+    { field_label: 'Converted Date', api_name: 'Converted_Date', data_type: 'datetime', visible: true },
+    // Campaign_Source already exists in Zoho
+    { field_label: 'UTM Medium', api_name: 'UTM_Medium', data_type: 'text', length: 100, visible: true },
+    { field_label: 'UTM Content', api_name: 'UTM_Content', data_type: 'text', length: 255, visible: true },
+  ];
+
+  // Create missing fields
+  console.log('\n🔧 Creating missing custom fields...');
+  for (const fieldConfig of fieldsToCreate) {
+    const exists = fields.find(f => f.api_name === fieldConfig.api_name);
+    if (!exists) {
+      console.log(`   Creating ${fieldConfig.api_name}...`);
+      try {
+        const result = await createField(accessToken, fieldConfig);
+        if (result.fields?.[0]?.status === 'success') {
+          console.log(`   ✅ ${fieldConfig.api_name} created`);
+        } else {
+          console.log(`   ⚠️  ${fieldConfig.api_name}: ${JSON.stringify(result)}`);
+        }
+      } catch (err) {
+        console.log(`   ❌ ${fieldConfig.api_name} failed: ${err.message}`);
+      }
+    } else {
+      console.log(`   ✓ ${fieldConfig.api_name} already exists`);
+    }
+  }
 
   for (const apiName of customFieldNames) {
     const field = fields.find(f => f.api_name === apiName);
