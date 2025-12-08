@@ -370,7 +370,7 @@ function HomeContent() {
 
           {/* Dynamic Testimonial Carousel with Photos */}
           <TestimonialCarouselDark
-            gozoOnly={location === 'gozo'}
+            gozoOnly={false}
             autoRotateInterval={6000}
           />
 
