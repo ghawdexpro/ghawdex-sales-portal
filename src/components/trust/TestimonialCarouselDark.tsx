@@ -20,7 +20,7 @@ interface Testimonial {
   isGozo?: boolean;
 }
 
-// Customer testimonials with installation photos (AI-generated for Xewkija/Mosta)
+// Customer testimonials with people photos
 const TESTIMONIALS: Testimonial[] = [
   {
     id: '1',
@@ -29,72 +29,45 @@ const TESTIMONIALS: Testimonial[] = [
     systemSize: '10 kWp + 10 kWh Battery',
     savings: '€320/month',
     quote: 'With the 95% battery grant in Gozo, I paid only €499 for a full system worth €12,000! The team handled all paperwork with ARMS. My electricity bill went from €280 to practically zero.',
-    image: '/testimonials/testimonial-xewkija.jpg',
+    image: '/testimonials/testimonial-person-joseph.jpg',
     isGozo: true,
   },
   {
     id: '2',
-    name: 'Maria Borg',
-    location: 'Mosta, Malta',
-    systemSize: '12 kWp + 12 kWh Battery',
-    savings: '€380/month',
-    quote: 'The calculator on the website was incredibly accurate. They quoted €350/month savings and I\'m actually saving more! Installation was done in 11 days, even faster than promised.',
-    image: '/testimonials/testimonial-mosta.jpg',
-  },
-  {
-    id: '3',
     name: 'Paul Vella',
     location: 'Naxxar, Malta',
     systemSize: '15 kWp + 15 kWh Battery',
     savings: '€450/month',
     quote: 'Running a business from home, my bills were crazy. Now I\'m selling electricity back to the grid! The €10,200 grant made this a no-brainer. Professional team, no hidden costs.',
-    image: '/testimonials/testimonial-naxxar.jpg',
+    image: '/testimonials/testimonial-person-paul.jpg',
   },
   {
-    id: '4',
+    id: '3',
     name: 'Carmen Galea',
     location: 'Rabat, Malta',
     systemSize: '8 kWp + 8 kWh Battery',
     savings: '€245/month',
     quote: 'As a pensioner, I was worried about the investment. But with BOV 0% financing and the grants, my monthly payment is less than what I was paying Enemalta! Wish I did this sooner.',
-    image: '/testimonials/testimonial-rabat.jpg',
+    image: '/testimonials/testimonial-person-carmen.jpg',
   },
   {
-    id: '5',
+    id: '4',
     name: 'Anthony Sultana',
     location: 'Victoria, Gozo',
     systemSize: '6 kWp + 10 kWh Battery',
     savings: '€195/month',
     quote: 'The Gozo 95% battery grant is amazing! Paid almost nothing out of pocket. The team came from Malta but were very professional. System working perfectly for 8 months now.',
-    image: '/testimonials/testimonial-victoria.jpg',
+    image: '/testimonials/testimonial-person-anthony.jpg',
     isGozo: true,
   },
   {
-    id: '6',
+    id: '5',
     name: 'Rita Azzopardi',
     location: 'Sliema, Malta',
     systemSize: '10 kWp + 10 kWh Battery',
     savings: '€310/month',
     quote: 'Living in an apartment, I thought solar wasn\'t possible. GhawdeX found roof space and now my family of 5 has near-zero electricity costs. The digital contract signing was so convenient!',
-    image: '/testimonials/testimonial-sliema.jpg',
-  },
-  {
-    id: '7',
-    name: 'Mark Grech',
-    location: 'Qormi, Malta',
-    systemSize: '20 kWp + 20 kWh Battery',
-    savings: '€580/month',
-    quote: 'I have a pool and AC running most of the year. My bills were €600+! Now I generate more than I use. The 14-day installation guarantee was met exactly. Very impressed.',
-    image: '/testimonials/testimonial-qormi.jpg',
-  },
-  {
-    id: '8',
-    name: 'Joanna Mifsud',
-    location: 'St. Julian\'s, Malta',
-    systemSize: '8 kWp',
-    savings: '€210/month',
-    quote: 'Started without battery, planning to add one next year. Even solar-only with the 50% grant is fantastic. Already saving over €200 monthly. The online quote matched exactly.',
-    image: '/testimonials/testimonial-stjulians.jpg',
+    image: '/testimonials/testimonial-person-rita.jpg',
   },
 ];
 

@@ -106,16 +106,16 @@ function HomeContent() {
   const ctaButtonRef = useRef<HTMLButtonElement>(null);
   const [showStickyBtn, setShowStickyBtn] = useState(false);
 
-  // Detect location from UTM campaign parameter or default to Malta
+  // Detect location from UTM params - default to Gozo (better deal to showcase)
   const location = useMemo(() => {
     const campaign = searchParams.get('utm_campaign')?.toLowerCase() || '';
     const content = searchParams.get('utm_content')?.toLowerCase() || '';
     const source = searchParams.get('location')?.toLowerCase() || '';
 
-    if (campaign.includes('gozo') || content.includes('gozo') || source === 'gozo') {
-      return 'gozo';
+    if (campaign.includes('malta') || content.includes('malta') || source === 'malta') {
+      return 'malta';
     }
-    return 'malta';
+    return 'gozo';
   }, [searchParams]);
 
   const grantInfo = GRANT_DATA[location];
