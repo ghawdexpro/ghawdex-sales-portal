@@ -108,15 +108,8 @@ export async function sendLeadConfirmationEmail(
     });
   }
 
-  if (recipientEmail) {
-    return sendStandaloneEmail({
-      to: { email: recipientEmail, name: data.name },
-      subject,
-      html,
-    });
-  }
-
-  return { success: false, error: 'No lead ID or email provided' };
+  // Require Zoho Lead ID for all emails
+  return { success: false, error: 'Zoho Lead ID required to send emails' };
 }
 
 /**

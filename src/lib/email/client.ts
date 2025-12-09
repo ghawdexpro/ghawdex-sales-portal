@@ -224,73 +224,15 @@ async function sendEmailViaZohoContact(
 // =============================================================================
 
 /**
- * Send standalone email using ZeptoMail (Zoho's transactional email)
- * Use this when we don't have a Zoho lead ID yet
+ * Send standalone email (fallback for leads without Zoho ID)
+ * NOTE: Currently not supported - all leads must have Zoho ID to receive emails
  */
 export async function sendStandaloneEmail(options: SendEmailOptions): Promise<EmailResult> {
-  // If ZeptoMail is configured, use it
-  const zeptoApiKey = process.env.ZEPTOMAIL_API_KEY;
-
-  if (zeptoApiKey) {
-    return sendViaZeptoMail(options, zeptoApiKey);
-  }
-
-  // Fallback: Log warning (we'll add more providers later)
-  console.warn('[Email] No standalone email provider configured');
+  console.warn('[Email] Standalone email not supported - lead must have Zoho ID');
   console.log('[Email] Would send to:', typeof options.to === 'string' ? options.to : options.to.email);
   console.log('[Email] Subject:', options.subject);
 
-  return { success: false, error: 'No standalone email provider configured' };
-}
-
-/**
- * Send via ZeptoMail (Zoho's transactional email service)
- */
-async function sendViaZeptoMail(options: SendEmailOptions, apiKey: string): Promise<EmailResult> {
-  const to = typeof options.to === 'string' ? options.to : options.to.email;
-  const toName = typeof options.to === 'object' ? options.to.name : undefined;
-
-  try {
-    const response = await fetch('https://api.zeptomail.eu/v1.1/email', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: apiKey,
-      },
-      body: JSON.stringify({
-        from: {
-          address: FROM_EMAIL,
-          name: FROM_NAME,
-        },
-        to: [
-          {
-            email_address: {
-              address: to,
-              name: toName || to.split('@')[0],
-            },
-          },
-        ],
-        subject: options.subject,
-        htmlbody: options.html,
-        textbody: options.text,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      console.log('[Email] Sent via ZeptoMail:', result.request_id);
-      return { success: true, messageId: result.request_id };
-    }
-
-    console.error('[Email] ZeptoMail failed:', result);
-    return { success: false, error: result.message || 'ZeptoMail error' };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Email] ZeptoMail error:', message);
-    return { success: false, error: message };
-  }
+  return { success: false, error: 'Lead must have Zoho ID to send emails' };
 }
 
 // =============================================================================
