@@ -1870,7 +1870,10 @@ export default function Step6Summary() {
         >
           {/* Big Close Button at top - always visible */}
           <button
-            onClick={closeModal}
+            onClick={(e) => {
+              e.stopPropagation();
+              closeModal();
+            }}
             className="absolute top-4 right-4 z-[60] bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-all hover:scale-110"
             aria-label="Close"
           >

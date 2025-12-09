@@ -7,8 +7,9 @@ const STEPS = [
   { num: 2, label: 'Consumption' },
   { num: 3, label: 'System' },
   { num: 4, label: 'Financing' },
-  { num: 5, label: 'Contact' },
-  { num: 6, label: 'Summary' },
+  { num: 5, label: 'Bill Upload' },
+  { num: 6, label: 'Contact' },
+  { num: 7, label: 'Summary' },
 ];
 
 interface WizardLayoutProps {

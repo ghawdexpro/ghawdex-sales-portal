@@ -87,11 +87,11 @@ export default function Step4Financing() {
       monthlyPayment: monthlyPayment || undefined,
     });
 
-    // Skip Step 5 (Contact) if user came from Zoho CRM link (already has contact info)
+    // Skip Bill Upload (Step 5) and Contact (Step 6) if user came from Zoho CRM link
     if (state.isPrefilledLead) {
-      dispatch({ type: 'SET_STEP', payload: 6 });
+      dispatch({ type: 'SET_STEP', payload: 7 }); // Skip to Summary
     } else {
-      dispatch({ type: 'NEXT_STEP' });
+      dispatch({ type: 'NEXT_STEP' }); // Go to Bill Upload (Step 5)
     }
   };
 

@@ -9,8 +9,9 @@ import Step1Location from '@/components/wizard/steps/Step1Location';
 import Step2Consumption from '@/components/wizard/steps/Step2Consumption';
 import Step3System from '@/components/wizard/steps/Step3System';
 import Step4Financing from '@/components/wizard/steps/Step4Financing';
-import Step5Contact from '@/components/wizard/steps/Step5Contact';
-import Step6Summary from '@/components/wizard/steps/Step6Summary';
+import Step5BillUpload from '@/components/wizard/steps/Step5BillUpload';
+import Step6Contact from '@/components/wizard/steps/Step6Contact';
+import Step7Summary from '@/components/wizard/steps/Step7Summary';
 import { useWizard } from '@/components/wizard/WizardContext';
 import { TestimonialCarouselDark, GrantCountdownDark } from '@/components/trust';
 
@@ -82,9 +83,11 @@ function WizardSteps() {
     case 4:
       return <Step4Financing />;
     case 5:
-      return <Step5Contact />;
+      return <Step5BillUpload />;
     case 6:
-      return <Step6Summary />;
+      return <Step6Contact />;
+    case 7:
+      return <Step7Summary />;
     default:
       return <Step1Location />;
   }
