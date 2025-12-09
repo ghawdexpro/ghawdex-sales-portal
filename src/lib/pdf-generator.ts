@@ -1,6 +1,24 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { WizardState, SystemPackage, BatteryOption } from './types';
 
+// Sanitize Maltese characters for PDF (WinAnsi encoding doesn't support them)
+function sanitizeForPdf(text: string): string {
+  return text
+    .replace(/ħ/g, 'h')
+    .replace(/Ħ/g, 'H')
+    .replace(/ċ/g, 'c')
+    .replace(/Ċ/g, 'C')
+    .replace(/ġ/g, 'g')
+    .replace(/Ġ/g, 'G')
+    .replace(/ż/g, 'z')
+    .replace(/Ż/g, 'Z')
+    .replace(/à/g, 'a')
+    .replace(/è/g, 'e')
+    .replace(/ì/g, 'i')
+    .replace(/ò/g, 'o')
+    .replace(/ù/g, 'u');
+}
+
 interface ProposalData {
   customerName: string;
   email: string;
@@ -66,7 +84,7 @@ export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise
     color: black,
   });
 
-  page.drawText('Engineering Excellence in Energy Storage', {
+  page.drawText(sanitizeForPdf('Engineering Excellence in Energy Storage'), {
     x: 50,
     y: yPosition - 15,
     size: 9,
@@ -153,28 +171,28 @@ export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise
     borderWidth: 1,
   });
 
-  page.drawText(`Customer: ${data.customerName}`, {
+  page.drawText(sanitizeForPdf(`Customer: ${data.customerName}`), {
     x: 60,
     y: yPosition - 20,
     size: 10,
     font: fontRegular,
     color: black,
   });
-  page.drawText(`Email: ${data.email}`, {
+  page.drawText(sanitizeForPdf(`Email: ${data.email}`), {
     x: 60,
     y: yPosition - 35,
     size: 10,
     font: fontRegular,
     color: black,
   });
-  page.drawText(`Phone: ${data.phone}`, {
+  page.drawText(sanitizeForPdf(`Phone: ${data.phone}`), {
     x: width / 2 + 10,
     y: yPosition - 20,
     size: 10,
     font: fontRegular,
     color: black,
   });
-  page.drawText(`Address: ${data.address}`, {
+  page.drawText(sanitizeForPdf(`Address: ${data.address}`), {
     x: width / 2 + 10,
     y: yPosition - 35,
     size: 10,
