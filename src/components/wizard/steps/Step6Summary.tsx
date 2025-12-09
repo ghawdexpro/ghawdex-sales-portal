@@ -84,6 +84,9 @@ export default function Step6Summary() {
       container.style.zIndex = '-9999';
       document.body.appendChild(container);
 
+      // Wait for browser to paint the content before generating PDF
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       // Generate PDF blob
       const pdfBlob = await html2pdf()
         .set({
@@ -1770,6 +1773,9 @@ export default function Step6Summary() {
                       container.style.pointerEvents = 'none';
                       container.style.zIndex = '-9999';
                       document.body.appendChild(container);
+
+                      // Wait for browser to paint the content
+                      await new Promise(resolve => setTimeout(resolve, 200));
 
                       const docType = modalOpen === 'proposal' ? 'proposal' : 'tech_spec';
                       const filename = `${docType}_${state.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'ghawdex'}.pdf`;
