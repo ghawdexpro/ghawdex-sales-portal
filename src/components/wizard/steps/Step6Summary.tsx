@@ -1761,50 +1761,9 @@ export default function Step6Summary() {
             <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                 <button
-                  onClick={async () => {
-                    try {
-                      const html2pdf = (await import('html2pdf.js')).default;
-                      const container = document.createElement('div');
-                      container.innerHTML = modalContent;
-                      // Use opacity instead of off-screen positioning
-                      container.style.position = 'fixed';
-                      container.style.top = '0';
-                      container.style.left = '0';
-                      container.style.width = '210mm';
-                      container.style.height = 'auto';
-                      container.style.opacity = '0.01'; // Slightly visible to force rendering
-                      container.style.pointerEvents = 'none';
-                      container.style.zIndex = '-9999';
-                      container.style.backgroundColor = 'white';
-                      document.body.appendChild(container);
-
-                      // Wait longer for browser to paint content, load fonts, and apply styles
-                      await new Promise(resolve => setTimeout(resolve, 1000));
-
-                      const docType = modalOpen === 'proposal' ? 'proposal' : 'tech_spec';
-                      const filename = `${docType}_${state.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'ghawdex'}.pdf`;
-
-                      await html2pdf()
-                        .set({
-                          margin: 10,
-                          filename,
-                          image: { type: 'jpeg', quality: 0.98 },
-                          html2canvas: { scale: 2, useCORS: true },
-                          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        })
-                        .from(container)
-                        .save();
-
-                      // Clean up with delay
-                      setTimeout(() => {
-                        if (document.body.contains(container)) {
-                          document.body.removeChild(container);
-                        }
-                      }, 100);
-                    } catch (e) {
-                      console.error('PDF download failed:', e);
-                      alert('Failed to generate PDF. Please try again or use browser print (Cmd+P / Ctrl+P).');
-                    }
+                  onClick={() => {
+                    // Use browser's native print dialog - more reliable than html2pdf
+                    window.print();
                   }}
                   className="bg-amber-500 hover:bg-amber-600 text-black px-6 py-2 rounded-lg transition-colors font-semibold flex items-center gap-2"
                 >
