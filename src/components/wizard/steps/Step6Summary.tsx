@@ -79,13 +79,15 @@ export default function Step6Summary() {
       container.style.top = '0';
       container.style.left = '0';
       container.style.width = '210mm'; // A4 width
-      container.style.opacity = '0';
+      container.style.height = 'auto';
+      container.style.opacity = '0.01'; // Slightly visible to force rendering
       container.style.pointerEvents = 'none';
       container.style.zIndex = '-9999';
+      container.style.backgroundColor = 'white'; // Ensure white background
       document.body.appendChild(container);
 
-      // Wait for browser to paint the content before generating PDF
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait longer for browser to paint content, load fonts, and apply styles
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Generate PDF blob
       const pdfBlob = await html2pdf()
@@ -1769,13 +1771,15 @@ export default function Step6Summary() {
                       container.style.top = '0';
                       container.style.left = '0';
                       container.style.width = '210mm';
-                      container.style.opacity = '0';
+                      container.style.height = 'auto';
+                      container.style.opacity = '0.01'; // Slightly visible to force rendering
                       container.style.pointerEvents = 'none';
                       container.style.zIndex = '-9999';
+                      container.style.backgroundColor = 'white';
                       document.body.appendChild(container);
 
-                      // Wait for browser to paint the content
-                      await new Promise(resolve => setTimeout(resolve, 200));
+                      // Wait longer for browser to paint content, load fonts, and apply styles
+                      await new Promise(resolve => setTimeout(resolve, 1000));
 
                       const docType = modalOpen === 'proposal' ? 'proposal' : 'tech_spec';
                       const filename = `${docType}_${state.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'ghawdex'}.pdf`;
