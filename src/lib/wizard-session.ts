@@ -147,15 +147,17 @@ export async function createWizardSession(
     const utmParams = getUTMParams();
 
     const sessionData = {
-      session_token: sessionToken,
-      status: 'in_progress' as WizardSessionStatus,
+      session_id: sessionToken, // Note: column is named session_id, not session_token
       current_step: 1,
-      highest_step_reached: 1,
-      device_info: deviceInfo,
-      referrer: typeof document !== 'undefined' ? document.referrer : null,
-      ...utmParams,
-      step_timestamps: { 1: new Date().toISOString() },
-      ...initialData,
+      session_data: {
+        status: 'in_progress' as WizardSessionStatus,
+        highest_step_reached: 1,
+        device_info: deviceInfo,
+        referrer: typeof document !== 'undefined' ? document.referrer : null,
+        ...utmParams,
+        step_timestamps: { 1: new Date().toISOString() },
+        ...initialData,
+      },
     };
 
     const response = await supabaseFetch('/wizard_sessions', {
@@ -181,7 +183,7 @@ export async function createWizardSession(
 export async function getWizardSessionByToken(sessionToken: string): Promise<WizardSession | null> {
   try {
     const response = await supabaseFetch(
-      `/wizard_sessions?session_token=eq.${sessionToken}&select=*`
+      `/wizard_sessions?session_id=eq.${sessionToken}&select=*`
     );
 
     if (!response.ok) {
