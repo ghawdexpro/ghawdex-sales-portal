@@ -6,18 +6,41 @@
  * - 72h follow-up (if no response)
  * - 7d final follow-up (if no response)
  *
- * Also handles marketing sequences based on lead pillar:
- * - Speed Pillar: Fast installation messaging
- * - Grants Pillar: €10,200 grant focus
- * - Nurture: Educational content for cold leads
- *
  * Cron: 0 * * * * (every hour)
  */
 
 import { NextResponse } from 'next/server';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { sendFollowUpEmail, sendEmailViaZohoCRM } from '@/lib/email';
-import { generateMarketingEmail } from '@/lib/email/templates/marketing-sequences';
+import { sendFollowUpEmail } from '@/lib/email';
+import crypto from 'crypto';
+
+// Generate HMAC token for lead signing URL (same algorithm as backoffice)
+function generateLeadSigningToken(leadId: string): string | null {
+  const secret = process.env.PORTAL_CONTRACT_SECRET || process.env.CRON_SECRET;
+  if (!secret) {
+    console.error('[EmailCron] No secret configured for signing URLs');
+    return null;
+  }
+  const timestamp = Date.now().toString();
+  const payload = `${leadId}:${timestamp}`;
+  const hmac = crypto.createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+    .substring(0, 16);
+  const encodedPayload = Buffer.from(payload).toString('base64url');
+  return `${encodedPayload}.${hmac}`;
+}
+
+// Build contract signing URL with HMAC token
+function buildContractSigningUrl(leadId: string): string {
+  const backofficeUrl = process.env.BACKOFFICE_URL || 'https://bo.ghawdex.pro';
+  const token = generateLeadSigningToken(leadId);
+  if (token) {
+    return `${backofficeUrl}/sign/lead/${leadId}?t=${token}`;
+  }
+  // Fallback without token (will likely be rejected by backoffice)
+  return `${backofficeUrl}/sign/lead/${leadId}`;
+}
 
 // Lazy-initialized Supabase client (avoids build-time errors)
 let supabase: SupabaseClient | null = null;
@@ -37,19 +60,6 @@ const FOLLOW_UP_24H = 24;
 const FOLLOW_UP_72H = 72;
 const FOLLOW_UP_7D = 168; // 7 days
 
-// Sequence email timing (hours after lead creation)
-const SEQUENCE_TIMINGS = {
-  'speed-1': 1,      // 1 hour - immediate
-  'speed-2': 72,     // 3 days
-  'speed-3': 120,    // 5 days
-  'grants-1': 1,     // 1 hour - immediate
-  'grants-2': 72,    // 3 days
-  'grants-3': 120,   // 5 days
-  'nurture-1': 48,   // 2 days
-  'nurture-2': 168,  // 7 days
-  'nurture-3': 336,  // 14 days
-};
-
 export async function GET(request: Request) {
   // Verify cron secret
   const authHeader = request.headers.get('authorization');
@@ -61,12 +71,11 @@ export async function GET(request: Request) {
 
   const results = {
     followUps: { sent: 0, skipped: 0, errors: 0 },
-    sequences: { sent: 0, skipped: 0, errors: 0 },
     details: [] as string[],
   };
 
   try {
-    // 1. Get leads that need follow-ups
+    // 1. Get leads that need follow-ups (including system data for emails)
     const { data: leads, error: leadsError } = await getSupabase()
       .from('leads')
       .select(`
@@ -76,13 +85,14 @@ export async function GET(request: Request) {
         phone,
         zoho_lead_id,
         status,
-        lead_score,
-        quality_score,
-        source_campaign,
-        source_medium,
-        is_gozo,
         created_at,
-        converted_at
+        converted_at,
+        system_size_kw,
+        battery_size_kwh,
+        with_battery,
+        annual_savings,
+        grant_amount,
+        is_gozo
       `)
       .in('status', ['new', 'contacted', 'qualified'])
       .is('converted_at', null)
@@ -128,71 +138,57 @@ export async function GET(request: Request) {
         (Date.now() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60)
       );
 
-      // Determine lead pillar based on source/score
-      const pillar = determinePillar(lead);
+      // Check which follow-up to send
+      const emailToSend = getFollowUpToSend(hoursSinceCreation, leadSentEmails);
 
-      // Check which emails to send
-      const emailsToSend = getEmailsToSend(
-        hoursSinceCreation,
-        leadSentEmails,
-        pillar,
-        lead.lead_score || 0
-      );
+      if (!emailToSend) {
+        results.followUps.skipped++;
+        continue;
+      }
 
-      for (const emailType of emailsToSend) {
-        try {
-          let result;
+      try {
+        // Apply defaults for leads without system data (Facebook, external sources)
+        // User requirement: default 5 kWp + 10 kWh battery, Gozo location
+        const systemSize = lead.system_size_kw || 5;  // Default: 5 kWp Essential
+        const annualSavings = lead.annual_savings || 1800;  // Default estimate
 
-          if (emailType.startsWith('follow-up')) {
-            // Standard follow-up emails
-            result = await sendFollowUpEmail(
-              lead.zoho_lead_id,
-              emailType as 'follow-up-24h' | 'follow-up-72h' | 'follow-up-7d',
-              {
-                name: lead.name,
-                quoteRef: `GX-${lead.id.slice(0, 8).toUpperCase()}`,
-                systemSize: 10, // Default, should come from quote
-                annualSavings: 1800, // Default, should come from quote
-                contractSigningUrl: `https://bo.ghawdex.pro/sign/lead/${lead.id}`,
-                salesPhone: '+356 7905 5156',
-              }
-            );
-          } else {
-            // Marketing sequence emails
-            const { subject, html } = generateMarketingEmail(emailType, {
-              name: lead.name,
-              isGozo: lead.is_gozo,
-            });
+        // Generate valid contract signing URL with HMAC token
+        const contractSigningUrl = buildContractSigningUrl(lead.id);
 
-            result = await sendEmailViaZohoCRM({
-              leadId: lead.zoho_lead_id,
-              subject,
-              html,
-            });
+        const result = await sendFollowUpEmail(
+          lead.zoho_lead_id,
+          emailToSend,
+          {
+            name: lead.name,
+            quoteRef: `GX-${lead.id.slice(0, 8).toUpperCase()}`,
+            systemSize,
+            annualSavings,
+            contractSigningUrl,
+            salesPhone: '+356 7905 5156',
           }
+        );
 
-          if (result.success) {
-            // Log to communications table
-            await getSupabase().from('communications').insert({
-              lead_id: lead.id,
-              channel: 'email',
-              direction: 'outbound',
-              template_used: emailType,
-              status: 'sent',
-              subject: getEmailSubject(emailType, lead.name),
-              external_message_id: result.messageId,
-            });
+        if (result.success) {
+          // Log to communications table
+          await getSupabase().from('communications').insert({
+            lead_id: lead.id,
+            channel: 'email',
+            direction: 'outbound',
+            template_used: emailToSend,
+            status: 'sent',
+            subject: getEmailSubject(emailToSend, lead.name),
+            external_message_id: result.messageId,
+          });
 
-            results.followUps.sent++;
-            results.details.push(`Sent ${emailType} to ${lead.email}`);
-          } else {
-            results.followUps.errors++;
-            results.details.push(`Failed ${emailType} for ${lead.email}: ${result.error}`);
-          }
-        } catch (error) {
+          results.followUps.sent++;
+          results.details.push(`Sent ${emailToSend} to ${lead.email}`);
+        } else {
           results.followUps.errors++;
-          console.error(`[EmailCron] Error sending ${emailType}:`, error);
+          results.details.push(`Failed ${emailToSend} for ${lead.email}: ${result.error}`);
         }
+      } catch (error) {
+        results.followUps.errors++;
+        console.error(`[EmailCron] Error sending ${emailToSend}:`, error);
       }
     }
 
@@ -211,73 +207,23 @@ export async function GET(request: Request) {
 }
 
 /**
- * Determine which pillar a lead belongs to based on source and behavior
+ * Determine which follow-up email to send (only one at a time)
  */
-function determinePillar(lead: {
-  source_campaign?: string | null;
-  source_medium?: string | null;
-  lead_score?: number | null;
-}): 'speed' | 'grants' | 'nurture' {
-  const campaign = (lead.source_campaign || '').toLowerCase();
-  const medium = (lead.source_medium || '').toLowerCase();
-
-  // Check campaign/medium for pillar hints
-  if (campaign.includes('speed') || campaign.includes('14day') || campaign.includes('fast')) {
-    return 'speed';
-  }
-  if (campaign.includes('grant') || campaign.includes('10200') || campaign.includes('savings')) {
-    return 'grants';
-  }
-
-  // High-intent leads get grants messaging (most compelling)
-  if ((lead.lead_score || 0) >= 50) {
-    return 'grants';
-  }
-
-  // Low-score leads get nurture sequence
-  if ((lead.lead_score || 0) < 30) {
-    return 'nurture';
-  }
-
-  // Default to grants (strongest message)
-  return 'grants';
-}
-
-/**
- * Determine which emails need to be sent based on timing
- */
-function getEmailsToSend(
+function getFollowUpToSend(
   hoursSinceCreation: number,
-  alreadySent: Set<string>,
-  pillar: 'speed' | 'grants' | 'nurture',
-  leadScore: number
-): string[] {
-  const emailsToSend: string[] = [];
-
-  // Standard follow-ups (for all pillars)
+  alreadySent: Set<string>
+): 'follow-up-24h' | 'follow-up-72h' | 'follow-up-7d' | null {
+  // Check in order: 24h, 72h, 7d
   if (hoursSinceCreation >= FOLLOW_UP_24H && !alreadySent.has('follow-up-24h')) {
-    emailsToSend.push('follow-up-24h');
+    return 'follow-up-24h';
   }
   if (hoursSinceCreation >= FOLLOW_UP_72H && !alreadySent.has('follow-up-72h')) {
-    emailsToSend.push('follow-up-72h');
+    return 'follow-up-72h';
   }
   if (hoursSinceCreation >= FOLLOW_UP_7D && !alreadySent.has('follow-up-7d')) {
-    emailsToSend.push('follow-up-7d');
+    return 'follow-up-7d';
   }
-
-  // Marketing sequence emails based on pillar
-  const sequencePrefix = pillar;
-  for (let i = 1; i <= 3; i++) {
-    const emailKey = `${sequencePrefix}-${i}` as keyof typeof SEQUENCE_TIMINGS;
-    const timing = SEQUENCE_TIMINGS[emailKey];
-
-    if (hoursSinceCreation >= timing && !alreadySent.has(emailKey)) {
-      emailsToSend.push(emailKey);
-    }
-  }
-
-  // Only send one email at a time to avoid spam
-  return emailsToSend.slice(0, 1);
+  return null;
 }
 
 /**
@@ -290,15 +236,6 @@ function getEmailSubject(emailType: string, name: string): string {
     'follow-up-24h': `${firstName}, any questions about your solar quote?`,
     'follow-up-72h': `${firstName}, don't miss your solar savings opportunity`,
     'follow-up-7d': `${firstName}, your solar quote expires soon`,
-    'speed-1': 'Your 14-day solar installation starts now',
-    'speed-2': '"They did it in 14 days" - Real customer stories',
-    'speed-3': 'Last chance: Start your 14-day countdown',
-    'grants-1': 'How to claim your €10,200 solar grant',
-    'grants-2': 'Step-by-step: How we get you €10,200',
-    'grants-3': 'Grant budget update: Act now',
-    'nurture-1': 'Free tool: Calculate your solar savings in 60 seconds',
-    'nurture-2': 'Quick question: What\'s holding you back?',
-    'nurture-3': 'Last message (but you need to see this)',
   };
 
   return subjects[emailType] || `GhawdeX Solar - ${emailType}`;

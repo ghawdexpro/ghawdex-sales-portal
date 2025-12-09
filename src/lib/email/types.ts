@@ -86,12 +86,35 @@ export interface ContractReminderData {
 }
 
 export interface FollowUpData {
+  // Core fields
   name: string;
   quoteRef: string;
   systemSize: number;
   annualSavings: number;
   contractSigningUrl?: string;
   salesPhone: string;
+
+  // System details (for specific quotes)
+  batterySize?: number;           // 10 for LUNA-10
+  panelCount?: number;            // 11 for 5 kWp
+  inverterModel?: string;         // "SUN2000-5KTL-L1"
+  batteryModel?: string;          // "LUNA2000-10-S0"
+  annualProduction?: number;      // 7500 kWh
+
+  // Pricing (for net cost display)
+  totalPrice?: number;            // 13000
+  grantAmount?: number;           // 9875
+  netCost?: number;               // 3125
+  pvGrant?: number;               // 2750
+  batteryGrant?: number;          // 7125
+
+  // Location (affects grant rates)
+  isGozo?: boolean;               // true for 95% battery grant
+
+  // Calculated fields
+  lifetimeSavings?: number;       // 45000
+  monthlySavings?: number;        // 150
+  weeklyCost?: number;            // 35 (what they pay ARMS)
 }
 
 export interface SessionRecoveryData {
