@@ -31,13 +31,14 @@ interface ProposalData {
 }
 
 export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise<Uint8Array> {
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]); // A4 size in points
-  const { width, height } = page.getSize();
+  try {
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595, 842]); // A4 size in points
+    const { width, height } = page.getSize();
 
-  // Load fonts
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    // Load fonts
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   // Colors
   const black = rgb(0.1, 0.1, 0.18); // #1a1a2e
@@ -450,5 +451,9 @@ export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise
     color: gray,
   });
 
-  return pdfDoc.save();
+    return await pdfDoc.save();
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
