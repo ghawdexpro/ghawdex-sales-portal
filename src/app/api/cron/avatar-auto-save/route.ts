@@ -99,6 +99,13 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     }
   }
 
+  // Detect if address is in Gozo
+  const addressLower = (data.address || '').toLowerCase();
+  const isGozo = addressLower.includes('gozo') ||
+                 addressLower.includes('għawdex') ||
+                 addressLower.includes('victoria') ||
+                 addressLower.includes('rabat, gozo');
+
   const leadData = {
     name: session.customer_name || 'Avatar Customer',
     email: session.customer_email || '',
@@ -106,6 +113,8 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     address: data.address || '',
     coordinates: data.coordinates || null,
     google_maps_link: generateGoogleMapsLinkFromCoords(data.coordinates),
+    is_gozo: isGozo,
+    locality: null, // Will be extracted from address if available
     household_size: data.household_size || null,
     monthly_bill: data.monthly_bill || null,
     consumption_kwh: data.consumption_kwh || null,
