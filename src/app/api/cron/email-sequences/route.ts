@@ -15,15 +15,22 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { sendFollowUpEmail, sendEmailViaZohoCRM } from '@/lib/email';
 import { generateMarketingEmail } from '@/lib/email/templates/marketing-sequences';
 
-// Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy-initialized Supabase client (avoids build-time errors)
+let supabase: SupabaseClient | null = null;
+
+function getSupabase(): SupabaseClient {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabase;
+}
 
 // Time thresholds in hours
 const FOLLOW_UP_24H = 24;
@@ -60,7 +67,7 @@ export async function GET(request: Request) {
 
   try {
     // 1. Get leads that need follow-ups
-    const { data: leads, error: leadsError } = await supabase
+    const { data: leads, error: leadsError } = await getSupabase()
       .from('leads')
       .select(`
         id,
@@ -94,7 +101,7 @@ export async function GET(request: Request) {
 
     // 2. Get sent communications to avoid duplicates
     const leadIds = leads.map(l => l.id);
-    const { data: communications } = await supabase
+    const { data: communications } = await getSupabase()
       .from('communications')
       .select('lead_id, template_used, created_at')
       .in('lead_id', leadIds)
@@ -166,7 +173,7 @@ export async function GET(request: Request) {
 
           if (result.success) {
             // Log to communications table
-            await supabase.from('communications').insert({
+            await getSupabase().from('communications').insert({
               lead_id: lead.id,
               channel: 'email',
               direction: 'outbound',
