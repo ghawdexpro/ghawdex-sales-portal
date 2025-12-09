@@ -31,6 +31,9 @@ export function generateEmailFromTemplate<T>(
     case 'follow-up-24h':
       return generateFollowUp24hEmail(data as FollowUpData);
 
+    case 'follow-up-48h':
+      return generateFollowUp48hEmail(data as FollowUpData);
+
     case 'follow-up-72h':
       return generateFollowUp72hEmail(data as FollowUpData);
 
@@ -183,6 +186,7 @@ function generateFollowUp24hEmail(data: FollowUpData): EmailContent {
 
       <div class="footer">
         <p class="footer-text">GhawdeX Solar | 14-Day Installation Guarantee | <a href="https://get.ghawdex.pro">get.ghawdex.pro</a></p>
+        ${data.unsubscribeUrl ? `<p class="footer-text" style="margin-top: 10px;"><a href="${data.unsubscribeUrl}" style="color: #4b4b4b;">Unsubscribe</a></p>` : ''}
       </div>
     </div>
   </div>
@@ -231,6 +235,158 @@ The GhawdeX Team
 
 ---
 GhawdeX Solar | 14-Day Installation Guarantee | get.ghawdex.pro
+${data.unsubscribeUrl ? `\nUnsubscribe: ${data.unsubscribeUrl}` : ''}
+  `.trim();
+
+  return { subject, html, text };
+}
+
+function generateFollowUp48hEmail(data: FollowUpData): EmailContent {
+  const firstName = data.name.split(' ')[0];
+
+  // Calculate values with defaults
+  const netCost = data.netCost || 3125;
+  const batterySize = data.batterySize || 10;
+
+  const subject = `${firstName}, see what we built for your neighbors in Gozo`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 0; padding: 0; background: #0a0a0a; }
+    .wrapper { background: #0a0a0a; padding: 20px 0; }
+    .container { max-width: 600px; margin: 0 auto; background: #1a1a1a; }
+    .header { padding: 30px 30px 20px; text-align: center; border-bottom: 2px solid #ce1126; }
+    .logo { font-size: 24px; font-weight: 700; margin: 0; }
+    .logo-red { color: #ce1126; }
+    .logo-white { color: #ffffff; }
+    .tagline { font-size: 12px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 0; }
+    .content { padding: 30px; color: #a0a0a0; }
+    .greeting { color: #ffffff; font-size: 16px; margin: 0 0 20px; }
+    .intro { margin: 0 0 25px; font-size: 15px; }
+    .stats-grid { display: table; width: 100%; margin: 25px 0; }
+    .stat-box { display: table-cell; width: 33%; text-align: center; padding: 15px; background: #252525; }
+    .stat-box:first-child { border-radius: 8px 0 0 8px; }
+    .stat-box:last-child { border-radius: 0 8px 8px 0; }
+    .stat-number { font-size: 32px; font-weight: 700; color: #22c55e; margin: 0; }
+    .stat-label { font-size: 11px; color: #6b6b6b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; }
+    .testimonial-box { background: rgba(251, 191, 36, 0.08); border-left: 4px solid #fbbf24; border-radius: 0 8px 8px 0; padding: 20px; margin: 25px 0; }
+    .testimonial-text { font-size: 15px; color: #ffffff; font-style: italic; margin: 0 0 12px; line-height: 1.5; }
+    .testimonial-author { font-size: 13px; color: #fbbf24; font-style: normal; }
+    .your-system { background: #252525; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    .your-system-title { font-size: 13px; color: #22c55e; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px; font-weight: 600; }
+    .your-system-row { font-size: 14px; color: #a0a0a0; margin: 6px 0; }
+    .your-system-row strong { color: #ffffff; }
+    .cta-wrapper { text-align: center; margin: 30px 0; }
+    .cta { display: inline-block; background: #22c55e; color: #ffffff !important; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
+    .contact-row { font-size: 14px; margin: 12px 0; }
+    .contact-row a { color: #fbbf24; text-decoration: none; }
+    .signature { color: #ffffff; margin: 25px 0 0; font-size: 15px; }
+    .footer { padding: 25px 30px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; }
+    .footer-text { font-size: 12px; color: #6b6b6b; margin: 0; }
+    .footer-text a { color: #fbbf24; text-decoration: none; }
+    @media only screen and (max-width: 480px) {
+      .content { padding: 20px; }
+      .stat-number { font-size: 24px; }
+      .cta { padding: 14px 30px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <p class="logo"><span class="logo-red">Ghawdex</span> <span class="logo-white">Solar</span></p>
+        <p class="tagline">Our Recent Work</p>
+      </div>
+
+      <div class="content">
+        <p class="greeting">${firstName},</p>
+
+        <p class="intro">While you're reviewing your quote, here's what we've been building across Gozo:</p>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <p class="stat-number">47</p>
+            <p class="stat-label">Installations</p>
+          </div>
+          <div class="stat-box">
+            <p class="stat-number">14</p>
+            <p class="stat-label">Avg Days</p>
+          </div>
+          <div class="stat-box">
+            <p class="stat-number">100%</p>
+            <p class="stat-label">Grants Approved</p>
+          </div>
+        </div>
+
+        <div class="testimonial-box">
+          <p class="testimonial-text">"I was skeptical about the 14-day promise. They started Monday, finished Friday week 2. Now I generate more than I use."</p>
+          <p class="testimonial-author">— Joseph, Gharb (5 kWp + 10 kWh)</p>
+        </div>
+
+        <div class="your-system">
+          <p class="your-system-title">Your System</p>
+          <p class="your-system-row">• ${data.systemSize} kWp + ${batterySize} kWh battery</p>
+          <p class="your-system-row">• Net cost: <strong>€${netCost.toLocaleString()}</strong> (after grants)</p>
+          <p class="your-system-row">• Same quality, same guarantee</p>
+        </div>
+
+        ${data.contractSigningUrl ? `
+        <div class="cta-wrapper">
+          <a href="${data.contractSigningUrl}" class="cta">View My Quote →</a>
+        </div>
+        ` : ''}
+
+        <div class="contact-row">📞 <a href="tel:${data.salesPhone}">${data.salesPhone}</a></div>
+        <div class="contact-row">💬 <a href="https://wa.me/35679055156">WhatsApp us</a></div>
+
+        <p class="signature">Here when you're ready,<br><strong>The GhawdeX Team</strong></p>
+      </div>
+
+      <div class="footer">
+        <p class="footer-text">GhawdeX Solar | <a href="https://get.ghawdex.pro">get.ghawdex.pro</a></p>
+        ${data.unsubscribeUrl ? `<p class="footer-text" style="margin-top: 10px;"><a href="${data.unsubscribeUrl}" style="color: #4b4b4b;">Unsubscribe</a></p>` : ''}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+${firstName},
+
+While you're reviewing your quote, here's what we've been building across Gozo:
+
+THE NUMBERS (2024):
+• 47 installations completed
+• 14 days average installation time
+• 100% grant applications approved
+
+"I was skeptical about the 14-day promise. They started Monday, finished Friday week 2. Now I generate more than I use."
+— Joseph, Gharb (5 kWp + 10 kWh)
+
+YOUR SYSTEM:
+• ${data.systemSize} kWp + ${batterySize} kWh battery
+• Net cost: €${netCost.toLocaleString()} (after grants)
+• Same quality, same guarantee
+
+${data.contractSigningUrl ? `View your quote: ${data.contractSigningUrl}` : ''}
+
+📞 ${data.salesPhone}
+💬 wa.me/35679055156
+
+Here when you're ready,
+The GhawdeX Team
+
+---
+GhawdeX Solar | get.ghawdex.pro
+${data.unsubscribeUrl ? `Unsubscribe: ${data.unsubscribeUrl}` : ''}
   `.trim();
 
   return { subject, html, text };
@@ -352,6 +508,7 @@ function generateFollowUp72hEmail(data: FollowUpData): EmailContent {
 
       <div class="footer">
         <p class="footer-text">GhawdeX Solar | 14-Day Installation Guarantee | <a href="https://get.ghawdex.pro">get.ghawdex.pro</a></p>
+        ${data.unsubscribeUrl ? `<p class="footer-text" style="margin-top: 10px;"><a href="${data.unsubscribeUrl}" style="color: #4b4b4b;">Unsubscribe</a></p>` : ''}
       </div>
     </div>
   </div>
@@ -391,6 +548,7 @@ The GhawdeX Team
 
 ---
 GhawdeX Solar | 14-Day Installation Guarantee | get.ghawdex.pro
+${data.unsubscribeUrl ? `Unsubscribe: ${data.unsubscribeUrl}` : ''}
   `.trim();
 
   return { subject, html, text };
@@ -525,6 +683,7 @@ function generateFollowUp7dEmail(data: FollowUpData): EmailContent {
 
       <div class="footer">
         <p class="footer-text">GhawdeX Solar | <a href="https://get.ghawdex.pro">get.ghawdex.pro</a></p>
+        ${data.unsubscribeUrl ? `<p class="footer-text" style="margin-top: 10px;"><a href="${data.unsubscribeUrl}" style="color: #4b4b4b;">Unsubscribe</a></p>` : ''}
       </div>
     </div>
   </div>
@@ -572,6 +731,7 @@ P.S. Every week you wait = €${weeklyLoss} more to ARMS.
 
 ---
 GhawdeX Solar | get.ghawdex.pro
+${data.unsubscribeUrl ? `Unsubscribe: ${data.unsubscribeUrl}` : ''}
   `.trim();
 
   return { subject, html, text };

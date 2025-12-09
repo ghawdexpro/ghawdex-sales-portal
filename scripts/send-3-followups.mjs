@@ -17,8 +17,8 @@ envFile.split('\n').forEach(line => {
 });
 
 const ZEPTOMAIL_API_KEY = env.ZEPTOMAIL_API_KEY;
-const TEST_EMAIL = 'admin@ghawdex.pro';
-const TEST_NAME = 'Gozo Max';
+const TEST_EMAIL = process.argv[2] || 'admin@ghawdex.pro';
+const TEST_NAME = process.argv[3] || 'Gozo Max';
 
 // =============================================================================
 // EMAIL STYLES

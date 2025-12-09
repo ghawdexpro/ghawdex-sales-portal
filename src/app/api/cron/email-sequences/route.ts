@@ -42,6 +42,17 @@ function buildContractSigningUrl(leadId: string): string {
   return `${backofficeUrl}/sign/lead/${leadId}`;
 }
 
+// Build unsubscribe URL with HMAC token
+function buildUnsubscribeUrl(leadId: string): string {
+  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://get.ghawdex.pro';
+  const token = generateLeadSigningToken(leadId);
+  if (token) {
+    return `${portalUrl}/api/unsubscribe?lead=${leadId}&token=${token}`;
+  }
+  // Without token the unsubscribe will fail validation
+  return `${portalUrl}/api/unsubscribe?lead=${leadId}`;
+}
+
 // Lazy-initialized Supabase client (avoids build-time errors)
 let supabase: SupabaseClient | null = null;
 
@@ -57,6 +68,7 @@ function getSupabase(): SupabaseClient {
 
 // Time thresholds in hours
 const FOLLOW_UP_24H = 24;
+const FOLLOW_UP_48H = 48;
 const FOLLOW_UP_72H = 72;
 const FOLLOW_UP_7D = 168; // 7 days
 
@@ -76,6 +88,7 @@ export async function GET(request: Request) {
 
   try {
     // 1. Get leads that need follow-ups (including system data for emails)
+    // Filter out opted-out leads - they shouldn't receive any more emails
     const { data: leads, error: leadsError } = await getSupabase()
       .from('leads')
       .select(`
@@ -92,11 +105,14 @@ export async function GET(request: Request) {
         with_battery,
         annual_savings,
         grant_amount,
-        is_gozo
+        total_price,
+        is_gozo,
+        email_opted_out
       `)
       .in('status', ['new', 'contacted', 'qualified'])
       .is('converted_at', null)
       .is('deleted_at', null)
+      .or('email_opted_out.is.null,email_opted_out.eq.false')  // Only leads who haven't opted out
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -150,10 +166,16 @@ export async function GET(request: Request) {
         // Apply defaults for leads without system data (Facebook, external sources)
         // User requirement: default 5 kWp + 10 kWh battery, Gozo location
         const systemSize = lead.system_size_kw || 5;  // Default: 5 kWp Essential
+        const batterySize = lead.battery_size_kwh || 10;  // Default: 10 kWh LUNA
         const annualSavings = lead.annual_savings || 1800;  // Default estimate
+        const totalPrice = lead.total_price || 13000;  // Default Gozo package
+        const grantAmount = lead.grant_amount || 9875;  // Default Gozo grants
+        const netCost = totalPrice - grantAmount;
+        const isGozo = lead.is_gozo ?? true;  // Default to Gozo
 
-        // Generate valid contract signing URL with HMAC token
+        // Generate valid URLs with HMAC tokens
         const contractSigningUrl = buildContractSigningUrl(lead.id);
+        const unsubscribeUrl = buildUnsubscribeUrl(lead.id);
 
         const result = await sendFollowUpEmail(
           lead.zoho_lead_id,
@@ -162,8 +184,17 @@ export async function GET(request: Request) {
             name: lead.name,
             quoteRef: `GX-${lead.id.slice(0, 8).toUpperCase()}`,
             systemSize,
+            batterySize,
             annualSavings,
+            totalPrice,
+            grantAmount,
+            netCost,
+            pvGrant: 2750,  // Fixed Malta PV grant (50% up to €2,750)
+            batteryGrant: isGozo ? 7125 : 6000,  // 95% Gozo vs 80% Malta
+            isGozo,
+            panelCount: 11,  // Default for 5 kWp
             contractSigningUrl,
+            unsubscribeUrl,
             salesPhone: '+356 7905 5156',
           }
         );
@@ -212,10 +243,13 @@ export async function GET(request: Request) {
 function getFollowUpToSend(
   hoursSinceCreation: number,
   alreadySent: Set<string>
-): 'follow-up-24h' | 'follow-up-72h' | 'follow-up-7d' | null {
-  // Check in order: 24h, 72h, 7d
+): 'follow-up-24h' | 'follow-up-48h' | 'follow-up-72h' | 'follow-up-7d' | null {
+  // Check in order: 24h, 48h, 72h, 7d
   if (hoursSinceCreation >= FOLLOW_UP_24H && !alreadySent.has('follow-up-24h')) {
     return 'follow-up-24h';
+  }
+  if (hoursSinceCreation >= FOLLOW_UP_48H && !alreadySent.has('follow-up-48h')) {
+    return 'follow-up-48h';
   }
   if (hoursSinceCreation >= FOLLOW_UP_72H && !alreadySent.has('follow-up-72h')) {
     return 'follow-up-72h';
@@ -233,9 +267,10 @@ function getEmailSubject(emailType: string, name: string): string {
   const firstName = name.split(' ')[0];
 
   const subjects: Record<string, string> = {
-    'follow-up-24h': `${firstName}, any questions about your solar quote?`,
-    'follow-up-72h': `${firstName}, don't miss your solar savings opportunity`,
-    'follow-up-7d': `${firstName}, your solar quote expires soon`,
+    'follow-up-24h': `${firstName}, your solar quote is ready to review`,
+    'follow-up-48h': `${firstName}, see what we built for your neighbors in Gozo`,
+    'follow-up-72h': `${firstName}, you've paid ARMS money since your quote arrived`,
+    'follow-up-7d': `${firstName}, before I close your solar file...`,
   };
 
   return subjects[emailType] || `GhawdeX Solar - ${emailType}`;

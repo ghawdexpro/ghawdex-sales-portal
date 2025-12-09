@@ -11,6 +11,7 @@ export type EmailTemplate =
   | 'quote-pdf'
   | 'contract-reminder'
   | 'follow-up-24h'
+  | 'follow-up-48h'
   | 'follow-up-72h'
   | 'follow-up-7d'
   | 'session-recovery';
@@ -92,6 +93,7 @@ export interface FollowUpData {
   systemSize: number;
   annualSavings: number;
   contractSigningUrl?: string;
+  unsubscribeUrl?: string;        // For opt-out link in emails
   salesPhone: string;
 
   // System details (for specific quotes)
