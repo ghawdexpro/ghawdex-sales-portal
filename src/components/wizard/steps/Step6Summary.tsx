@@ -1539,13 +1539,7 @@ export default function Step6Summary() {
         )}
       </div>
 
-      {/* Property Details */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-        <div className="text-gray-400 text-sm mb-2">Installation Address</div>
-        <div className="text-white">{state.address}</div>
-      </div>
-
-      {/* Download Documents */}
+      {/* Download Documents - MOVED TO TOP */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
         <h3 className="text-white font-semibold text-lg mb-4">Your Documents</h3>
         <div className="grid grid-cols-2 gap-3">
@@ -1631,6 +1625,12 @@ export default function Step6Summary() {
           </div>
         </div>
       )}
+
+      {/* Property Details - MOVED AFTER DOCUMENTS & CHECKOUT */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+        <div className="text-gray-400 text-sm mb-2">Installation Address</div>
+        <div className="text-white">{state.address}</div>
+      </div>
 
       {/* What's Next */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
