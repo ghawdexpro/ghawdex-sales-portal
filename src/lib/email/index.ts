@@ -1,18 +1,17 @@
 /**
  * GhawdeX Email Service
  *
- * Unified email module using Zoho CRM Mail + ZeptoMail.
+ * Unified email module using Zoho CRM Mail ONLY.
  *
  * Features:
  * - Sends via Zoho CRM (logs in lead history)
- * - Falls back to ZeptoMail for standalone emails
- * - Beautiful HTML templates
+ * - Beautiful HTML dark-theme templates
  * - Retry logic built-in
+ * - HMAC-secured unsubscribe links
  *
  * Environment Variables:
- * - ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN (for CRM email)
+ * - ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN (required)
  * - ZOHO_SENDER_EMAIL (default: info@ghawdex.pro)
- * - ZEPTOMAIL_API_KEY (for standalone email)
  *
  * @example
  * ```typescript
