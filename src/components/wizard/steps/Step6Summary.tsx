@@ -1394,8 +1394,8 @@ export default function Step6Summary() {
         </p>
       </div>
 
-      {/* Quote Card */}
-      <div className={`bg-gradient-to-br ${isBatteryOnly ? 'from-purple-500/20 to-blue-500/20 border-purple-500/30' : 'from-amber-500/20 to-orange-500/20 border-amber-500/30'} border rounded-2xl p-6 mb-6`}>
+      {/* Quote Card - MOVED AFTER DOCUMENTS & CHECKOUT */}
+      <div style={{ display: 'none' }} className={`quote-card-placeholder bg-gradient-to-br ${isBatteryOnly ? 'from-purple-500/20 to-blue-500/20 border-purple-500/30' : 'from-amber-500/20 to-orange-500/20 border-amber-500/30'} border rounded-2xl p-6 mb-6`}>
         {/* YOUR PRICE - Hero display at top */}
         <div className={`bg-gradient-to-r ${isBatteryOnly ? 'from-purple-500/40 to-blue-500/40 border-purple-400' : 'from-amber-500/40 to-orange-500/40 border-amber-400'} rounded-xl p-5 mb-6 border-2 ${isBatteryOnly ? 'shadow-xl shadow-purple-500/30' : 'shadow-xl shadow-amber-500/30'}`}>
           <div className="flex items-center justify-between">
@@ -1627,6 +1627,153 @@ export default function Step6Summary() {
           </div>
         </div>
       )}
+
+      {/* Quote Card - REPOSITIONED HERE (after Documents & Checkout) */}
+      <div className={`bg-gradient-to-br ${isBatteryOnly ? 'from-purple-500/20 to-blue-500/20 border-purple-500/30' : 'from-amber-500/20 to-orange-500/20 border-amber-500/30'} border rounded-2xl p-6 mb-6`}>
+        {/* YOUR PRICE - Hero display */}
+        <div className={`bg-gradient-to-r ${isBatteryOnly ? 'from-purple-500/40 to-blue-500/40 border-purple-400' : 'from-amber-500/40 to-orange-500/40 border-amber-400'} rounded-xl p-5 mb-6 border-2 ${isBatteryOnly ? 'shadow-xl shadow-purple-500/30' : 'shadow-xl shadow-amber-500/30'}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`text-xs font-semibold uppercase tracking-wider ${isBatteryOnly ? 'text-purple-300' : 'text-amber-300'} mb-1`}>Your Price</div>
+              <div className={`font-bold text-4xl sm:text-5xl tracking-tight ${isBatteryOnly ? 'text-purple-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400'}`}>
+                {formatCurrency(state.totalPrice || 0)}
+              </div>
+              {(state.grantPath || isBatteryOnly) && displayGrantAmount > 0 && (
+                <div className="text-green-400 text-sm font-medium mt-1">
+                  <span className="inline-flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                    {formatCurrency(displayGrantAmount)} grant applied
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full ${isBatteryOnly ? 'bg-purple-500/30' : 'bg-amber-500/30'} flex items-center justify-center`}>
+              <svg className={`w-8 h-8 sm:w-10 sm:h-10 ${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* System info */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <div className={`${isBatteryOnly ? 'text-purple-400' : 'text-amber-400'} text-sm font-medium mb-1`}>
+              {isBatteryOnly ? 'Battery Storage' : 'Selected System'}
+            </div>
+            <div className="text-white text-2xl font-bold">
+              {isBatteryOnly ? `${battery?.capacityKwh || 0} kWh Battery` : `${state.selectedSystem?.name} Package`}
+            </div>
+            <div className="text-gray-400">
+              {isBatteryOnly
+                ? `${battery?.name || 'Huawei LUNA2000'} + Hybrid Inverter`
+                : `${state.selectedSystem?.systemSizeKw} kWp • ${state.selectedSystem?.panels} panels`
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* System Details */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {isBatteryOnly ? (
+            <>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Battery Capacity</div>
+                <div className="text-purple-400 font-semibold text-xl">
+                  {battery?.capacityKwh || 0} kWh
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Est. Annual Savings</div>
+                <div className="text-green-400 font-semibold text-xl">
+                  {formatCurrency(state.annualSavings || 0)}
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Payback Period</div>
+                <div className="text-white font-semibold text-xl">
+                  {state.paybackYears} years
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Location Bonus</div>
+                <div className="text-white font-semibold text-xl">
+                  {state.location === 'gozo' ? 'Gozo 95%' : 'Malta 80%'}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Annual Production</div>
+                <div className="text-white font-semibold text-xl">
+                  {formatNumber(state.selectedSystem?.annualProductionKwh || 0)} kWh
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Annual Savings</div>
+                <div className="text-green-400 font-semibold text-xl">
+                  {formatCurrency(state.annualSavings || 0)}
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">Payback Period</div>
+                <div className="text-white font-semibold text-xl">
+                  {state.paybackYears} years
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4">
+                <div className="text-gray-400 text-sm">25-Year Earnings</div>
+                <div className="text-green-400 font-semibold text-xl">
+                  {formatCurrency(lifetimeEarnings)}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Payment */}
+        <div className="bg-white/5 rounded-xl p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-gray-400 text-sm">Payment Method</div>
+              <div className="text-white font-semibold">
+                {state.paymentMethod === 'loan'
+                  ? `BOV Financing (${state.loanTerm ? state.loanTerm / 12 : 0} years)`
+                  : 'Pay in Full'
+                }
+              </div>
+            </div>
+            {state.paymentMethod === 'loan' && state.monthlyPayment && (
+              <div className="text-right">
+                <div className="text-amber-400 font-bold text-xl">
+                  {formatCurrency(state.monthlyPayment)}/mo
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Battery if selected */}
+        {battery && !isBatteryOnly && (
+          <div className="bg-white/5 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-white font-medium">Battery Storage</div>
+                  <div className="text-gray-400 text-sm">{battery.name}</div>
+                </div>
+              </div>
+              <div className="text-white font-semibold">{battery.capacityKwh} kWh</div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Property Details - MOVED AFTER DOCUMENTS & CHECKOUT */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
