@@ -14,6 +14,8 @@ const initialState: WizardState = {
   coordinates: null,
   googleMapsLink: null,
   location: 'malta',
+  locationSource: 'auto',
+  locationAutoDetected: null,
   roofArea: null,
   maxPanels: null,
   annualSunshine: null,
@@ -64,6 +66,7 @@ type WizardAction =
   | { type: 'SET_PROPOSAL_URL'; payload: { proposalFileUrl: string } }
   | { type: 'SET_CONTRACT_URL'; payload: { contractSigningUrl: string } }
   | { type: 'SET_LEAD_ID'; payload: { leadId: string } }
+  | { type: 'OVERRIDE_LOCATION'; payload: { location: Location } }
   | { type: 'RESET' };
 
 function wizardReducer(state: WizardState, action: WizardAction): WizardState {
@@ -75,7 +78,17 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
     case 'PREV_STEP':
       return { ...state, step: Math.max(1, state.step - 1) };
     case 'SET_ADDRESS':
-      return { ...state, ...action.payload };
+      const detectedLocation = action.payload.location;
+      return {
+        ...state,
+        address: action.payload.address,
+        coordinates: action.payload.coordinates,
+        googleMapsLink: action.payload.googleMapsLink,
+        // Only update location if not manually overridden
+        location: state.locationSource === 'manual' ? state.location : detectedLocation,
+        locationAutoDetected: detectedLocation,
+        locationSource: state.locationSource || 'auto',
+      };
     case 'SET_SOLAR_DATA':
       return { ...state, ...action.payload, solarDataIsFallback: action.payload.isFallback || false };
     case 'SET_CONSUMPTION':
@@ -120,6 +133,12 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, contractSigningUrl: action.payload.contractSigningUrl };
     case 'SET_LEAD_ID':
       return { ...state, leadId: action.payload.leadId };
+    case 'OVERRIDE_LOCATION':
+      return {
+        ...state,
+        location: action.payload.location,
+        locationSource: 'manual',
+      };
     case 'RESET':
       return initialState;
     default:

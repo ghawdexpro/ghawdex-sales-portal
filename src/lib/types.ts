@@ -11,6 +11,8 @@ export interface WizardState {
   coordinates: { lat: number; lng: number } | null;
   googleMapsLink: string | null;
   location: Location;
+  locationSource: 'auto' | 'manual'; // How location was determined
+  locationAutoDetected: Location | null; // Original auto-detected value
 
   // Step 2: Roof Analysis
   roofArea: number | null;
@@ -140,6 +142,7 @@ export interface Lead {
   // Location - Gozo vs Malta (from campaign UTM or coordinates)
   is_gozo: boolean;
   locality: string | null;
+  location_source: 'auto' | 'manual';
   // Equipment details
   panel_brand: string | null;
   panel_model: string | null;
@@ -185,6 +188,8 @@ export interface WizardSession {
   coordinates: { lat: number; lng: number } | null;
   google_maps_link: string | null;
   location: Location | null;
+  location_source: 'auto' | 'manual';
+  location_auto_detected: Location | null;
 
   // Step 1→2: Solar analysis
   roof_area: number | null;

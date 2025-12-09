@@ -336,6 +336,7 @@ export async function POST(request: NextRequest) {
       // Location - Gozo vs Malta
       is_gozo: isGozo,
       locality: body.locality || null,
+      location_source: body.location_source || 'auto',
       // Equipment details
       panel_brand: body.panel_brand || null,
       panel_model: body.panel_model || null,

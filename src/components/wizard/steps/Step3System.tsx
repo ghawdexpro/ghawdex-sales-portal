@@ -157,6 +157,73 @@ export default function Step3System() {
         </div>
       </div>
 
+      {/* Location Override - Manual Gozo/Malta Toggle */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <div>
+              <div className="text-white font-medium">Location</div>
+              <div className="text-gray-400 text-xs">
+                {state.locationSource === 'auto' ? (
+                  <>Auto-detected: {state.locationAutoDetected === 'gozo' ? 'Gozo' : 'Malta'}</>
+                ) : (
+                  <span className="text-purple-400">Manual override active</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Segmented Control */}
+        <div className="grid grid-cols-2 gap-2 p-1 bg-black/30 rounded-lg">
+          <button
+            onClick={() => dispatch({ type: 'OVERRIDE_LOCATION', payload: { location: 'malta' } })}
+            className={`py-3 px-4 rounded-md font-medium transition-all ${
+              state.location === 'malta'
+                ? 'bg-amber-500 text-black shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <div className="text-center">
+              <div className="font-semibold">Malta</div>
+              <div className="text-xs opacity-80">80% battery grant</div>
+            </div>
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'OVERRIDE_LOCATION', payload: { location: 'gozo' } })}
+            className={`py-3 px-4 rounded-md font-medium transition-all ${
+              state.location === 'gozo'
+                ? 'bg-amber-500 text-black shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <div className="text-center">
+              <div className="font-semibold">Gozo</div>
+              <div className="text-xs opacity-80">95% battery grant</div>
+            </div>
+          </button>
+        </div>
+
+        {/* Grant Difference Info */}
+        {state.location === 'gozo' && (
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <div className="flex items-center gap-2 text-green-400 text-sm">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Gozo bonus: +15% battery subsidy vs Malta</span>
+            </div>
+            <div className="text-gray-400 text-xs mt-1">
+              Max grant: €{GRANT_SCHEME_2025.BATTERY.gozo.maxTotal.toLocaleString()} (vs €{GRANT_SCHEME_2025.BATTERY.malta.maxTotal.toLocaleString()} Malta)
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Battery-Only Selection */}
       {batteryOnlyMode && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
