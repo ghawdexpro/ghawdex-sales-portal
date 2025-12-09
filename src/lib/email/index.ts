@@ -124,7 +124,7 @@ export async function sendLeadConfirmationEmail(
  */
 export async function sendFollowUpEmail(
   zohoLeadId: string,
-  template: 'follow-up-24h' | 'follow-up-72h' | 'follow-up-7d',
+  template: 'follow-up-24h' | 'follow-up-48h' | 'follow-up-72h' | 'follow-up-7d',
   data: FollowUpData
 ): Promise<EmailResult> {
   const { subject, html } = generateEmailFromTemplate(template, data);

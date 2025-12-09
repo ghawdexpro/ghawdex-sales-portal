@@ -115,6 +115,7 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     google_maps_link: generateGoogleMapsLinkFromCoords(data.coordinates),
     is_gozo: isGozo,
     locality: null, // Will be extracted from address if available
+    location_source: 'auto' as const, // Avatar chat auto-detects from address
     household_size: data.household_size || null,
     monthly_bill: data.monthly_bill || null,
     consumption_kwh: data.consumption_kwh || null,
