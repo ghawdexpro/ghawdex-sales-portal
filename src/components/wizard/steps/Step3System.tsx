@@ -82,9 +82,9 @@ export default function Step3System() {
         setSelectedBattery(BATTERY_OPTIONS[1]); // Default to 10kWh
       }
     } else {
-      // Exiting battery-only mode - reset to solar-only defaults
-      setGrantType('pv_only');
-      setWithBattery(false); // Reset battery toggle for solar mode
+      // Exiting battery-only mode - keep battery on by default
+      setGrantType('pv_battery');
+      setWithBattery(true); // Keep battery enabled by default
       // Re-recommend a system if we have consumption data
       if (state.consumptionKwh) {
         const recommended = recommendSystem(state.consumptionKwh, SYSTEM_PACKAGES);

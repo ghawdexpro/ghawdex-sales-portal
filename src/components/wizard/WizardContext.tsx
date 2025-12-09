@@ -26,9 +26,9 @@ const initialState: WizardState = {
   consumptionKwh: null,
   billFileUrl: null,
   selectedSystem: null,
-  withBattery: false,
+  withBattery: true,
   batterySize: null,
-  grantType: 'pv_only',
+  grantType: 'pv_battery',
   grantPath: true, // Legacy
   paymentMethod: null,
   loanTerm: null,
