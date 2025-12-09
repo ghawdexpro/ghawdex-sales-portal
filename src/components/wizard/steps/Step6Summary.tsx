@@ -1908,16 +1908,51 @@ export default function Step6Summary() {
             <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                 <button
-                  onClick={() => {
-                    // Use browser's native print dialog - more reliable than html2pdf
-                    window.print();
+                  onClick={async () => {
+                    try {
+                      // Use pdf-lib for reliable PDF generation
+                      const { generateProposalPdfWithPdfLib } = await import('@/lib/pdf-generator');
+
+                      const pdfBytes = await generateProposalPdfWithPdfLib({
+                        customerName: state.fullName || 'Customer',
+                        email: state.email || '',
+                        phone: state.phone || '',
+                        address: state.address || '',
+                        quoteRef,
+                        date: today,
+                        system: state.selectedSystem,
+                        battery: battery || null,
+                        isBatteryOnly,
+                        totalPrice: state.totalPrice || 0,
+                        grantAmount: displayGrantAmount,
+                        grossPrice: (state.totalPrice || 0) + displayGrantAmount,
+                        annualSavings: state.annualSavings || 0,
+                        paybackYears: state.paybackYears || 0,
+                        paymentMethod: state.paymentMethod === 'loan' ? 'BOV Financing' : 'Pay in Full',
+                        monthlyPayment: state.monthlyPayment,
+                        loanTerm: state.loanTerm,
+                        location: state.location,
+                      });
+
+                      // Download the PDF
+                      const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `proposal_${state.fullName?.replace(/[^a-zA-Z0-9]/g, '_') || 'ghawdex'}.pdf`;
+                      link.click();
+                      URL.revokeObjectURL(url);
+                    } catch (error) {
+                      console.error('PDF generation failed:', error);
+                      alert('Failed to generate PDF. Please try the WhatsApp share button instead.');
+                    }
                   }}
                   className="bg-amber-500 hover:bg-amber-600 text-black px-6 py-2 rounded-lg transition-colors font-semibold flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  Save PDF
+                  Download PDF
                 </button>
                 <button
                   onClick={() => {
