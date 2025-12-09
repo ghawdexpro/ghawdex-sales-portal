@@ -74,8 +74,14 @@ export default function Step6Summary() {
       // Create a temporary container for the HTML
       const container = document.createElement('div');
       container.innerHTML = htmlContent;
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
+      // Use opacity instead of off-screen positioning to allow proper rendering
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '0';
+      container.style.width = '210mm'; // A4 width
+      container.style.opacity = '0';
+      container.style.pointerEvents = 'none';
+      container.style.zIndex = '-9999';
       document.body.appendChild(container);
 
       // Generate PDF blob
@@ -90,8 +96,12 @@ export default function Step6Summary() {
         .from(container)
         .outputPdf('blob');
 
-      // Clean up
-      document.body.removeChild(container);
+      // Clean up with delay to ensure rendering is complete
+      setTimeout(() => {
+        if (document.body.contains(container)) {
+          document.body.removeChild(container);
+        }
+      }, 100);
 
       // Upload to Supabase storage
       const formData = new FormData();
@@ -129,6 +139,8 @@ export default function Step6Summary() {
     } catch (error) {
       console.error('Failed to upload proposal PDF:', error);
       pdfUploadedRef.current = false; // Allow retry
+      // Show user-visible error feedback
+      alert('Failed to generate PDF. Please try again or use browser print (Cmd+P / Ctrl+P).');
       return null;
     } finally {
       setPdfUploading(false);
@@ -1749,8 +1761,14 @@ export default function Step6Summary() {
                       const html2pdf = (await import('html2pdf.js')).default;
                       const container = document.createElement('div');
                       container.innerHTML = modalContent;
-                      container.style.position = 'absolute';
-                      container.style.left = '-9999px';
+                      // Use opacity instead of off-screen positioning
+                      container.style.position = 'fixed';
+                      container.style.top = '0';
+                      container.style.left = '0';
+                      container.style.width = '210mm';
+                      container.style.opacity = '0';
+                      container.style.pointerEvents = 'none';
+                      container.style.zIndex = '-9999';
                       document.body.appendChild(container);
 
                       const docType = modalOpen === 'proposal' ? 'proposal' : 'tech_spec';
@@ -1767,9 +1785,15 @@ export default function Step6Summary() {
                         .from(container)
                         .save();
 
-                      document.body.removeChild(container);
+                      // Clean up with delay
+                      setTimeout(() => {
+                        if (document.body.contains(container)) {
+                          document.body.removeChild(container);
+                        }
+                      }, 100);
                     } catch (e) {
                       console.error('PDF download failed:', e);
+                      alert('Failed to generate PDF. Please try again or use browser print (Cmd+P / Ctrl+P).');
                     }
                   }}
                   className="bg-amber-500 hover:bg-amber-600 text-black px-6 py-2 rounded-lg transition-colors font-semibold flex items-center gap-2"
