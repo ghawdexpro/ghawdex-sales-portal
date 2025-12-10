@@ -445,18 +445,24 @@ export function formatNumber(num: number): string {
 }
 
 /**
- * Calculate deposit amount with €799 minimum
- * Enforces 30% deposit OR €799 minimum, whichever is higher
+ * Calculate deposit amount with €799 minimum (capped at total price)
+ * Enforces 30% deposit OR €799 minimum, whichever is higher, but never exceeds total price
  * Used for all purchases: PV systems, batteries, bundles
  *
  * @param totalPrice Total price after grant deduction
- * @returns Deposit amount (30% or €799, whichever is higher)
+ * @returns Deposit amount (30% or €799, whichever is higher, capped at total price)
  *
  * @example
- * calculateDeposit(1000) // Returns 799 (30% = €300, but minimum is €799)
+ * calculateDeposit(1000) // Returns 799 (30% = €300, minimum is €799)
  * calculateDeposit(3000) // Returns 900 (30% = €900 > €799)
+ * calculateDeposit(550)  // Returns 550 (would be €799, but capped at total price)
  */
 export function calculateDeposit(totalPrice: number): number {
+  if (totalPrice <= 0) return 0;
+
   const thirtyPercent = totalPrice * 0.30;
-  return Math.max(thirtyPercent, 799);
+  const desiredDeposit = Math.max(thirtyPercent, 799);
+
+  // Cap deposit at total price (important for Gozo with 95% grant)
+  return Math.min(desiredDeposit, totalPrice);
 }
