@@ -340,13 +340,19 @@ export default function Step1Location() {
 
         // Listen for place selection using the new event
         autocompleteElement.addEventListener('gmp-select', async (event) => {
+          console.log('🔍 Event fired:', event.type);
+          console.log('📦 Event detail:', (event as CustomEvent).detail);
+
           const { placePrediction } = (event as CustomEvent).detail;
+          console.log('🎯 PlacePrediction:', placePrediction);
 
           // Convert prediction to full Place object
           const place = placePrediction.toPlace();
+          console.log('🏠 Place object:', place);
 
           // Fetch the fields we need
           await place.fetchFields({ fields: ['location', 'viewport', 'formattedAddress', 'displayName'] });
+          console.log('✅ Fields fetched - location:', place.location, 'viewport:', place.viewport);
 
           if (place.location && googleMapRef.current) {
             const lat = place.location.lat();
