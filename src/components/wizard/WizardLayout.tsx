@@ -18,7 +18,14 @@ interface WizardLayoutProps {
 }
 
 export default function WizardLayout({ children, onClose }: WizardLayoutProps) {
-  const { state } = useWizard();
+  const { state, dispatch } = useWizard();
+
+  const handleStepClick = (stepNum: number) => {
+    // Only allow navigation to completed steps
+    if (state.step > stepNum) {
+      dispatch({ type: 'SET_STEP', payload: stepNum });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e]">
@@ -45,14 +52,17 @@ export default function WizardLayout({ children, onClose }: WizardLayoutProps) {
                 {STEPS.map((step, index) => (
                   <div key={step.num} className="flex items-center">
                     <div className="flex flex-col items-center">
-                      <div
+                      <button
+                        onClick={() => handleStepClick(step.num)}
+                        disabled={state.step <= step.num}
                         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all ${
                           state.step > step.num
-                            ? 'bg-green-500 text-white'
+                            ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600 hover:scale-110'
                             : state.step === step.num
-                            ? 'bg-amber-500 text-black'
-                            : 'bg-white/10 text-gray-500'
-                        }`}
+                            ? 'bg-amber-500 text-black cursor-not-allowed'
+                            : 'bg-white/10 text-gray-500 cursor-not-allowed'
+                        } disabled:cursor-not-allowed`}
+                        aria-label={`${state.step > step.num ? 'Go to' : ''} Step ${step.num}: ${step.label}`}
                       >
                         {state.step > step.num ? (
                           <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -61,7 +71,7 @@ export default function WizardLayout({ children, onClose }: WizardLayoutProps) {
                         ) : (
                           step.num
                         )}
-                      </div>
+                      </button>
                       <span className={`text-[10px] sm:text-xs mt-1 hidden sm:block ${
                         state.step >= step.num ? 'text-white' : 'text-gray-500'
                       }`}>

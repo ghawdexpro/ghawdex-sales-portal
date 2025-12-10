@@ -31,7 +31,7 @@ const HOUSEHOLD_SIZES = [
 
 export default function Step2Consumption() {
   const { state, dispatch } = useWizard();
-  const [householdSize, setHouseholdSize] = useState<number | null>(state.householdSize || 2);
+  const [householdSize, setHouseholdSize] = useState<number | null>(state.householdSize || 4);
   const [isBusiness, setIsBusiness] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState<number | null>(state.monthlyBill);
   const [customBill, setCustomBill] = useState('');
