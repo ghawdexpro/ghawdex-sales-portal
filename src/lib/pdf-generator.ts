@@ -440,6 +440,12 @@ export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise
 
   // Footer - position after terms with spacing
   yPosition -= 20;
+
+  // Ensure footer doesn't get cut off (need at least 60pt for 3 lines + separator)
+  if (yPosition < 60) {
+    yPosition = 60;
+  }
+
   page.drawLine({
     start: { x: 50, y: yPosition + 10 },
     end: { x: width - 50, y: yPosition + 10 },
