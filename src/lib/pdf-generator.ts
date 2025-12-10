@@ -69,19 +69,12 @@ export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise
   let yPosition = height - 60;
 
   // Header
-  page.drawText('Ghawde', {
+  page.drawText('GhawdeX', {
     x: 50,
     y: yPosition,
     size: 24,
     font: fontBold,
     color: amber,
-  });
-  page.drawText('X', {
-    x: 118,
-    y: yPosition,
-    size: 24,
-    font: fontBold,
-    color: black,
   });
 
   page.drawText(sanitizeForPdf('Engineering Excellence in Energy Storage'), {
