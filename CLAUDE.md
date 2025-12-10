@@ -496,36 +496,50 @@ When customer already has PV system and wants only battery:
 
 ### Grant Calculations (REWS 2025)
 
-**PV Grant:**
-- €300/kWp (first 4 kWp), €150/kWp (remaining)
-- Cap: €2,400 (Malta) / €3,600 (Gozo)
+**⚠️ CRITICAL: Grant Formula Fix Applied**
+
+The €720/kWh and €450/kWp rates are REFERENCE RATES for estimation, NOT hard per-unit caps!
+
+**CORRECT Grant Formula:**
+```typescript
+batteryGrant = min(
+  actualPrice × percentage,  // 80% Malta, 95% Gozo
+  maxCap                     // €7,200 Malta, €8,550 Gozo
+)
+```
+
+**WRONG Formula (previously used):**
+```typescript
+// ❌ DON'T DO THIS - per-kWh rate is NOT a hard cap!
+batteryGrant = min(
+  kWh × €720,                // This was incorrectly limiting grants
+  actualPrice × percentage,
+  maxCap
+)
+```
+
+**PV Grant (New Installations):**
+- Option A (Standard Inverter): €625/kWp, 50%, max €2,500
+- Option B (Hybrid Inverter): €750/kWp, 50%, max €3,000
 
 **Battery Grant:**
-- €200/kWh (Malta) / €190/kWh (Gozo)
-- Cap: €2,500 (Malta) / €4,750 (Gozo - 95% of €5,000)
+- Malta: 80% of actual cost, max €7,200
+- Gozo: 95% of actual cost, max €8,550
+- Reference rate: €720/kWh (for estimation only)
 
-**Customer Pays** = Gross Price - Total Grant (PV + Battery only, NO inverter grant)
+**Hybrid Inverter Grant (Retrofit Only - Option C):**
+- 80% of actual cost, max €1,800
+- Reference rate: €450/kWp (for estimation only)
 
-### Price Calculation Formula
-
-```typescript
-// 1. Get package price (already GROSS)
-const pvPrice = hasBattery ? pkg.priceWithBattery : pkg.priceEur;
-const batteryPrice = battery.priceEur;
-const grossTotal = pvPrice + batteryPrice;
-
-// 2. Extract VAT from GROSS price (NOT add to it!)
-const vatAmount = grossTotal - (grossTotal / 1.18);
-const netPrice = grossTotal / 1.18;
-
-// 3. Calculate grants
-const pvGrant = calculatePvGrant(systemKwp, isGozo);
-const batteryGrant = calculateBatteryGrant(batteryKwh, isGozo);
-const totalGrant = pvGrant + batteryGrant;  // NO inverter grant!
-
-// 4. Customer pays
-const customerPays = grossTotal - totalGrant;
+**Example: 10 kWh Battery Retrofit in Gozo**
 ```
+Battery: €9,000 × 95% = €8,550 (hits cap) ✅
+Inverter: €2,250 × 80% = €1,800 (hits cap) ✅
+Total Grant: €10,350
+Customer Pays: €900 + €350 (backup) = €1,250
+```
+
+**Customer Pays** = Gross Price - Total Grant
 
 ### Key Files (Source of Truth)
 

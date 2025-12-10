@@ -10,7 +10,7 @@ import { recommendSystem, calculateTotalPriceWithGrant, calculateDeposit, format
 
 export default function Step3System() {
   const { state, dispatch } = useWizard();
-  const [batteryOnlyMode, setBatteryOnlyMode] = useState(state.grantType === 'battery_only');
+  const [batteryOnlyMode, setBatteryOnlyMode] = useState(state.grantType === 'battery_only' || state.grantType === 'battery_retrofit');
   // Initialize with existing selection or hardcoded default (5 kWp)
   const [selectedSystem, setSelectedSystem] = useState<SystemPackage | null>(() => {
     if (state.selectedSystem) return state.selectedSystem;
@@ -47,7 +47,7 @@ export default function Step3System() {
         system: batteryOnlyMode ? null : selectedSystem,
         withBattery: batteryOnlyMode ? true : withBattery,
         batterySize: batteryToSave,
-        grantType: batteryOnlyMode ? 'battery_only' : grantType,
+        grantType: batteryOnlyMode ? 'battery_retrofit' : grantType,
       },
     });
 
@@ -60,7 +60,7 @@ export default function Step3System() {
       systemSizeKw: batteryOnlyMode ? 0 : selectedSystem?.systemSizeKw,
       withBattery: batteryOnlyMode || withBattery,
       batterySize: batteryToSave || undefined,
-      grantType: batteryOnlyMode ? 'battery_only' : grantType,
+      grantType: batteryOnlyMode ? 'battery_retrofit' : grantType,
       estimatedPrice: priceDetails.totalPrice,
     });
 
@@ -76,8 +76,8 @@ export default function Step3System() {
     const newMode = !batteryOnlyMode;
     setBatteryOnlyMode(newMode);
     if (newMode) {
-      // Entering battery-only mode
-      setGrantType('battery_only');
+      // Entering battery-only mode (uses battery_retrofit grant for maximum benefit)
+      setGrantType('battery_retrofit');
       setWithBattery(true);
       if (!selectedBattery) {
         setSelectedBattery(BATTERY_OPTIONS[1]); // Default to 10kWh
@@ -99,7 +99,7 @@ export default function Step3System() {
     ? calculateTotalPriceWithGrant(
         null,
         selectedBattery,
-        'battery_only',
+        'battery_retrofit',
         state.location
       )
     : selectedSystem

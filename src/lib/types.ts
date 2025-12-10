@@ -1,7 +1,7 @@
 // Types for GhawdeX Sales Portal
 
 export type Location = 'malta' | 'gozo';
-export type GrantType = 'none' | 'pv_only' | 'pv_battery' | 'battery_only';
+export type GrantType = 'none' | 'pv_only' | 'pv_battery' | 'battery_only' | 'battery_retrofit';
 export type WizardSessionStatus = 'in_progress' | 'abandoned' | 'completed' | 'converted_to_lead';
 
 export interface WizardState {
@@ -354,6 +354,18 @@ export const GRANT_SCHEME_2025 = {
   },
 };
 
+// Battery Retrofit Pricing (Option C - Separate Battery + Inverter)
+// For customers with existing PV systems needing hybrid inverter + battery
+export const BATTERY_RETROFIT_PRICING = {
+  BATTERY: {
+    5: 4500,   // €4,500 for 5 kWh battery
+    10: 9000,  // €9,000 for 10 kWh battery (optimized for Gozo 95% cap at €8,550)
+    15: 11500, // €11,500 for 15 kWh battery
+  },
+  INVERTER: 2250,      // €2,250 for 5 kWp hybrid inverter (hits 80% cap at €1,800)
+  INVERTER_KWP: 5,     // Standard 5 kWp rating (maximizes €1,800 grant: 5 × €450 = €2,250)
+};
+
 // Helper function to detect location from coordinates
 export function detectLocation(lat: number): Location {
   // Gozo is north of Malta, roughly above latitude 36.0
@@ -370,7 +382,9 @@ export function calculateGrantAmount(
   grantType: GrantType,
   location: Location,
   systemPrice?: number,
-  batteryPrice?: number
+  batteryPrice?: number,
+  inverterKwp?: number,    // For retrofit calculations
+  inverterPrice?: number   // For retrofit calculations
 ): number {
   if (grantType === 'none') return 0;
 
@@ -406,16 +420,14 @@ export function calculateGrantAmount(
     );
 
     // Battery: 80% (Malta) or 95% (Gozo) of battery costs
+    // IMPORTANT: €720/kWh is a REFERENCE rate for estimation, NOT a hard per-kWh cap!
+    // Actual grant = min(price × percentage, max_cap)
     let batteryGrant = 0;
-    if (batteryKwh && batteryKwh > 0) {
-      const batteryKwhBasedGrant = batteryKwh * GRANT_SCHEME_2025.BATTERY[location].perKwh;
-      const batteryPercentageBasedGrant = batteryPrice
-        ? batteryPrice * GRANT_SCHEME_2025.BATTERY[location].percentage
-        : batteryKwhBasedGrant;
+    if (batteryKwh && batteryKwh > 0 && batteryPrice) {
+      const batteryPercentageGrant = batteryPrice * GRANT_SCHEME_2025.BATTERY[location].percentage;
 
       batteryGrant = Math.min(
-        batteryKwhBasedGrant,
-        batteryPercentageBasedGrant,
+        batteryPercentageGrant,
         GRANT_SCHEME_2025.BATTERY[location].maxTotal
       );
     }
@@ -428,21 +440,51 @@ export function calculateGrantAmount(
     // Battery: 80% (Malta) or 95% (Gozo) of battery costs
     // Note: Battery price includes all necessary hardware (inverter, integration, etc.)
     // so we only apply the battery grant, not a separate inverter grant
+    // IMPORTANT: €720/kWh is a REFERENCE rate for estimation, NOT a hard per-kWh cap!
+    // Actual grant = min(price × percentage, max_cap)
     let batteryGrant = 0;
-    if (batteryKwh && batteryKwh > 0) {
-      const batteryKwhBasedGrant = batteryKwh * GRANT_SCHEME_2025.BATTERY[location].perKwh;
-      const batteryPercentageBasedGrant = batteryPrice
-        ? batteryPrice * GRANT_SCHEME_2025.BATTERY[location].percentage
-        : batteryKwhBasedGrant;
+    if (batteryKwh && batteryKwh > 0 && batteryPrice) {
+      const batteryPercentageGrant = batteryPrice * GRANT_SCHEME_2025.BATTERY[location].percentage;
 
       batteryGrant = Math.min(
-        batteryKwhBasedGrant,
-        batteryPercentageBasedGrant,
+        batteryPercentageGrant,
         GRANT_SCHEME_2025.BATTERY[location].maxTotal
       );
     }
 
     totalGrant = batteryGrant;
+  } else if (grantType === 'battery_retrofit') {
+    // Option C: Battery + Hybrid Inverter (Retrofit for existing PV systems)
+    // Customer's old inverter is not hybrid-compatible, must be replaced
+    // This captures BOTH battery grant (80%/95%) AND inverter grant (80%, max €1,800)
+
+    // Battery Grant (80% Malta / 95% Gozo)
+    // IMPORTANT: €720/kWh is a REFERENCE rate for estimation, NOT a hard per-kWh cap!
+    // Actual grant = min(price × percentage, max_cap)
+    let batteryGrant = 0;
+    if (batteryKwh && batteryKwh > 0 && batteryPrice) {
+      const batteryPercentageGrant = batteryPrice * GRANT_SCHEME_2025.BATTERY[location].percentage;
+
+      batteryGrant = Math.min(
+        batteryPercentageGrant,
+        GRANT_SCHEME_2025.BATTERY[location].maxTotal
+      );
+    }
+
+    // Hybrid Inverter Grant (80%, separate from battery grant)
+    // IMPORTANT: €450/kWp is a REFERENCE rate, NOT a hard per-kWp cap!
+    // Actual grant = min(price × percentage, max_cap)
+    let inverterGrant = 0;
+    if (inverterKwp && inverterPrice) {
+      const inverterPercentageGrant = inverterPrice * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.percentage;
+
+      inverterGrant = Math.min(
+        inverterPercentageGrant,
+        GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal
+      );
+    }
+
+    totalGrant = batteryGrant + inverterGrant;
   }
 
   return Math.min(totalGrant, maxTotal);

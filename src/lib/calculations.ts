@@ -4,6 +4,7 @@ import {
   ECO_REDUCTION,
   FIXED_CHARGES,
   EMERGENCY_BACKUP_COST,
+  BATTERY_RETROFIT_PRICING,
   SystemPackage,
   BatteryOption,
   FinancingOption,
@@ -374,31 +375,52 @@ export function calculateTotalPriceWithGrant(
   battery: BatteryOption | null,
   grantType: GrantType,
   location: Location
-): { totalPrice: number; grantAmount: number; grossPrice: number } {
-  // Handle battery-only case (no solar system)
-  // Battery price includes hardware + Emergency Backup Circuit for whole-house protection
-  if (grantType === 'battery_only' || !system) {
-    const batteryGrossPrice = battery?.price || 0;
+): {
+  totalPrice: number;
+  grantAmount: number;
+  grossPrice: number;
+  batteryPrice?: number;
+  inverterPrice?: number;
+} {
+  // Handle battery-only AND battery-retrofit cases (no solar system)
+  if (grantType === 'battery_only' || grantType === 'battery_retrofit' || !system) {
+    let batteryGrossPrice = battery?.price || 0;
+    let inverterPrice = 0;
 
-    // Calculate grant on battery only (backup circuit NOT eligible for grant)
+    // For retrofit: use separate battery and inverter pricing to maximize grants
+    if (grantType === 'battery_retrofit' && battery) {
+      batteryGrossPrice = BATTERY_RETROFIT_PRICING.BATTERY[battery.capacityKwh as 5 | 10 | 15];
+      inverterPrice = BATTERY_RETROFIT_PRICING.INVERTER;
+    }
+
+    const totalSystemPrice = batteryGrossPrice + inverterPrice;
+
+    // Calculate grant (includes inverter grant for retrofit)
     const grantAmount = calculateGrantAmount(
       0, // No PV
       battery?.capacityKwh || null,
-      grantType === 'battery_only' ? grantType : 'none',
+      grantType === 'battery_only' ? 'battery_only' : grantType === 'battery_retrofit' ? 'battery_retrofit' : 'none',
       location,
       0,
-      batteryGrossPrice
+      batteryGrossPrice,
+      grantType === 'battery_retrofit' ? BATTERY_RETROFIT_PRICING.INVERTER_KWP : undefined,
+      grantType === 'battery_retrofit' ? BATTERY_RETROFIT_PRICING.INVERTER : undefined
     );
 
-    // Add Emergency Backup Circuit cost (NOT covered by grant)
-    // This provides automatic whole-house backup during power outages
-    const backupCost = grantType === 'battery_only' ? EMERGENCY_BACKUP_COST : 0;
+    // Add Emergency Backup Circuit (NOT covered by grant)
+    const backupCost = (grantType === 'battery_only' || grantType === 'battery_retrofit') ? EMERGENCY_BACKUP_COST : 0;
 
-    const batteryAfterGrant = Math.max(0, batteryGrossPrice - grantAmount);
-    const totalPrice = batteryAfterGrant + backupCost;
-    const grossPrice = batteryGrossPrice + backupCost; // Total gross includes backup
+    const systemAfterGrant = Math.max(0, totalSystemPrice - grantAmount);
+    const totalPrice = systemAfterGrant + backupCost;
+    const grossPrice = totalSystemPrice + backupCost;
 
-    return { totalPrice, grantAmount, grossPrice };
+    return {
+      totalPrice,
+      grantAmount,
+      grossPrice,
+      batteryPrice: batteryGrossPrice,
+      inverterPrice: grantType === 'battery_retrofit' ? inverterPrice : undefined
+    };
   }
 
   // Use discounted price for PV+Battery bundles, original price for PV-only

@@ -3,7 +3,7 @@
 import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
 import { trackTelegramWizardStep, trackTelegramWizardComplete } from '@/lib/telegram-events';
-import { BATTERY_OPTIONS, EMERGENCY_BACKUP_COST, GRANT_SCHEME_2025 } from '@/lib/types';
+import { BATTERY_OPTIONS, BATTERY_RETROFIT_PRICING, EMERGENCY_BACKUP_COST, GRANT_SCHEME_2025 } from '@/lib/types';
 import { formatCurrency, formatNumber, calculateDeposit } from '@/lib/calculations';
 import { getSessionToken } from '@/lib/wizard-session';
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
@@ -26,7 +26,7 @@ export default function Step6Summary() {
       color: ['#f59e0b', '#22c55e', '#3b82f6', '#ec4899'][i % 4],
     })), []);
 
-  const isBatteryOnly = state.grantType === 'battery_only';
+  const isBatteryOnly = state.grantType === 'battery_only' || state.grantType === 'battery_retrofit';
 
   const battery = state.batterySize
     ? BATTERY_OPTIONS.find(b => b.capacityKwh === state.batterySize)
@@ -460,25 +460,57 @@ export default function Step6Summary() {
 
           <h2>Pricing Breakdown (REWS 2025)</h2>
           <table>
-            <tr>
-              <td><strong>Battery System</strong></td>
-              <td>${formatCurrency(batteryGrossPrice)}</td>
-            </tr>
-            <tr style="background: #f0fdf4;">
-              <td style="padding-left: 20px;">Emergency Backup Circuit</td>
-              <td style="color: #16a34a;">+${formatCurrency(EMERGENCY_BACKUP_COST)}</td>
-            </tr>
-            <tr class="highlight">
-              <td><strong>Total System Value</strong></td>
-              <td><strong>${formatCurrency(batteryGrossPrice + EMERGENCY_BACKUP_COST)}</strong></td>
-            </tr>
-            <tr>
-              <td><strong>Government Grant (${grantPercentage}%)</strong></td>
-              <td style="color: #16a34a; font-weight: bold;">-${formatCurrency(grantAmount)}</td>
-            </tr>
-            <tr style="font-size: 11px; color: #666;">
-              <td colspan="2" style="padding-left: 20px;">Grant applies to battery only (€720/kWh, max ${state.location === 'gozo' ? '€8,550' : '€7,200'})</td>
-            </tr>
+            ${state.grantType === 'battery_retrofit' ? `
+              <!-- Retrofit: Separate Battery + Inverter -->
+              <tr>
+                <td><strong>Battery System (${battery?.capacityKwh || 10} kWh)</strong></td>
+                <td>${formatCurrency(BATTERY_RETROFIT_PRICING.BATTERY[battery?.capacityKwh as 5 | 10 | 15] || batteryGrossPrice)}</td>
+              </tr>
+              <tr>
+                <td><strong>Hybrid Inverter (5 kWp)</strong></td>
+                <td>${formatCurrency(BATTERY_RETROFIT_PRICING.INVERTER)}</td>
+              </tr>
+              <tr style="background: #f0fdf4;">
+                <td style="padding-left: 20px;">Emergency Backup Circuit</td>
+                <td style="color: #16a34a;">+${formatCurrency(EMERGENCY_BACKUP_COST)}</td>
+              </tr>
+              <tr class="highlight">
+                <td><strong>Total System Value</strong></td>
+                <td><strong>${formatCurrency((BATTERY_RETROFIT_PRICING.BATTERY[battery?.capacityKwh as 5 | 10 | 15] || batteryGrossPrice) + BATTERY_RETROFIT_PRICING.INVERTER + EMERGENCY_BACKUP_COST)}</strong></td>
+              </tr>
+              <tr style="background: #f0fdf4;">
+                <td style="padding-left: 20px;">Battery Grant (${grantPercentage}%)</td>
+                <td style="color: #16a34a; font-weight: bold;">-${formatCurrency(Math.min((BATTERY_RETROFIT_PRICING.BATTERY[battery?.capacityKwh as 5 | 10 | 15] || batteryGrossPrice) * (grantPercentage / 100), GRANT_SCHEME_2025.BATTERY[state.location].maxTotal, (battery?.capacityKwh || 10) * GRANT_SCHEME_2025.BATTERY[state.location].perKwh))}</td>
+              </tr>
+              <tr style="background: #f0fdf4;">
+                <td style="padding-left: 20px;">Hybrid Inverter Grant (80%)</td>
+                <td style="color: #16a34a; font-weight: bold;">-${formatCurrency(Math.min(BATTERY_RETROFIT_PRICING.INVERTER * 0.8, BATTERY_RETROFIT_PRICING.INVERTER_KWP * GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.perKwp, GRANT_SCHEME_2025.HYBRID_INVERTER_FOR_BATTERY.maxTotal))}</td>
+              </tr>
+              <tr style="font-size: 11px; color: #666;">
+                <td colspan="2" style="padding-left: 20px;">REWS 2025 Option C: Battery €720/kWh (max €${state.location === 'gozo' ? '8,550' : '7,200'}) + Inverter €450/kWp (max €1,800)</td>
+              </tr>
+            ` : `
+              <!-- Battery Only: Legacy pricing -->
+              <tr>
+                <td><strong>Battery System</strong></td>
+                <td>${formatCurrency(batteryGrossPrice)}</td>
+              </tr>
+              <tr style="background: #f0fdf4;">
+                <td style="padding-left: 20px;">Emergency Backup Circuit</td>
+                <td style="color: #16a34a;">+${formatCurrency(EMERGENCY_BACKUP_COST)}</td>
+              </tr>
+              <tr class="highlight">
+                <td><strong>Total System Value</strong></td>
+                <td><strong>${formatCurrency(batteryGrossPrice + EMERGENCY_BACKUP_COST)}</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Government Grant (${grantPercentage}%)</strong></td>
+                <td style="color: #16a34a; font-weight: bold;">-${formatCurrency(grantAmount)}</td>
+              </tr>
+              <tr style="font-size: 11px; color: #666;">
+                <td colspan="2" style="padding-left: 20px;">Grant applies to battery only (€720/kWh, max ${state.location === 'gozo' ? '€8,550' : '€7,200'})</td>
+              </tr>
+            `}
             <tr style="font-size: 11px; color: #666;">
               <td colspan="2" style="padding-left: 20px;">Backup protection NOT covered by grant</td>
             </tr>

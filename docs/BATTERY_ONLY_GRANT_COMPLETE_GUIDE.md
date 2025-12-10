@@ -124,12 +124,24 @@ The **2025 Renewable Energy Systems Household Grants Scheme** is administered by
 
 ### Option C vs Option D: Key Difference
 
-| Aspect | Option C (Retrofit) | Option D (Battery Only) |
-|--------|---------------------|-------------------------|
-| Purpose | Add hybrid inverter + battery to existing PV | Add battery only |
-| Inverter Grant | Yes - 80% up to €1,800 | No separate inverter grant |
-| Battery Grant | Yes - 80% up to €7,200 | Yes - 80% up to €7,200 |
-| Use Case | Old PV system needs new inverter | Existing hybrid inverter or standalone battery |
+**⚠️ IMPORTANT: GhawdeX uses Option C (Retrofit) for ALL battery-only installations**
+
+Customers with existing PV systems have old (non-hybrid) inverters that cannot work with battery storage. Therefore, we ALWAYS replace the inverter + add battery, which qualifies for Option C with BOTH grants.
+
+| Aspect | Option C (Retrofit) ✅ GhawdeX Default | Option D (Battery Only) |
+|--------|----------------------------------------|-------------------------|
+| Purpose | Add hybrid inverter + battery to existing PV | Add battery to system with existing hybrid inverter |
+| Inverter Grant | **Yes - 80% up to €1,800** | No separate inverter grant |
+| Battery Grant | Yes - 80%/95% up to €7,200/€8,550 | Yes - 80%/95% up to €7,200/€8,550 |
+| **Total Max Grant** | **€9,000 (Malta) / €10,350 (Gozo)** | €7,200 (Malta) / €8,550 (Gozo) |
+| Use Case | **Old PV system needs new hybrid inverter (most common)** | Existing hybrid inverter already installed (rare) |
+| Customer Investment (10 kWh Gozo) | **€1,250 (€900 + €350 backup)** | €1,800 + €350 backup |
+
+**Why Option C is better:**
+- Captures additional €1,800 inverter grant
+- Customer saves €900+ compared to Option D
+- Total government support: up to €10,350 (Gozo) vs €8,550
+- Provides new hybrid inverter (future-proof for battery expansion)
 
 ---
 

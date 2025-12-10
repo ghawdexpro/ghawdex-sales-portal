@@ -151,7 +151,7 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Quote_Amount: lead.total_price || undefined,
     Deposit_Amount: lead.deposit_amount || undefined,
     Deposit_Paid: false, // Default to unpaid, updated when payment received
-    Emergency_Backup_Included: lead.grant_type === 'battery_only', // Auto-detect battery-only orders
+    Emergency_Backup_Included: lead.grant_type === 'battery_only' || lead.grant_type === 'battery_retrofit', // Auto-detect battery-only/retrofit orders
     Payment_Structure: lead.deposit_amount ? '2-part' : undefined,
     Remaining_Payment_Amount: lead.deposit_amount && lead.total_price
       ? lead.total_price - lead.deposit_amount
