@@ -380,7 +380,8 @@ export default function Step6Summary() {
             .terms h3 { font-size: 12px; color: #1a1a2e; margin-bottom: 10px; }
             .terms ul { padding-left: 20px; }
             .terms li { margin: 5px 0; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+            .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
+            .footer p { margin: 5px 0; line-height: 1.5; }
             .footer strong { color: #8b5cf6; }
             .savings-box { background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0; }
             .savings-box h4 { color: #16a34a; margin-bottom: 10px; }
@@ -535,7 +536,7 @@ export default function Step6Summary() {
               <td style="font-weight: bold;">${formatCurrency((state.totalPrice || 0) - (state.depositAmount || calculateDeposit(state.totalPrice || 0)))}</td>
             </tr>
             <tr>
-              <td style="padding-left: 20px; font-size: 12px; color: #666;">Pay remaining balance (typically 8-12 months)</td>
+              <td style="padding-left: 20px; font-size: 12px; color: #666;">Pay remaining balance (typically 2-4 months)</td>
               <td></td>
             </tr>
           </table>
@@ -626,7 +627,8 @@ export default function Step6Summary() {
           .terms h3 { font-size: 12px; color: #1a1a2e; margin-bottom: 10px; }
           .terms ul { padding-left: 20px; }
           .terms li { margin: 5px 0; }
-          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
+          .footer p { margin: 5px 0; line-height: 1.5; }
           .footer strong { color: #f59e0b; }
           @media print { body { padding: 20px; } }
         </style>
@@ -835,7 +837,8 @@ export default function Step6Summary() {
             .notes h3 { font-size: 13px; margin-bottom: 10px; color: #6d28d9; }
             .notes ul { padding-left: 20px; }
             .notes li { margin: 5px 0; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+            .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
+            .footer p { margin: 5px 0; line-height: 1.5; }
             @media print { body { padding: 20px; } .datasheet-link { background: #666; } }
           </style>
         </head>
@@ -1141,7 +1144,8 @@ export default function Step6Summary() {
           .notes h3 { font-size: 13px; margin-bottom: 10px; }
           .notes ul { padding-left: 20px; }
           .notes li { margin: 5px 0; }
-          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
+          .footer p { margin: 5px 0; line-height: 1.5; }
           @media print {
             body { padding: 20px; }
             .datasheet-link { background: #666; }
@@ -1616,7 +1620,7 @@ export default function Step6Summary() {
             <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg">
               <div>
                 <div className="text-white font-medium">Part 2 - When Grant Assigned</div>
-                <div className="text-gray-400 text-xs">Typically 8-12 months</div>
+                <div className="text-gray-400 text-xs">Typically 2-4 months</div>
               </div>
               <div className="text-right">
                 <div className="text-white font-bold text-lg">
@@ -1903,7 +1907,7 @@ export default function Step6Summary() {
             <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg">
               <div>
                 <div className="text-white font-medium">Part 2 - When Grant Assigned</div>
-                <div className="text-gray-400 text-xs">Typically 8-12 months</div>
+                <div className="text-gray-400 text-xs">Typically 2-4 months</div>
               </div>
               <div className="text-right">
                 <div className="text-white font-bold text-lg">
