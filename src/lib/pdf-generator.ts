@@ -455,9 +455,16 @@ export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise
     font: fontBold,
     color: primaryColor,
   });
-  page.drawText('Phone: +356 7905 5156 | Email: info@ghawdex.pro | www.ghawdex.pro', {
-    x: width / 2 - 150,
+  page.drawText('Phone: +356 7905 5156 | Email: info@ghawdex.pro', {
+    x: width / 2 - 120,
     y: yPosition - 20,
+    size: 8,
+    font: fontRegular,
+    color: gray,
+  });
+  page.drawText('www.ghawdex.pro', {
+    x: width / 2 - 40,
+    y: yPosition - 32,
     size: 8,
     font: fontRegular,
     color: gray,
