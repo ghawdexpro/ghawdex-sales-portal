@@ -666,90 +666,105 @@ export async function POST(request: NextRequest) {
     // =========================================================================
     // SEND CUSTOMER COMMUNICATIONS (Email + SMS)
     // Non-blocking - don't fail lead creation if communications fail
+    // Send for BOTH new leads AND quote completions (updated leads)
     // =========================================================================
-    if (lead?.id && leadData.email) {
+    if (lead?.id && leadData.email && leadData.total_price) {
       const signingUrl = contractSigningUrl || fallbackSigningUrl || undefined;
       const quoteRef = `GHX-${lead.id.substring(0, 8).toUpperCase()}`;
 
-      // Prepare confirmation data
-      const confirmationData = {
-        name: leadData.name,
-        systemSize: leadData.system_size_kw || 0,
-        totalPrice: leadData.total_price || 0,
-        annualSavings: leadData.annual_savings || 0,
-        paybackYears: leadData.annual_savings && leadData.total_price
-          ? Math.round((leadData.total_price - (leadData.grant_amount || 0)) / leadData.annual_savings * 10) / 10
-          : 5,
-        withBattery: leadData.with_battery || false,
-        batterySize: leadData.battery_size_kwh ?? undefined,
-        paymentMethod: (leadData.payment_method as 'cash' | 'loan') || 'cash',
-        monthlyPayment: leadData.monthly_payment ?? undefined,
-        contractSigningUrl: signingUrl,
-        quoteRef,
-      };
+      // Determine if this is a quote completion (has system config + price)
+      const isQuoteComplete = leadData.system_size_kw && leadData.total_price && leadData.total_price > 0;
 
-      // Send email confirmation (logged in Zoho CRM if zohoLeadId available)
-      if (isEmailConfigured()) {
-        sendLeadConfirmationEmail(finalZohoId || null, confirmationData, leadData.email)
-          .then(result => {
-            if (result.success) {
-              console.log('[Lead] Email confirmation sent:', result.messageId);
-            } else {
-              console.error('[Lead] Email confirmation failed:', result.error);
-            }
-          })
-          .catch(err => console.error('[Lead] Email error:', err));
-      }
+      // Only send emails/SMS if quote is complete (prevent sending for partial wizard data)
+      if (isQuoteComplete) {
+        console.log('[Lead] Quote complete - sending email + SMS confirmations');
 
-      // Send SMS confirmation
-      if (isSmsConfigured() && leadData.phone) {
-        sendLeadConfirmationSms(leadData.phone, {
+        // Prepare confirmation data
+        const confirmationData = {
           name: leadData.name,
-          quoteRef,
           systemSize: leadData.system_size_kw || 0,
-        })
-          .then(result => {
-            if (result.success) {
-              console.log('[Lead] SMS confirmation sent:', result.messageId);
-            } else {
-              console.error('[Lead] SMS confirmation failed:', result.error);
-            }
+          totalPrice: leadData.total_price || 0,
+          annualSavings: leadData.annual_savings || 0,
+          paybackYears: leadData.annual_savings && leadData.total_price
+            ? Math.round((leadData.total_price - (leadData.grant_amount || 0)) / leadData.annual_savings * 10) / 10
+            : 5,
+          withBattery: leadData.with_battery || false,
+          batterySize: leadData.battery_size_kwh ?? undefined,
+          paymentMethod: (leadData.payment_method as 'cash' | 'loan') || 'cash',
+          monthlyPayment: leadData.monthly_payment ?? undefined,
+          contractSigningUrl: signingUrl,
+          quoteRef,
+        };
+
+        // Send email confirmation (logged in Zoho CRM if zohoLeadId available)
+        if (isEmailConfigured()) {
+          sendLeadConfirmationEmail(finalZohoId || null, confirmationData, leadData.email)
+            .then(result => {
+              if (result.success) {
+                console.log('[Lead] Email confirmation sent:', result.messageId);
+              } else {
+                console.error('[Lead] Email confirmation failed:', result.error);
+              }
+            })
+            .catch(err => console.error('[Lead] Email error:', err));
+        }
+
+        // Send SMS confirmation
+        if (isSmsConfigured() && leadData.phone) {
+          sendLeadConfirmationSms(leadData.phone, {
+            name: leadData.name,
+            quoteRef,
+            systemSize: leadData.system_size_kw || 0,
           })
-          .catch(err => console.error('[Lead] SMS error:', err));
-      }
+            .then(result => {
+              if (result.success) {
+                console.log('[Lead] SMS confirmation sent:', result.messageId);
+              } else {
+                console.error('[Lead] SMS confirmation failed:', result.error);
+              }
+            })
+            .catch(err => console.error('[Lead] SMS error:', err));
+        }
 
-      // Schedule follow-up communications (24h, 72h, 7d)
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        // Schedule follow-up communications (24h, 72h, 7d)
+        // Only schedule if this is a NEW quote (prevent duplicate follow-ups for updates)
+        const isNewQuote = !existingLead || !existingLead.total_price || existingLead.total_price === 0;
+        if (isNewQuote) {
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-      if (supabaseUrl && supabaseKey) {
-        const now = new Date();
-        const followUps = [
-          { type: 'follow-up-24h', channel: 'email', hours: 24 },
-          { type: 'follow-up-24h', channel: 'sms', hours: 24 },
-          { type: 'follow-up-72h', channel: 'email', hours: 72 },
-          { type: 'follow-up-7d', channel: 'email', hours: 168 },
-        ];
+          if (supabaseUrl && supabaseKey) {
+            const now = new Date();
+            const followUps = [
+              { type: 'follow-up-24h', channel: 'email', hours: 24 },
+              { type: 'follow-up-24h', channel: 'sms', hours: 24 },
+              { type: 'follow-up-72h', channel: 'email', hours: 72 },
+              { type: 'follow-up-7d', channel: 'email', hours: 168 },
+            ];
 
-        const scheduleData = followUps.map(fu => ({
-          lead_id: lead.id,
-          scheduled_at: new Date(now.getTime() + fu.hours * 60 * 60 * 1000).toISOString(),
-          type: fu.type,
-          channel: fu.channel,
-          status: 'pending',
-          metadata: { quoteRef, contractUrl: signingUrl },
-        }));
+            const scheduleData = followUps.map(fu => ({
+              lead_id: lead.id,
+              scheduled_at: new Date(now.getTime() + fu.hours * 60 * 60 * 1000).toISOString(),
+              type: fu.type,
+              channel: fu.channel,
+              status: 'pending',
+              metadata: { quoteRef, contractUrl: signingUrl },
+            }));
 
-        fetch(`${supabaseUrl}/rest/v1/follow_up_schedule`, {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal',
-          },
-          body: JSON.stringify(scheduleData),
-        }).catch(err => console.error('[Lead] Failed to schedule follow-ups:', err));
+            fetch(`${supabaseUrl}/rest/v1/follow_up_schedule`, {
+              method: 'POST',
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal',
+              },
+              body: JSON.stringify(scheduleData),
+            }).catch(err => console.error('[Lead] Failed to schedule follow-ups:', err));
+          }
+        }
+      } else {
+        console.log('[Lead] Quote incomplete - skipping email/SMS (no system size or price)');
       }
     }
 
