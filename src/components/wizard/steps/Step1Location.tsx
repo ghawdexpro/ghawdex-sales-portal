@@ -339,8 +339,11 @@ export default function Step1Location() {
         `;
 
         // Listen for place selection using the new event
-        autocompleteElement.addEventListener('gmp-placeselect', async (event) => {
-          const place = (event as CustomEvent).detail.place;
+        autocompleteElement.addEventListener('gmp-select', async (event) => {
+          const { placePrediction } = (event as CustomEvent).detail;
+
+          // Convert prediction to full Place object
+          const place = placePrediction.toPlace();
 
           // Fetch the fields we need
           await place.fetchFields({ fields: ['location', 'viewport', 'formattedAddress', 'displayName'] });
