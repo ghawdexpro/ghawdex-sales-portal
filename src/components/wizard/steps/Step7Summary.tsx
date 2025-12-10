@@ -380,9 +380,6 @@ export default function Step6Summary() {
             .terms h3 { font-size: 12px; color: #1a1a2e; margin-bottom: 10px; }
             .terms ul { padding-left: 20px; }
             .terms li { margin: 5px 0; }
-            .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
-            .footer p { margin: 5px 0; line-height: 1.5; }
-            .footer strong { color: #8b5cf6; }
             .savings-box { background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0; }
             .savings-box h4 { color: #16a34a; margin-bottom: 10px; }
             @media print { body { padding: 20px; } }
@@ -581,12 +578,12 @@ export default function Step6Summary() {
               <li>All equipment comes with manufacturer warranty</li>
               <li>Price includes installation, commissioning, and grid connection</li>
             </ul>
-          </div>
 
-          <div class="footer">
-            <p><strong>GhawdeX Engineering</strong></p>
-            <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
-            <p>www.ghawdex.pro</p>
+            <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #666;">
+              <strong>GhawdeX Engineering</strong><br>
+              Phone: +356 7905 5156 | Email: info@ghawdex.pro<br>
+              www.ghawdex.pro
+            </p>
           </div>
         </body>
         </html>
@@ -627,9 +624,6 @@ export default function Step6Summary() {
           .terms h3 { font-size: 12px; color: #1a1a2e; margin-bottom: 10px; }
           .terms ul { padding-left: 20px; }
           .terms li { margin: 5px 0; }
-          .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
-          .footer p { margin: 5px 0; line-height: 1.5; }
-          .footer strong { color: #f59e0b; }
           @media print { body { padding: 20px; } }
         </style>
       </head>
@@ -742,12 +736,12 @@ export default function Step6Summary() {
             <li>All equipment comes with manufacturer warranty</li>
             <li>Price includes installation, commissioning, and grid connection</li>
           </ul>
-        </div>
 
-        <div class="footer">
-          <p><strong>GhawdeX Engineering</strong></p>
-          <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
-          <p>www.ghawdex.pro</p>
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #666;">
+            <strong>GhawdeX Engineering</strong><br>
+            Phone: +356 7905 5156 | Email: info@ghawdex.pro<br>
+            www.ghawdex.pro
+          </p>
         </div>
       </body>
       </html>
@@ -837,8 +831,6 @@ export default function Step6Summary() {
             .notes h3 { font-size: 13px; margin-bottom: 10px; color: #6d28d9; }
             .notes ul { padding-left: 20px; }
             .notes li { margin: 5px 0; }
-            .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
-            .footer p { margin: 5px 0; line-height: 1.5; }
             @media print { body { padding: 20px; } .datasheet-link { background: #666; } }
           </style>
         </head>
@@ -1019,12 +1011,12 @@ export default function Step6Summary() {
               <li>Installation includes all mounting, cabling, and protection devices</li>
               <li>Grid connection coordination with Enemalta included</li>
             </ul>
-          </div>
 
-          <div class="footer">
-            <p><strong>GhawdeX Engineering</strong> - Huawei Certified Partner</p>
-            <p>Phone: +356 7905 5156 | Email: info@ghawdex.pro</p>
-            <p>www.ghawdex.pro</p>
+            <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #666;">
+              <strong>GhawdeX Engineering</strong> - Huawei Certified Partner<br>
+              Phone: +356 7905 5156 | Email: info@ghawdex.pro<br>
+              www.ghawdex.pro
+            </p>
           </div>
         </body>
         </html>
@@ -1144,8 +1136,6 @@ export default function Step6Summary() {
           .notes h3 { font-size: 13px; margin-bottom: 10px; }
           .notes ul { padding-left: 20px; }
           .notes li { margin: 5px 0; }
-          .footer { margin-top: 50px; padding-top: 20px; text-align: center; font-size: 12px; color: #666; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; clear: both; }
-          .footer p { margin: 5px 0; line-height: 1.5; }
           @media print {
             body { padding: 20px; }
             .datasheet-link { background: #666; }
