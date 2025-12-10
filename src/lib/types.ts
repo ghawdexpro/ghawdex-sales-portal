@@ -512,12 +512,13 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
   },
 ];
 
-// Battery pricing optimized for battery-only purchases with backup protection
-// Lowered base prices + Emergency Backup Circuit (€350) = competitive final customer pricing
+// Battery pricing @ €900/kWh to maximize REWS 2025 grant capture
+// 10 kWh hits maximum grant of €7,200 (Malta 80% / Gozo 95%)
+// Includes battery unit + hybrid inverter + installation + 10-year warranty
 export const BATTERY_OPTIONS: BatteryOption[] = [
-  { id: 'luna-5', name: 'Huawei LUNA2000-5-S0', capacityKwh: 5, price: 2000 },   // Customer pays €750 final (€400 + €350 backup)
-  { id: 'luna-10', name: 'Huawei LUNA2000-10-S0', capacityKwh: 10, price: 4000 }, // Customer pays €1,150 final (€800 + €350 backup)
-  { id: 'luna-15', name: 'Huawei LUNA2000-15-S0', capacityKwh: 15, price: 6000 }, // Customer pays €1,550 final (€1,200 + €350 backup)
+  { id: 'luna-5', name: 'Huawei LUNA2000-5-S0', capacityKwh: 5, price: 4500 },    // €900/kWh → Customer pays €1,250 (€900 + €350 backup)
+  { id: 'luna-10', name: 'Huawei LUNA2000-10-S0', capacityKwh: 10, price: 9000 },  // €900/kWh - MAX GRANT €7,200! → Customer pays €2,150 (€1,800 + €350 backup), €799 deposit
+  { id: 'luna-15', name: 'Huawei LUNA2000-15-S0', capacityKwh: 15, price: 11500 }, // €767/kWh (€2,000 discount!) → Customer pays €4,650 (€4,300 + €350 backup)
 ];
 
 // Emergency Backup Circuit - automatically included in battery-only purchases
