@@ -239,18 +239,19 @@ export default function Step3System() {
           {/* Battery Selection Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {BATTERY_OPTIONS.map((battery) => {
-              // Calculate grant for this battery option
-              const batteryGrant = Math.min(
-                battery.capacityKwh * GRANT_SCHEME_2025.BATTERY[state.location].perKwh,
-                battery.price * GRANT_SCHEME_2025.BATTERY[state.location].percentage,
-                GRANT_SCHEME_2025.BATTERY[state.location].maxTotal
+              // Calculate accurate pricing using the same logic as summary
+              const cardPricing = calculateTotalPriceWithGrant(
+                null,                    // No PV system (battery-only)
+                battery,                 // Current battery option
+                'battery_retrofit',      // Grant type for battery-only mode
+                state.location           // Malta or Gozo
               );
 
-              // Calculate final customer price (battery - grant + backup)
-              const batteryAfterGrant = battery.price - batteryGrant;
-              const finalPrice = batteryAfterGrant + EMERGENCY_BACKUP_COST;
+              const finalPrice = cardPricing.totalPrice;
               const deposit = calculateDeposit(finalPrice);
               const remaining = finalPrice - deposit;
+              const totalSystemValue = cardPricing.grossPrice;  // Includes battery + inverter + backup
+              const grantSavings = cardPricing.grantAmount;     // Includes battery grant + inverter grant
 
               const isSelected = selectedBattery?.id === battery.id;
 
@@ -281,11 +282,11 @@ export default function Step3System() {
                   <div className="space-y-1 text-xs mb-3">
                     <div className="flex justify-between text-gray-400">
                       <span>System Value:</span>
-                      <span>{formatCurrency(battery.price + EMERGENCY_BACKUP_COST)}</span>
+                      <span>{formatCurrency(totalSystemValue)}</span>
                     </div>
                     <div className="flex justify-between text-green-400 font-medium">
                       <span>Grant Savings:</span>
-                      <span>-{formatCurrency(batteryGrant)}</span>
+                      <span>-{formatCurrency(grantSavings)}</span>
                     </div>
                     <div className="flex justify-between text-white font-bold border-t border-white/10 pt-1">
                       <span>You Pay:</span>
@@ -600,10 +601,10 @@ export default function Step3System() {
       )}
 
       {/* Fixed bottom section with Summary + Grant Selector + Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)]">
         {/* Amber/Purple glow divider based on mode */}
         <div className={`h-[2px] bg-gradient-to-r from-transparent ${batteryOnlyMode ? 'via-purple-500' : 'via-amber-500'} to-transparent shadow-[0_0_15px_${batteryOnlyMode ? 'rgba(168,85,247,0.6)' : 'rgba(245,158,11,0.6)'}]`} />
-        <div className="max-w-3xl mx-auto px-4 py-3">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3">
           {/* Price Summary - show for both solar and battery-only modes */}
           {(selectedSystem || batteryOnlyMode) && (
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">

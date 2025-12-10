@@ -120,7 +120,7 @@ export default function Step2Consumption() {
         <label className="block text-sm font-medium text-gray-300 mb-3 sm:mb-4">
           {isBusiness ? 'Business Customer' : 'How many people live in your household?'}
         </label>
-        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 sm:gap-2">
           {HOUSEHOLD_SIZES.map((size) => (
             <button
               key={size.value}

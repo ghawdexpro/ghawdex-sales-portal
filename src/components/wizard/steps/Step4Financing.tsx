@@ -128,7 +128,7 @@ export default function Step4Financing() {
         <div className="flex items-center justify-between">
           <div>
             <div className={`text-xs font-semibold uppercase tracking-wider ${isBatteryOnly ? 'text-purple-300' : 'text-amber-300'} mb-1`}>Your Price</div>
-            <div className={`font-bold text-4xl tracking-tight ${isBatteryOnly ? 'text-purple-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400'}`}>{formatCurrency(totalPrice)}</div>
+            <div className={`font-bold text-2xl sm:text-4xl tracking-tight ${isBatteryOnly ? 'text-purple-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400'}`}>{formatCurrency(totalPrice)}</div>
             {priceDetails.grantAmount > 0 && (
               <div className="text-green-400 text-sm font-medium mt-1">
                 <span className="inline-flex items-center gap-1">
@@ -181,10 +181,10 @@ export default function Step4Financing() {
       </div>
 
       {/* Payment Method Selection */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
         <button
           onClick={() => setPaymentMethod('cash')}
-          className={`p-6 rounded-xl border text-left transition-all ${
+          className={`p-3 sm:p-6 rounded-xl border text-left transition-all ${
             paymentMethod === 'cash'
               ? 'bg-amber-500/20 border-amber-500'
               : 'bg-white/5 border-white/10 hover:border-white/30'
@@ -202,7 +202,7 @@ export default function Step4Financing() {
 
         <button
           onClick={() => setPaymentMethod('loan')}
-          className={`p-6 rounded-xl border text-left transition-all ${
+          className={`p-3 sm:p-6 rounded-xl border text-left transition-all ${
             paymentMethod === 'loan'
               ? 'bg-amber-500/20 border-amber-500'
               : 'bg-white/5 border-white/10 hover:border-white/30'
@@ -225,7 +225,7 @@ export default function Step4Financing() {
       {paymentMethod === 'loan' && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
           <h3 className="text-white font-medium mb-4">Select Loan Term</h3>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {financingOptions.map((option) => (
               <button
                 key={option.term}
@@ -276,7 +276,7 @@ export default function Step4Financing() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
           <div>
             <div className="text-gray-400 text-sm">Annual Savings</div>
             <div className="text-green-400 font-bold text-2xl">{formatCurrency(annualSavings)}</div>
@@ -327,8 +327,8 @@ export default function Step4Financing() {
       </div>
 
       {/* Navigation - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a] border-t border-white/10">
-        <div className="max-w-2xl mx-auto flex gap-4 p-4">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a] border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-2xl mx-auto flex gap-3 sm:gap-4 p-3 sm:p-4">
           <button
             onClick={handleBack}
             className="flex-1 bg-white/5 border border-white/10 text-white font-semibold py-4 rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
