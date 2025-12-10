@@ -32,6 +32,7 @@ interface ZohoLeadData {
   google_maps_link?: string | null;
   system_size_kw?: number | null;
   total_price?: number | null;
+  deposit_amount?: number | null;
   annual_savings?: number | null;
   payment_method?: string | null;
   loan_term?: number | null;
@@ -148,6 +149,13 @@ function mapToZohoFields(lead: ZohoLeadData, options?: ZohoUpdateOptions): Recor
     Google_Maps_URL: lead.google_maps_link || undefined,
     System_Size: lead.system_size_kw || undefined,
     Quote_Amount: lead.total_price || undefined,
+    Deposit_Amount: lead.deposit_amount || undefined,
+    Deposit_Paid: false, // Default to unpaid, updated when payment received
+    Emergency_Backup_Included: lead.grant_type === 'battery_only', // Auto-detect battery-only orders
+    Payment_Structure: lead.deposit_amount ? '2-part' : undefined,
+    Remaining_Payment_Amount: lead.deposit_amount && lead.total_price
+      ? lead.total_price - lead.deposit_amount
+      : undefined,
     Annual_Savings: lead.annual_savings || undefined,
     Payment_Method: lead.payment_method || undefined,
     Loan_Term: lead.loan_term || undefined,
