@@ -158,7 +158,7 @@ export default function Step4Financing() {
             </div>
             <div className="text-right">
               <div className="text-green-400 font-bold text-2xl">{formatCurrency(calculateDeposit(totalPrice))}</div>
-              <div className="text-gray-400 text-[10px]">Min. 30% or €799</div>
+              <div className="text-gray-400 text-[10px]">Min. 50% or €799</div>
             </div>
           </div>
 
