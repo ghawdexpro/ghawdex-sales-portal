@@ -439,8 +439,7 @@ export async function generateProposalPdfWithPdfLib(data: ProposalData): Promise
   });
 
   // Footer - position after terms with spacing
-  // Ensure minimum space from bottom (at least 50pt from bottom)
-  yPosition = Math.max(yPosition - 20, 50);
+  yPosition -= 20;
   page.drawLine({
     start: { x: 50, y: yPosition + 10 },
     end: { x: width - 50, y: yPosition + 10 },
