@@ -324,6 +324,7 @@ export async function POST(request: NextRequest) {
       payment_method: body.payment_method || null,
       loan_term: body.loan_term || null,
       total_price: body.total_price || null,
+      deposit_amount: body.deposit_amount || null, // Minimum €799 deposit (30% or €799, whichever higher)
       monthly_payment: body.monthly_payment || null,
       annual_savings: body.annual_savings || null,
       notes: body.notes ? `[Customer note during application]: ${body.notes}` : null,

@@ -12,6 +12,7 @@ import {
   calculatePaybackYears,
   calculate25YearSavings,
   calculateBatterySavings,
+  calculateDeposit,
   formatCurrency,
 } from '@/lib/calculations';
 
@@ -77,6 +78,15 @@ export default function Step4Financing() {
       },
     });
 
+    // Calculate and save deposit (minimum €799)
+    const depositAmount = calculateDeposit(totalPrice);
+    dispatch({
+      type: 'SET_DEPOSIT',
+      payload: {
+        depositAmount,
+      },
+    });
+
     trackWizardStep(4, 'Financing');
 
     // Send rich data to Telegram
@@ -133,6 +143,40 @@ export default function Step4Financing() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
+        </div>
+      </div>
+
+      {/* 2-Part Payment Structure (CONVERSION-FOCUSED) */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4 sm:p-5 mb-6">
+        <div className="text-gray-400 text-sm mb-3">Payment Structure:</div>
+        <div className="space-y-3">
+          {/* Part 1: Deposit */}
+          <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <div>
+              <div className="text-white font-semibold">Part 1 - Sign Today</div>
+              <div className="text-gray-400 text-xs">Secure your system with deposit</div>
+            </div>
+            <div className="text-right">
+              <div className="text-green-400 font-bold text-2xl">{formatCurrency(calculateDeposit(totalPrice))}</div>
+              <div className="text-gray-400 text-[10px]">Min. 30% or €799</div>
+            </div>
+          </div>
+
+          {/* Part 2: Remaining */}
+          <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg">
+            <div>
+              <div className="text-white font-medium">Part 2 - When Grant Assigned</div>
+              <div className="text-gray-400 text-xs">Pay remaining balance</div>
+            </div>
+            <div className="text-right">
+              <div className="text-white font-bold text-xl">{formatCurrency(totalPrice - calculateDeposit(totalPrice))}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Simple Timeline */}
+        <div className="mt-3 pt-3 border-t border-white/10 text-xs text-gray-400 text-center">
+          No third payment - Simple 2-part structure
         </div>
       </div>
 

@@ -103,6 +103,7 @@ export interface CollectedData {
 
   // Calculated values
   total_price: number | null;
+  deposit_amount: number | null;
   grant_amount: number | null;
   monthly_payment: number | null;
   annual_savings: number | null;

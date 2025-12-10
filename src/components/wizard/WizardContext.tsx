@@ -41,6 +41,7 @@ const initialState: WizardState = {
   socialProvider: null,
   isSocialLogin: false,
   totalPrice: null,
+  depositAmount: null,
   monthlyPayment: null,
   annualSavings: null,
   paybackYears: null,
@@ -62,6 +63,7 @@ type WizardAction =
   | { type: 'SET_CONTACT'; payload: { fullName: string; email: string; phone: string; notes: string } }
   | { type: 'SET_SOCIAL_LOGIN'; payload: { fullName: string; email: string; socialProvider: 'google' | 'facebook' } }
   | { type: 'SET_CALCULATIONS'; payload: { totalPrice: number; monthlyPayment: number | null; annualSavings: number; paybackYears: number } }
+  | { type: 'SET_DEPOSIT'; payload: { depositAmount: number } }
   | { type: 'SET_PREFILL'; payload: { fullName: string; email: string; phone: string; zohoLeadId: string } }
   | { type: 'SET_PROPOSAL_URL'; payload: { proposalFileUrl: string } }
   | { type: 'SET_CONTRACT_URL'; payload: { contractSigningUrl: string } }
@@ -118,6 +120,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       };
     case 'SET_CALCULATIONS':
       return { ...state, ...action.payload };
+    case 'SET_DEPOSIT':
+      return { ...state, depositAmount: action.payload.depositAmount };
     case 'SET_PREFILL':
       return {
         ...state,

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { Shield, Check } from 'lucide-react';
 import { useWizard } from '../WizardContext';
 import { trackWizardStep, trackSystemSelected } from '@/lib/analytics';
 import { trackTelegramWizardStep } from '@/lib/telegram-events';
-import { SYSTEM_PACKAGES, BATTERY_OPTIONS, SystemPackage, BatteryOption, GrantType, getFitRate, GRANT_SCHEME_2025 } from '@/lib/types';
-import { recommendSystem, calculateTotalPriceWithGrant, formatCurrency, formatNumber } from '@/lib/calculations';
+import { SYSTEM_PACKAGES, BATTERY_OPTIONS, EMERGENCY_BACKUP_COST, SystemPackage, BatteryOption, GrantType, getFitRate, GRANT_SCHEME_2025 } from '@/lib/types';
+import { recommendSystem, calculateTotalPriceWithGrant, calculateDeposit, formatCurrency, formatNumber } from '@/lib/calculations';
 
 export default function Step3System() {
   const { state, dispatch } = useWizard();
@@ -224,67 +225,171 @@ export default function Step3System() {
         )}
       </div>
 
-      {/* Battery-Only Selection */}
+      {/* Battery-Only Premium Selection (CONVERSION OPTIMIZED) */}
       {batteryOnlyMode && (
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-          <div className="mb-4">
-            <div className="text-white font-medium mb-2">Select Battery Size</div>
-            <div className="text-gray-400 text-sm">
-              Includes hybrid inverter for seamless integration with your existing solar
-            </div>
+        <div className="space-y-4 mb-6">
+          {/* Premium Package Header */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+              ⚡ COMPLETE PROTECTION PACKAGE
+            </span>
+            <span className="text-gray-400 text-xs">Includes Whole House Backup</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+
+          {/* Battery Selection Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {BATTERY_OPTIONS.map((battery) => {
               // Calculate grant for this battery option
-              // Battery price includes all necessary hardware, so only battery grant applies
               const batteryGrant = Math.min(
                 battery.capacityKwh * GRANT_SCHEME_2025.BATTERY[state.location].perKwh,
                 battery.price * GRANT_SCHEME_2025.BATTERY[state.location].percentage,
                 GRANT_SCHEME_2025.BATTERY[state.location].maxTotal
               );
-              const totalGrant = batteryGrant;
+
+              // Calculate final customer price (battery - grant + backup)
+              const batteryAfterGrant = battery.price - batteryGrant;
+              const finalPrice = batteryAfterGrant + EMERGENCY_BACKUP_COST;
+              const deposit = calculateDeposit(finalPrice);
+              const remaining = finalPrice - deposit;
+
+              const isSelected = selectedBattery?.id === battery.id;
 
               return (
                 <button
                   key={battery.id}
                   onClick={() => setSelectedBattery(battery)}
-                  className={`p-3 sm:p-4 rounded-lg border text-center transition-all ${
-                    selectedBattery?.id === battery.id
-                      ? 'bg-purple-500/20 border-purple-500'
-                      : 'bg-white/5 border-white/10 hover:border-white/30'
+                  className={`relative p-4 sm:p-5 rounded-xl border-2 text-left transition-all duration-300 ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-green-500/20 to-blue-500/20 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.3)]'
+                      : 'bg-white/5 border-white/10 hover:border-green-500/50 hover:bg-white/10'
                   }`}
                 >
-                  <div className="text-white font-bold text-lg sm:text-xl">{battery.capacityKwh} kWh</div>
-                  <div className="text-gray-400 text-sm">{formatCurrency(battery.price)}</div>
-                  <div className="text-green-400 text-xs mt-1">
-                    -{formatCurrency(totalGrant)} grant
+                  {/* Selected Badge */}
+                  {isSelected && (
+                    <div className="absolute top-3 right-3 bg-green-500 text-white rounded-full p-1">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  )}
+
+                  {/* Battery Size */}
+                  <div className="text-center mb-3">
+                    <div className="text-2xl sm:text-3xl font-bold text-white">{battery.capacityKwh} kWh</div>
+                    <div className="text-xs text-gray-400">Huawei LUNA</div>
+                  </div>
+
+                  {/* Value Display */}
+                  <div className="space-y-1 text-xs mb-3">
+                    <div className="flex justify-between text-gray-400">
+                      <span>System Value:</span>
+                      <span>{formatCurrency(battery.price + EMERGENCY_BACKUP_COST)}</span>
+                    </div>
+                    <div className="flex justify-between text-green-400 font-medium">
+                      <span>Grant Savings:</span>
+                      <span>-{formatCurrency(batteryGrant)}</span>
+                    </div>
+                    <div className="flex justify-between text-white font-bold border-t border-white/10 pt-1">
+                      <span>You Pay:</span>
+                      <span>{formatCurrency(finalPrice)}</span>
+                    </div>
+                  </div>
+
+                  {/* Deposit CTA */}
+                  <div className={`text-center p-2 rounded-lg ${isSelected ? 'bg-green-500/20' : 'bg-white/5'}`}>
+                    <div className="text-green-400 font-bold">{formatCurrency(deposit)} deposit</div>
+                    <div className="text-[10px] text-gray-400">+{formatCurrency(remaining)} on grant</div>
                   </div>
                 </button>
               );
             })}
           </div>
 
-          {/* Battery-only grant info */}
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">Battery Grant ({state.location === 'gozo' ? '95%' : '80%'})</span>
-              <span className="text-green-400 font-medium">
-                {formatCurrency(Math.min(
-                  (selectedBattery?.capacityKwh || 0) * GRANT_SCHEME_2025.BATTERY[state.location].perKwh,
-                  (selectedBattery?.price || 0) * GRANT_SCHEME_2025.BATTERY[state.location].percentage,
-                  GRANT_SCHEME_2025.BATTERY[state.location].maxTotal
-                ))}
-              </span>
-            </div>
-            <div className="text-gray-500 text-xs mt-1">
-              Battery price includes hybrid inverter and all integration hardware
-            </div>
-            {state.location === 'gozo' && (
-              <div className="text-purple-400 text-xs mt-2">
-                Gozo bonus: 95% battery subsidy (vs 80% in Malta)
+          {/* Selected Battery - Premium Features Display */}
+          {selectedBattery && (
+            <div className="bg-gradient-to-br from-green-500/10 to-blue-500/10 border-2 border-green-500/30 rounded-xl p-5 sm:p-6">
+              {/* Features Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                {/* Left: Battery Features */}
+                <div>
+                  <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-400" />
+                    Battery Storage
+                  </h4>
+                  <div className="space-y-1 text-sm text-gray-300">
+                    <p>✓ {state.location === 'gozo' ? '95%' : '80%'} Government Grant</p>
+                    <p>✓ Store solar for night use</p>
+                    <p>✓ Reduce grid dependence</p>
+                    <p>✓ 10-year warranty</p>
+                  </div>
+                </div>
+
+                {/* Right: Backup Protection (HERO FEATURE) */}
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-blue-400" />
+                    Whole House Backup
+                  </h4>
+                  <div className="space-y-1 text-sm text-gray-300">
+                    <p>✓ Never lose power during outages</p>
+                    <p>✓ Switchover in 0.3 seconds</p>
+                    <p>✓ Powers home for {Math.round(selectedBattery.capacityKwh / 1.5)}+ hours</p>
+                    <p className="text-xs text-blue-400 font-medium">Included: €350 value</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Social Proof */}
+              <div className="bg-white/5 rounded-lg p-3 border-l-2 border-blue-400">
+                <p className="text-xs text-gray-300 italic">
+                  "The backup saved us during last week's outage. Totally worth it!" - Maria, Sliema
+                </p>
+              </div>
+
+              {/* Payment Breakdown (Value-First) */}
+              <div className="mt-4 bg-white/5 rounded-lg p-4">
+                <p className="text-sm text-gray-400 mb-2">Your Investment:</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-300">Total System Value:</span>
+                    <span className="text-white font-semibold">{formatCurrency(selectedBattery.price + EMERGENCY_BACKUP_COST)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-400">
+                    <span>Government Grant ({state.location === 'gozo' ? '95%' : '80%'}):</span>
+                    <span className="font-semibold">-{formatCurrency(priceDetails.grantAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-base border-t border-white/10 pt-2">
+                    <span className="text-white font-bold">You Pay:</span>
+                    <span className="text-white font-bold text-xl">{formatCurrency(priceDetails.totalPrice)}</span>
+                  </div>
+
+                  {/* 2-Part Payment Structure */}
+                  <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 text-sm">Part 1 - Sign Today:</span>
+                      <span className="text-green-400 font-bold text-lg">{formatCurrency(calculateDeposit(priceDetails.totalPrice))}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 text-sm">Part 2 - When Grant Assigned:</span>
+                      <span className="text-gray-300 font-medium">{formatCurrency(priceDetails.totalPrice - calculateDeposit(priceDetails.totalPrice))}</span>
+                    </div>
+                  </div>
+
+                  {/* Value Callout */}
+                  <div className="text-xs text-gray-400 mt-2">
+                    ✓ Includes hybrid inverter, backup protection, installation & 10-year warranty
+                  </div>
+                </div>
+              </div>
+
+              {/* Gozo Bonus */}
+              {state.location === 'gozo' && (
+                <div className="mt-3 text-center p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
+                  <p className="text-purple-400 text-xs font-medium">
+                    🎁 Gozo Bonus: Extra 15% grant savings!
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

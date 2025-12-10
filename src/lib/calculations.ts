@@ -3,6 +3,7 @@ import {
   RESIDENTIAL_TARIFF_BANDS,
   ECO_REDUCTION,
   FIXED_CHARGES,
+  EMERGENCY_BACKUP_COST,
   SystemPackage,
   BatteryOption,
   FinancingOption,
@@ -375,20 +376,28 @@ export function calculateTotalPriceWithGrant(
   location: Location
 ): { totalPrice: number; grantAmount: number; grossPrice: number } {
   // Handle battery-only case (no solar system)
-  // Battery price includes all necessary hardware (inverter, integration, etc.)
+  // Battery price includes hardware + Emergency Backup Circuit for whole-house protection
   if (grantType === 'battery_only' || !system) {
-    const grossPrice = battery?.price || 0;
+    const batteryGrossPrice = battery?.price || 0;
 
+    // Calculate grant on battery only (backup circuit NOT eligible for grant)
     const grantAmount = calculateGrantAmount(
       0, // No PV
       battery?.capacityKwh || null,
       grantType === 'battery_only' ? grantType : 'none',
       location,
       0,
-      grossPrice
+      batteryGrossPrice
     );
 
-    const totalPrice = Math.max(0, grossPrice - grantAmount);
+    // Add Emergency Backup Circuit cost (NOT covered by grant)
+    // This provides automatic whole-house backup during power outages
+    const backupCost = grantType === 'battery_only' ? EMERGENCY_BACKUP_COST : 0;
+
+    const batteryAfterGrant = Math.max(0, batteryGrossPrice - grantAmount);
+    const totalPrice = batteryAfterGrant + backupCost;
+    const grossPrice = batteryGrossPrice + backupCost; // Total gross includes backup
+
     return { totalPrice, grantAmount, grossPrice };
   }
 
@@ -433,4 +442,21 @@ export function formatCurrency(amount: number): string {
 // Format number
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat('en-MT').format(num);
+}
+
+/**
+ * Calculate deposit amount with €799 minimum
+ * Enforces 30% deposit OR €799 minimum, whichever is higher
+ * Used for all purchases: PV systems, batteries, bundles
+ *
+ * @param totalPrice Total price after grant deduction
+ * @returns Deposit amount (30% or €799, whichever is higher)
+ *
+ * @example
+ * calculateDeposit(1000) // Returns 799 (30% = €300, but minimum is €799)
+ * calculateDeposit(3000) // Returns 900 (30% = €900 > €799)
+ */
+export function calculateDeposit(totalPrice: number): number {
+  const thirtyPercent = totalPrice * 0.30;
+  return Math.max(thirtyPercent, 799);
 }

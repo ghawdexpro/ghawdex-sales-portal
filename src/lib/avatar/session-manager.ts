@@ -447,6 +447,7 @@ export class SessionManager {
       phone: prefill?.phone || null,
       notes: null,
       total_price: null,
+      deposit_amount: null,
       grant_amount: null,
       monthly_payment: null,
       annual_savings: null,

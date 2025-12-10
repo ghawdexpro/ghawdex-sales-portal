@@ -54,6 +54,7 @@ export interface WizardState {
 
   // Calculated values
   totalPrice: number | null;
+  depositAmount: number | null; // Minimum €799 deposit (30% or €799, whichever higher)
   monthlyPayment: number | null;
   annualSavings: number | null;
   paybackYears: number | null;
@@ -130,6 +131,7 @@ export interface Lead {
   payment_method: string | null;
   loan_term: number | null;
   total_price: number | null;
+  deposit_amount: number | null;
   monthly_payment: number | null;
   annual_savings: number | null;
   notes: string | null;
@@ -214,6 +216,7 @@ export interface WizardSession {
   payment_method: 'cash' | 'loan' | null;
   loan_term: number | null;
   total_price: number | null;
+  deposit_amount: number | null;
   monthly_payment: number | null;
   annual_savings: number | null;
   payback_years: number | null;
@@ -509,9 +512,15 @@ export const SYSTEM_PACKAGES: SystemPackage[] = [
   },
 ];
 
-// Battery pricing optimized to maximize 80% (Malta) / 95% (Gozo) grant
+// Battery pricing optimized for battery-only purchases with backup protection
+// Lowered base prices + Emergency Backup Circuit (€350) = competitive final customer pricing
 export const BATTERY_OPTIONS: BatteryOption[] = [
-  { id: 'luna-5', name: 'Huawei LUNA2000-5-S0', capacityKwh: 5, price: 4000 },
-  { id: 'luna-10', name: 'Huawei LUNA2000-10-S0', capacityKwh: 10, price: 7500 },
-  { id: 'luna-15', name: 'Huawei LUNA2000-15-S0', capacityKwh: 15, price: 10500 },
+  { id: 'luna-5', name: 'Huawei LUNA2000-5-S0', capacityKwh: 5, price: 2000 },   // Customer pays €750 final (€400 + €350 backup)
+  { id: 'luna-10', name: 'Huawei LUNA2000-10-S0', capacityKwh: 10, price: 4000 }, // Customer pays €1,150 final (€800 + €350 backup)
+  { id: 'luna-15', name: 'Huawei LUNA2000-15-S0', capacityKwh: 15, price: 6000 }, // Customer pays €1,550 final (€1,200 + €350 backup)
 ];
+
+// Emergency Backup Circuit - automatically included in battery-only purchases
+// Provides whole-house backup protection during power outages
+// NOT covered by REWS grant (added to final customer price after grant calculation)
+export const EMERGENCY_BACKUP_COST = 350; // € - Complete Home Protection Package

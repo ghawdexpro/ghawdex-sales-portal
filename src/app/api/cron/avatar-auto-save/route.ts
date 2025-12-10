@@ -30,6 +30,7 @@ interface CollectedData {
   payment_method?: string;
   loan_term?: number;
   total_price?: number;
+  deposit_amount?: number;
   monthly_payment?: number;
   annual_savings?: number;
 }
@@ -130,6 +131,7 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     payment_method: data.payment_method || null,
     loan_term: data.loan_term || null,
     total_price: data.total_price || null,
+    deposit_amount: data.deposit_amount || null,
     monthly_payment: data.monthly_payment || null,
     annual_savings: data.annual_savings || null,
     notes: `Auto-saved from avatar session ${session.id}. Phase: ${session.current_phase}`,

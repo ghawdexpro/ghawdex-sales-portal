@@ -3,8 +3,8 @@
 import { useWizard } from '../WizardContext';
 import { trackWizardComplete, trackQuoteGenerated, trackLeadCreated } from '@/lib/analytics';
 import { trackTelegramWizardStep, trackTelegramWizardComplete } from '@/lib/telegram-events';
-import { BATTERY_OPTIONS, GRANT_SCHEME_2025 } from '@/lib/types';
-import { formatCurrency, formatNumber } from '@/lib/calculations';
+import { BATTERY_OPTIONS, EMERGENCY_BACKUP_COST, GRANT_SCHEME_2025 } from '@/lib/types';
+import { formatCurrency, formatNumber, calculateDeposit } from '@/lib/calculations';
 import { getSessionToken } from '@/lib/wizard-session';
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 
@@ -253,6 +253,7 @@ export default function Step6Summary() {
             payment_method: state.paymentMethod,
             loan_term: state.loanTerm,
             total_price: state.totalPrice,
+            deposit_amount: state.depositAmount,
             monthly_payment: state.monthlyPayment,
             annual_savings: state.annualSavings,
             notes: isBatteryOnly ? 'Battery-only installation (no solar)' : null,
@@ -443,31 +444,74 @@ export default function Step6Summary() {
               <td><strong>Warranty</strong></td>
               <td>10 years manufacturer warranty</td>
             </tr>
+            <tr class="highlight" style="background: #f0fdf4; border-left: 3px solid #22c55e;">
+              <td><strong>🛡️ Whole House Backup Protection</strong></td>
+              <td><strong>Included (€350 value)</strong></td>
+            </tr>
+            <tr style="background: #f0fdf4;">
+              <td style="padding-left: 30px; font-size: 13px; color: #16a34a;">• Never lose power during Enemalta outages</td>
+              <td style="font-size: 13px; color: #16a34a;">Automatic switchover in 0.3 seconds</td>
+            </tr>
+            <tr style="background: #f0fdf4;">
+              <td style="padding-left: 30px; font-size: 13px; color: #16a34a;">• Powers entire home for ${Math.round((battery?.capacityKwh || 10) / 1.5)}+ hours</td>
+              <td style="font-size: 13px; color: #16a34a;">Essential peace of mind</td>
+            </tr>
           </table>
 
-          <h2>Grant Calculation (REWS 2025)</h2>
+          <h2>Pricing Breakdown (REWS 2025)</h2>
           <table>
             <tr>
-              <td><strong>System Gross Price</strong></td>
+              <td><strong>Battery System</strong></td>
               <td>${formatCurrency(batteryGrossPrice)}</td>
             </tr>
-            <tr>
-              <td><strong>Grant Rate</strong></td>
-              <td>${grantPercentage}% (${state.location === 'gozo' ? 'Gozo enhanced rate' : 'Malta standard rate'})</td>
-            </tr>
-            <tr>
-              <td><strong>Grant Cap</strong></td>
-              <td>€720/kWh (max ${state.location === 'gozo' ? '€8,550' : '€7,200'})</td>
+            <tr style="background: #f0fdf4;">
+              <td style="padding-left: 20px;">Emergency Backup Circuit</td>
+              <td style="color: #16a34a;">+${formatCurrency(EMERGENCY_BACKUP_COST)}</td>
             </tr>
             <tr class="highlight">
-              <td><strong>Grant Amount</strong></td>
-              <td style="color: #16a34a; font-weight: bold;">${formatCurrency(grantAmount)}</td>
+              <td><strong>Total System Value</strong></td>
+              <td><strong>${formatCurrency(batteryGrossPrice + EMERGENCY_BACKUP_COST)}</strong></td>
             </tr>
-            <tr class="highlight">
-              <td><strong>You Pay</strong></td>
-              <td style="font-weight: bold;">${formatCurrency(state.totalPrice || 0)}</td>
+            <tr>
+              <td><strong>Government Grant (${grantPercentage}%)</strong></td>
+              <td style="color: #16a34a; font-weight: bold;">-${formatCurrency(grantAmount)}</td>
+            </tr>
+            <tr style="font-size: 11px; color: #666;">
+              <td colspan="2" style="padding-left: 20px;">Grant applies to battery only (€720/kWh, max ${state.location === 'gozo' ? '€8,550' : '€7,200'})</td>
+            </tr>
+            <tr style="font-size: 11px; color: #666;">
+              <td colspan="2" style="padding-left: 20px;">Backup protection NOT covered by grant</td>
+            </tr>
+            <tr class="highlight" style="background: #fef3c7; border-top: 2px solid #f59e0b;">
+              <td><strong style="font-size: 16px;">Your Investment</strong></td>
+              <td style="font-weight: bold; font-size: 18px;">${formatCurrency(state.totalPrice || 0)}</td>
             </tr>
           </table>
+
+          <h2>Payment Schedule</h2>
+          <table>
+            <tr class="highlight" style="background: #dcfce7;">
+              <td><strong>Part 1 - Sign Today</strong></td>
+              <td style="color: #16a34a; font-weight: bold; font-size: 18px;">${formatCurrency(state.depositAmount || calculateDeposit(state.totalPrice || 0))}</td>
+            </tr>
+            <tr>
+              <td style="padding-left: 20px; font-size: 12px; color: #666;">Secure your system with deposit (30% minimum or €799)</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td><strong>Part 2 - When Grant Assigned</strong></td>
+              <td style="font-weight: bold;">${formatCurrency((state.totalPrice || 0) - (state.depositAmount || calculateDeposit(state.totalPrice || 0)))}</td>
+            </tr>
+            <tr>
+              <td style="padding-left: 20px; font-size: 12px; color: #666;">Pay remaining balance (typically 8-12 months)</td>
+              <td></td>
+            </tr>
+          </table>
+
+          <div style="background: #f0fdf4; border-left: 3px solid #22c55e; padding: 15px; margin: 20px 0; border-radius: 6px;">
+            <p style="font-size: 13px; color: #333; margin-bottom: 8px;"><strong style="color: #16a34a;">✓ Simple 2-Part Payment</strong></p>
+            <p style="font-size: 12px; color: #666;">No hidden fees. No third payment. Just deposit today and remaining balance when your grant is assigned.</p>
+          </div>
 
           <div class="savings-box">
             <h4>How Battery Storage Saves You Money</h4>
@@ -1498,6 +1542,59 @@ export default function Step6Summary() {
           )}
         </div>
 
+        {/* Emergency Backup Protection Card (Battery-Only) */}
+        {isBatteryOnly && (
+          <div className="bg-gradient-to-br from-green-500/10 to-blue-500/10 border-2 border-green-500/30 rounded-xl p-4 sm:p-5 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                ✓ INCLUDED
+              </div>
+              <span className="text-gray-400 text-xs">€350 value</span>
+            </div>
+            <h3 className="text-white font-bold text-lg mb-2">
+              🛡️ Whole House Backup Protection
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-300">
+              <div>✓ Never lose power during outages</div>
+              <div>✓ 0.3 second automatic switchover</div>
+              <div>✓ {Math.round((battery?.capacityKwh || 10) / 1.5)}+ hours backup power</div>
+            </div>
+          </div>
+        )}
+
+        {/* Deposit & Payment Structure */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+          <div className="text-gray-400 text-sm mb-3">Payment Structure:</div>
+          <div className="space-y-3">
+            {/* Part 1: Deposit */}
+            <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <div>
+                <div className="text-white font-semibold">Part 1 - Sign Today</div>
+                <div className="text-gray-400 text-xs">Secure your system</div>
+              </div>
+              <div className="text-right">
+                <div className="text-green-400 font-bold text-xl">
+                  {formatCurrency(state.depositAmount || calculateDeposit(state.totalPrice || 0))}
+                </div>
+                <div className="text-gray-400 text-[10px]">30% or €799 min</div>
+              </div>
+            </div>
+
+            {/* Part 2: Remaining */}
+            <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg">
+              <div>
+                <div className="text-white font-medium">Part 2 - When Grant Assigned</div>
+                <div className="text-gray-400 text-xs">Typically 8-12 months</div>
+              </div>
+              <div className="text-right">
+                <div className="text-white font-bold text-lg">
+                  {formatCurrency((state.totalPrice || 0) - (state.depositAmount || calculateDeposit(state.totalPrice || 0)))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Payment */}
         <div className="bg-white/5 rounded-xl p-4 mb-4">
           <div className="flex items-center justify-between">
@@ -1730,6 +1827,59 @@ export default function Step6Summary() {
               </div>
             </>
           )}
+        </div>
+
+        {/* Emergency Backup Protection Card (Battery-Only) */}
+        {isBatteryOnly && (
+          <div className="bg-gradient-to-br from-green-500/10 to-blue-500/10 border-2 border-green-500/30 rounded-xl p-4 sm:p-5 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                ✓ INCLUDED
+              </div>
+              <span className="text-gray-400 text-xs">€350 value</span>
+            </div>
+            <h3 className="text-white font-bold text-lg mb-2">
+              🛡️ Whole House Backup Protection
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-300">
+              <div>✓ Never lose power during outages</div>
+              <div>✓ 0.3 second automatic switchover</div>
+              <div>✓ {Math.round((battery?.capacityKwh || 10) / 1.5)}+ hours backup power</div>
+            </div>
+          </div>
+        )}
+
+        {/* Deposit & Payment Structure */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+          <div className="text-gray-400 text-sm mb-3">Payment Structure:</div>
+          <div className="space-y-3">
+            {/* Part 1: Deposit */}
+            <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <div>
+                <div className="text-white font-semibold">Part 1 - Sign Today</div>
+                <div className="text-gray-400 text-xs">Secure your system</div>
+              </div>
+              <div className="text-right">
+                <div className="text-green-400 font-bold text-xl">
+                  {formatCurrency(state.depositAmount || calculateDeposit(state.totalPrice || 0))}
+                </div>
+                <div className="text-gray-400 text-[10px]">30% or €799 min</div>
+              </div>
+            </div>
+
+            {/* Part 2: Remaining */}
+            <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg">
+              <div>
+                <div className="text-white font-medium">Part 2 - When Grant Assigned</div>
+                <div className="text-gray-400 text-xs">Typically 8-12 months</div>
+              </div>
+              <div className="text-right">
+                <div className="text-white font-bold text-lg">
+                  {formatCurrency((state.totalPrice || 0) - (state.depositAmount || calculateDeposit(state.totalPrice || 0)))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Payment */}
