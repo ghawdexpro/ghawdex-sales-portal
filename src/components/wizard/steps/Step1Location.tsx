@@ -339,7 +339,7 @@ export default function Step1Location() {
         `;
 
         // Listen for place selection using the new event
-        autocompleteElement.addEventListener('gmp-select', async (event) => {
+        autocompleteElement.addEventListener('gmp-places-select', async (event) => {
           console.log('🔍 Event fired:', event.type);
           console.log('📦 Event detail:', (event as CustomEvent).detail);
 
