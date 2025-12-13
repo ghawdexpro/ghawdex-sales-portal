@@ -322,11 +322,13 @@ export default function Step1Location() {
         await loadPlacesLibrary();
 
         // Create the new PlaceAutocompleteElement web component
+        // Using type assertion because @types/google.maps is outdated and doesn't have the new properties
         const autocompleteElement = new google.maps.places.PlaceAutocompleteElement({
-          componentRestrictions: { country: 'mt' },
-          // Using 'geocode' instead of 'address' to include Gozo locations
-          types: ['geocode'],
-        });
+          // Restrict to Malta only (includes Gozo)
+          includedRegionCodes: ['mt'],
+          // Using 'geocode' to include all location types
+          includedPrimaryTypes: ['geocode'],
+        } as google.maps.places.PlaceAutocompleteElementOptions);
 
         // Style the web component to match our dark theme
         autocompleteElement.style.cssText = `
