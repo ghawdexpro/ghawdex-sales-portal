@@ -339,55 +339,56 @@ export default function Step1Location() {
         `;
 
         // Listen for place selection using the new event
-        autocompleteElement.addEventListener('gmp-places-select', async (event) => {
+        autocompleteElement.addEventListener('gmp-select', async (event: Event) => {
           console.log('🔍 Event fired:', event.type);
-          console.log('📦 Event detail:', (event as CustomEvent).detail);
 
-          const { placePrediction } = (event as CustomEvent).detail;
+          // The event passes placePrediction directly (per Google Maps docs)
+          const { placePrediction } = event as unknown as { placePrediction: google.maps.places.PlacePrediction };
           console.log('🎯 PlacePrediction:', placePrediction);
 
-          // Convert prediction to full Place object
-          const place = placePrediction.toPlace();
-          console.log('🏠 Place object:', place);
+          if (!placePrediction) {
+            console.error('No placePrediction in event');
+            return;
+          }
 
-          // Fetch the fields we need
-          await place.fetchFields({ fields: ['location', 'viewport', 'formattedAddress', 'displayName'] });
-          console.log('✅ Fields fetched - location:', place.location, 'viewport:', place.viewport);
+          try {
+            // Convert prediction to full Place object
+            const place = placePrediction.toPlace();
+            console.log('🏠 Place object:', place);
 
-          if (place.location && googleMapRef.current) {
-            const lat = place.location.lat();
-            const lng = place.location.lng();
+            // Fetch the fields we need
+            await place.fetchFields({ fields: ['location', 'viewport', 'formattedAddress', 'displayName'] });
+            console.log('✅ Fields fetched - location:', place.location, 'viewport:', place.viewport);
 
-            // Clear any existing marker first
-            if (markerRef.current) {
-              markerRef.current.setMap(null);
-              markerRef.current = null;
-            }
+            if (place.location && googleMapRef.current) {
+              const lat = place.location.lat();
+              const lng = place.location.lng();
 
-            // Try to use viewport for localities, fallback to center + zoom
-            let fitWorked = false;
-            if (place.viewport) {
-              try {
-                googleMapRef.current.fitBounds(place.viewport);
-                fitWorked = true;
-              } catch (e) {
-                console.warn('fitBounds failed:', e);
+              // Clear any existing marker first
+              if (markerRef.current) {
+                markerRef.current.setMap(null);
+                markerRef.current = null;
               }
-            }
 
-            // Fallback: center on location with appropriate zoom
-            if (!fitWorked) {
-              googleMapRef.current.setCenter({ lat, lng });
-              // Use zoom 15 for localities, gives neighborhood-level view
-              googleMapRef.current.setZoom(15);
-            }
+              // Try to use viewport for localities, fallback to center + zoom
+              if (place.viewport) {
+                googleMapRef.current.fitBounds(place.viewport);
+                console.log('🗺️ Fitted to viewport');
+              } else {
+                googleMapRef.current.setCenter({ lat, lng });
+                googleMapRef.current.setZoom(15);
+                console.log('🗺️ Centered on location with zoom 15');
+              }
 
-            // Clear address state - let user click to pin exact location
-            setSelectedAddress('');
-            dispatch({
-              type: 'SET_ADDRESS',
-              payload: { address: '', coordinates: null, googleMapsLink: null, location: detectLocation(lat) },
-            });
+              // Clear address state - let user click to pin exact location
+              setSelectedAddress('');
+              dispatch({
+                type: 'SET_ADDRESS',
+                payload: { address: '', coordinates: null, googleMapsLink: null, location: detectLocation(lat) },
+              });
+            }
+          } catch (err) {
+            console.error('Error processing place selection:', err);
           }
         });
 
@@ -521,11 +522,10 @@ export default function Step1Location() {
           onClick={handleUseMyLocation}
           disabled={isLocating}
           aria-label="Use my current location"
-          className={`rounded-xl px-4 py-3 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap ${
-            mapZoom <= INITIAL_ZOOM + 2 && !state.coordinates
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-amber-500/25'
-              : 'bg-white/5 border border-white/10 hover:bg-white/10'
-          }`}
+          className={`rounded-xl px-4 py-3 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap ${mapZoom <= INITIAL_ZOOM + 2 && !state.coordinates
+            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-amber-500/25'
+            : 'bg-white/5 border border-white/10 hover:bg-white/10'
+            }`}
         >
           {isLocating ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
