@@ -11,7 +11,8 @@ import SocialLogin from '../SocialLogin';
 
 export default function Step5Contact() {
   const { state, dispatch } = useWizard();
-  const [fullName, setFullName] = useState(state.fullName);
+  // Pre-fill from: state > billAnalysis > empty
+  const [fullName, setFullName] = useState(state.fullName || state.billAnalysis?.name || '');
   const [email, setEmail] = useState(state.email);
   const [phone, setPhone] = useState(state.phone);
   const [notes, setNotes] = useState(state.notes);
@@ -20,11 +21,18 @@ export default function Step5Contact() {
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const phoneInputRef = useRef<HTMLInputElement>(null);
 
+  // Track if name was auto-filled from bill (and user hasn't changed it)
+  const nameFromBill = state.billAnalysis?.name && fullName === state.billAnalysis.name;
+
   // Sync state when social login populates fields
   useEffect(() => {
     if (state.fullName && !fullName) setFullName(state.fullName);
     if (state.email && !email) setEmail(state.email);
-  }, [state.fullName, state.email, fullName, email]);
+    // Also sync from bill analysis if available and no name yet
+    if (state.billAnalysis?.name && !fullName && !state.fullName) {
+      setFullName(state.billAnalysis.name);
+    }
+  }, [state.fullName, state.email, state.billAnalysis?.name, fullName, email]);
 
   // Handle social login success
   const handleSocialLogin = async (data: { name: string; email: string; provider: 'google' | 'facebook' }) => {
@@ -168,6 +176,8 @@ export default function Step5Contact() {
           // Location - Gozo vs Malta (from UTM params or coordinates)
           is_gozo: state.location === 'gozo',
           location: state.location || 'malta',
+          // Bill analysis data (if analyzed during upload - avoids re-analysis)
+          bill_analysis: state.billAnalysis || null,
           // Equipment details for Zoho
           panel_brand: 'Huawei',
           panel_model: state.selectedSystem ? `${state.selectedSystem.panelWattage}W Mono PERC` : null,
@@ -314,6 +324,14 @@ export default function Step5Contact() {
           />
           {errors.fullName && (
             <p className="text-red-400 text-sm mt-1">{errors.fullName}</p>
+          )}
+          {nameFromBill && (
+            <div className="text-green-400 text-xs mt-1 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Auto-filled from your electricity bill
+            </div>
           )}
         </div>
 

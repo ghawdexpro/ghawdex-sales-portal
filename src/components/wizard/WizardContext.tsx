@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useReducer, useEffect, useRef, useCallback, useState, ReactNode } from 'react';
-import { WizardState, SystemPackage, SolarPotential, Location, GrantType, WizardSession } from '@/lib/types';
+import { WizardState, SystemPackage, SolarPotential, Location, GrantType, WizardSession, BillAnalysis } from '@/lib/types';
 import {
   getSessionToken,
   wizardStateToSessionData,
@@ -25,6 +25,7 @@ const initialState: WizardState = {
   monthlyBill: null,
   consumptionKwh: null,
   billFileUrl: null,
+  billAnalysis: null, // NEW: Extracted data from bill
   selectedSystem: null,
   withBattery: true,
   batterySize: null,
@@ -58,6 +59,7 @@ type WizardAction =
   | { type: 'SET_SOLAR_DATA'; payload: { roofArea: number; maxPanels: number; annualSunshine: number; solarPotential: SolarPotential | null; isFallback?: boolean } }
   | { type: 'SET_CONSUMPTION'; payload: { householdSize: number; monthlyBill: number; consumptionKwh: number } }
   | { type: 'SET_BILL_FILE'; payload: { billFileUrl: string | null } }
+  | { type: 'SET_BILL_ANALYSIS'; payload: BillAnalysis }
   | { type: 'SET_SYSTEM'; payload: { system: SystemPackage | null; withBattery: boolean; batterySize: number | null; grantType: GrantType } }
   | { type: 'SET_FINANCING'; payload: { paymentMethod: 'cash' | 'loan'; loanTerm: number | null } }
   | { type: 'SET_CONTACT'; payload: { fullName: string; email: string; phone: string; notes: string } }
@@ -97,6 +99,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, ...action.payload };
     case 'SET_BILL_FILE':
       return { ...state, billFileUrl: action.payload.billFileUrl };
+    case 'SET_BILL_ANALYSIS':
+      return { ...state, billAnalysis: action.payload };
     case 'SET_SYSTEM':
       return {
         ...state,

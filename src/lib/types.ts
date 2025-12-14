@@ -4,6 +4,16 @@ export type Location = 'malta' | 'gozo';
 export type GrantType = 'none' | 'pv_only' | 'pv_battery' | 'battery_only' | 'battery_retrofit';
 export type WizardSessionStatus = 'in_progress' | 'abandoned' | 'completed' | 'converted_to_lead';
 
+// Bill analysis data extracted from uploaded electricity bill
+export interface BillAnalysis {
+  name?: string;           // Customer name from bill
+  locality?: string;       // Locality from bill address
+  meterNumber?: string;    // ARMS meter number
+  armsAccount?: string;    // ARMS account number
+  consumptionKwh?: number; // Consumption from bill
+  rawAnalysis?: string;    // Full JSON extraction for lead creation
+}
+
 export interface WizardState {
   step: number;
   // Step 1: Address
@@ -26,6 +36,7 @@ export interface WizardState {
   monthlyBill: number | null;
   consumptionKwh: number | null;
   billFileUrl: string | null; // Optional uploaded electricity bill
+  billAnalysis: BillAnalysis | null; // Extracted data from bill for auto-fill
 
   // Step 4: System Selection
   selectedSystem: SystemPackage | null;
@@ -141,6 +152,11 @@ export interface Lead {
   bill_file_url: string | null;
   proposal_file_url: string | null;
   social_provider: string | null;
+  // Bill analysis fields (from Gemini OCR)
+  meter_number: string | null;
+  arms_account_number: string | null;
+  bill_raw_analysis: string | null;
+  bill_analyzed_at: string | null;
   // Location - Gozo vs Malta (from campaign UTM or coordinates)
   is_gozo: boolean;
   locality: string | null;

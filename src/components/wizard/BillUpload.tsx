@@ -11,6 +11,8 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
   const { state, dispatch } = useWizard();
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisSuccess, setAnalysisSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -18,10 +20,12 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
   const handleFiles = useCallback(async (files: File[]) => {
     setError(null);
     setIsUploading(true);
+    setAnalysisSuccess(false);
 
     try {
       const uploadedUrls: string[] = [];
 
+      // Upload files
       for (const file of files) {
         const formData = new FormData();
         formData.append('file', file);
@@ -47,11 +51,50 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
         payload: { billFileUrl: allUrls.join(',') },
       });
       setUploadedFiles(allUrls);
+      setIsUploading(false);
+
+      // Trigger bill analysis for auto-fill
+      setIsAnalyzing(true);
+      try {
+        const analysisResponse = await fetch('/api/analyze-bill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ billFileUrls: allUrls }),
+        });
+
+        if (analysisResponse.ok) {
+          const analysis = await analysisResponse.json();
+          if (analysis.success) {
+            // Store analysis in wizard state
+            dispatch({
+              type: 'SET_BILL_ANALYSIS',
+              payload: {
+                name: analysis.name || undefined,
+                locality: analysis.locality || undefined,
+                meterNumber: analysis.meterNumber || undefined,
+                armsAccount: analysis.armsAccount || undefined,
+                consumptionKwh: analysis.consumptionKwh || undefined,
+                rawAnalysis: analysis.rawAnalysis || undefined,
+              },
+            });
+
+            // Show success if we extracted useful data
+            if (analysis.name || analysis.meterNumber || analysis.armsAccount) {
+              setAnalysisSuccess(true);
+            }
+          }
+        }
+      } catch (analysisError) {
+        // Soft fail - don't block user, bill is still uploaded
+        console.error('Bill analysis failed:', analysisError);
+      }
+      setIsAnalyzing(false);
+
       onUploadComplete?.(allUrls.join(','));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
       setIsUploading(false);
+      setIsAnalyzing(false);
     }
   }, [dispatch, onUploadComplete, uploadedFiles]);
 
@@ -91,31 +134,51 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
       type: 'SET_BILL_FILE',
       payload: { billFileUrl: null },
     });
+    // Also clear bill analysis when removing file
+    dispatch({
+      type: 'SET_BILL_ANALYSIS',
+      payload: {},
+    });
     setUploadedFiles([]);
     setError(null);
+    setAnalysisSuccess(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // If already uploaded
+  // If already uploaded - show success state
   const fileCount = state.billFileUrl ? state.billFileUrl.split(',').length : 0;
+  const hasAnalysis = state.billAnalysis?.name || state.billAnalysis?.meterNumber;
+
   if (state.billFileUrl) {
     return (
-      <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+      <div className={`border rounded-xl p-4 ${
+        hasAnalysis
+          ? 'bg-green-500/10 border-green-500/30'
+          : 'bg-amber-500/10 border-amber-500/30'
+      }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+              hasAnalysis ? 'bg-green-500/20' : 'bg-amber-500/20'
+            }`}>
+              <svg className={`w-5 h-5 ${hasAnalysis ? 'text-green-400' : 'text-amber-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
               <div className="text-white font-medium text-sm">
-                {fileCount === 1 ? 'Bill uploaded' : `${fileCount} files uploaded`}
+                {hasAnalysis
+                  ? 'We found your details!'
+                  : fileCount === 1 ? 'Bill uploaded' : `${fileCount} files uploaded`
+                }
               </div>
-              <div className="text-green-400 text-xs">
-                {fileCount === 1 ? 'Electricity bill' : 'Electricity bills'}
+              <div className={`text-xs ${hasAnalysis ? 'text-green-400' : 'text-amber-400'}`}>
+                {hasAnalysis
+                  ? `${state.billAnalysis?.name ? 'Name' : ''}${state.billAnalysis?.name && state.billAnalysis?.meterNumber ? ' & ' : ''}${state.billAnalysis?.meterNumber ? 'Meter' : ''} detected`
+                  : 'Bill will be analyzed after submission'
+                }
               </div>
             </div>
           </div>
@@ -150,17 +213,17 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
 
       {/* Drop zone */}
       <div
-        onClick={handleClick}
+        onClick={!isUploading && !isAnalyzing ? handleClick : undefined}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`
-          relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all
+          relative border-2 border-dashed rounded-lg p-4 text-center transition-all
           ${isDragging
             ? 'border-amber-500 bg-amber-500/10'
             : 'border-white/20 hover:border-white/40 hover:bg-white/5'
           }
-          ${isUploading ? 'pointer-events-none opacity-60' : ''}
+          ${isUploading || isAnalyzing ? 'pointer-events-none opacity-60' : 'cursor-pointer'}
         `}
       >
         <input
@@ -179,6 +242,15 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             <span className="text-sm text-gray-400">Uploading...</span>
+          </div>
+        ) : isAnalyzing ? (
+          <div className="flex flex-col items-center gap-2">
+            <svg className="animate-spin w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <span className="text-sm text-green-400">Analyzing your bill...</span>
+            <span className="text-xs text-gray-500">This helps auto-fill your details</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
@@ -210,7 +282,7 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span>
-          Helps us verify your consumption for a more accurate quote. You can also send it later by email.
+          Upload your bill to auto-fill your details and verify consumption for a more accurate quote.
         </span>
       </div>
     </div>

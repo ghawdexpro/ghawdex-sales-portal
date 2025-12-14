@@ -141,6 +141,11 @@ async function saveSessionToCRM(session: AvatarSession): Promise<{ leadId: strin
     bill_file_url: null,
     proposal_file_url: null,
     social_provider: null,
+    // Bill analysis fields (not applicable for avatar chat)
+    meter_number: null,
+    arms_account_number: null,
+    bill_raw_analysis: null,
+    bill_analyzed_at: null,
     // Equipment details (avatar session data doesn't include full system details)
     panel_brand: data.selected_system ? 'Huawei' : null,
     panel_model: null,

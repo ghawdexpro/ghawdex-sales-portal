@@ -326,6 +326,11 @@ export async function POST(request: NextRequest) {
       source: body.source || 'sales-portal',
       bill_file_url: body.bill_file_url || null,
       proposal_file_url: body.proposal_file_url || null,
+      // Bill analysis data (if pre-analyzed during upload - avoids re-analysis)
+      meter_number: body.bill_analysis?.meterNumber || null,
+      arms_account_number: body.bill_analysis?.armsAccount || null,
+      bill_raw_analysis: body.bill_analysis?.rawAnalysis || null,
+      bill_analyzed_at: body.bill_analysis?.rawAnalysis ? new Date().toISOString() : null,
       social_provider: body.social_provider || null,
       // Location - Gozo vs Malta
       is_gozo: isGozo,
@@ -535,7 +540,8 @@ export async function POST(request: NextRequest) {
       ]).catch(console.error);
 
       // Trigger bill analysis if lead has uploaded bill (fire-and-forget)
-      if (lead?.id && leadData.bill_file_url) {
+      // SKIP if bill was already analyzed during upload (body.bill_analysis provided)
+      if (lead?.id && leadData.bill_file_url && !body.bill_analysis) {
         triggerBillAnalysis(lead.id, leadData.bill_file_url);
       }
     }
