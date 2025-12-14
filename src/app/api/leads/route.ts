@@ -207,32 +207,25 @@ ${priorityLabel}
   });
 }
 
-// n8n webhook trigger
-async function triggerN8nWebhook(lead: Lead) {
-  const n8nUrl = process.env.N8N_API_URL;
-  const webhookSecret = process.env.N8N_WEBHOOK_SECRET;
+// Trigger bill analysis on backoffice when lead has uploaded bill
+function triggerBillAnalysis(leadId: string, billFileUrl: string) {
+  const backofficeUrl = process.env.BACKOFFICE_URL || 'https://bo.ghawdex.pro';
+  const portalSecret = process.env.PORTAL_CONTRACT_SECRET;
 
-  if (!n8nUrl) {
-    console.log('n8n not configured, skipping webhook');
-    return;
-  }
+  if (!portalSecret || !billFileUrl) return;
 
-  try {
-    await fetch(`${n8nUrl}/webhook/new-lead`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Webhook-Secret': webhookSecret || '',
-      },
-      body: JSON.stringify({
-        source: 'sales-portal',
-        timestamp: new Date().toISOString(),
-        lead,
-      }),
-    });
-  } catch (error) {
-    console.error('Failed to trigger n8n webhook:', error);
-  }
+  // Parse comma-separated URLs into array
+  const billFileUrls = billFileUrl.split(',').map(u => u.trim()).filter(Boolean);
+
+  // Fire-and-forget - don't await, don't block the response
+  fetch(`${backofficeUrl}/api/bills/portal-analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Portal-Secret': portalSecret,
+    },
+    body: JSON.stringify({ leadId, billFileUrls }),
+  }).catch(err => console.error('Bill analysis trigger failed:', err));
 }
 
 /**
@@ -539,8 +532,12 @@ export async function POST(request: NextRequest) {
           priority,
           prefillLink,
         }),
-        lead ? triggerN8nWebhook(lead) : Promise.resolve(),
       ]).catch(console.error);
+
+      // Trigger bill analysis if lead has uploaded bill (fire-and-forget)
+      if (lead?.id && leadData.bill_file_url) {
+        triggerBillAnalysis(lead.id, leadData.bill_file_url);
+      }
     }
 
 // Link wizard session to lead (if session token provided)
