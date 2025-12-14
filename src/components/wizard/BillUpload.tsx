@@ -147,11 +147,12 @@ export default function BillUpload({ onUploadComplete }: BillUploadProps) {
     }
   };
 
-  // If already uploaded - show success state
+  // If already uploaded AND not currently analyzing - show success state
   const fileCount = state.billFileUrl ? state.billFileUrl.split(',').length : 0;
   const hasAnalysis = state.billAnalysis?.name || state.billAnalysis?.meterNumber;
 
-  if (state.billFileUrl) {
+  // Don't show success state if we're still analyzing
+  if (state.billFileUrl && !isAnalyzing) {
     return (
       <div className={`border rounded-xl p-4 ${
         hasAnalysis
