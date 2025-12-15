@@ -136,7 +136,7 @@ export default function TestimonialCarouselDark({
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
-            className={`p-2 rounded-full transition-colors ${
+            className={`p-3 min-w-11 min-h-11 flex items-center justify-center rounded-full transition-colors ${
               idx === currentIndex
                 ? 'bg-amber-400/20'
                 : 'bg-transparent hover:bg-white/10'
