@@ -1,610 +1,205 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-**GhawdeX Sales Portal** - AI-powered interactive wizard that guides customers from property inquiry to signed solar installation deal.
+**GhawdeX Sales Portal** - AI-powered wizard that guides customers from property inquiry to solar installation quote.
 
 - **Live:** https://get.ghawdex.pro
-- **GitHub:** https://github.com/ghawdexpro/ghawdex-sales-portal
-- **Purpose:** Capture qualified solar leads with complete system specifications and financing options
-- **Key Feature:** Dual-write architecture (Supabase + Zoho CRM in parallel)
-- **Backoffice Integration:** Zoho CRM syncs to backoffice hourly; Sales Portal Supabase syncs nightly as backup
+- **Purpose:** Capture qualified solar leads with system specs and financing options
+- **Architecture:** Dual-write (Supabase + Zoho CRM in parallel)
+- **Database:** Supabase `epxeimwsheyttevwtjku` (unified with backoffice)
 
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router, Server Components)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS v4
-- **Database:** Supabase (PostgreSQL) - project: `epxeimwsheyttevwtjku` (unified with backoffice)
-- **CRM:** Zoho CRM (EU region) with OAuth2 token refresh
-- **Maps:** Google Maps API + Google Solar API (roof analysis)
-- **AI:** OpenRouter API (Gemini 2.0 Flash)
-- **Notifications:** Telegram Bot API (3-tier notification system)
-- **Analytics:** GA4 + Facebook Pixel
-- **Deployment:** Railway (manual push required)
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 15 (App Router), TypeScript |
+| Styling | Tailwind CSS v4 |
+| Database | Supabase PostgreSQL |
+| CRM | Zoho CRM (EU region, OAuth2) |
+| Maps | Google Maps + Solar API |
+| AI | Gemini 2.0 Flash (OpenRouter) |
+| Avatar | HeyGen Streaming Avatar |
+| Notifications | Telegram 3-tier system |
+| Analytics | GA4 + Facebook Pixel |
 
 ## Development Commands
 
 ```bash
-npm run dev          # Development server (http://localhost:3000)
-npm run build        # Production build (checks type errors)
-npm run start        # Start production server
-npm run lint         # Run ESLint
+npm run dev          # Dev server (localhost:3000)
+npm run build        # Production build
+git push origin main # Deploy (Railway auto-deploys)
+railway logs         # Monitor deployment
 ```
 
-## Architecture Overview
+## Wizard Flow
 
-### The Sales Journey (Wizard Flow)
-
-**Single-page, context-driven** (NOT route-based):
+Single-page, context-driven (not route-based):
 
 ```
-/ Entry point
-├─ Detect Zoho CRM pre-fill params (?name=, ?email=, ?zoho_id=)
-├─ Initialize WizardContext with state
-└─ Render step based on state.step
-
-Step 1: Location      → Address + Map (Google Maps, detect Gozo/Malta)
-Step 2: Consumption   → Electricity bill + Solar API analysis (Google Solar)
-Step 3: System        → Choose package (5-20 kWp) + battery option
-Step 4: Financing     → Cash vs BOV loan (monthly payment calc)
-Step 5: Contact       → SKIPPED if pre-filled from Zoho CRM
-Step 6: Summary       → Review + Submit to Supabase + Zoho CRM
+Step 1: Location     → Address + Map (detect Gozo/Malta)
+Step 2: Consumption  → Bill amount + Google Solar API
+Step 3: System       → Package (3-15 kWp) + battery option
+Step 4: Financing    → Cash vs BOV loan
+Step 5: Contact      → SKIPPED if pre-filled from Zoho
+Step 6: Summary      → Review + Submit
 ```
 
-**State Management:**
-- Central `WizardContext` using `useReducer` (13 action types)
-- All wizard data persisted to Supabase on form submission
-- Automatic Zoho CRM update via `POST /api/leads`
-- For pre-filled leads from Zoho: Step 5 is automatically skipped, and lead is UPDATED (not created new)
-
-### Key Files & Architecture
-
-**Entry Point:**
-- `src/app/page.tsx` - Main wizard component
-  - Parses Zoho CRM URL params: `?name=John&email=john@example.com&phone=123&zoho_id=12345`
-  - Sets `isPrefilledLead=true` to skip Step 5 and trigger UPDATE in Zoho
-
-**State Management:**
-- `src/components/wizard/WizardContext.tsx` - Central `useReducer` for all wizard state
-  - Actions: SET_STEP, SET_ADDRESS, SET_SYSTEM, SET_CALCULATIONS, SET_PREFILL, RESET
-  - All step components dispatch actions to update state
-- `src/components/wizard/WizardLayout.tsx` - Wrapper with progress bar and navigation
-
-**Wizard Steps:**
-- `src/components/wizard/steps/Step[1-6]*.tsx` - Individual step components
-  - Each step validates input and dispatches state updates
-
-**Business Logic:**
-- `src/lib/calculations.ts` - Solar pricing & ROI calculations
-  - Feed-in tariffs: €0.105/kWh (with grant), €0.15/kWh (no grant)
-  - 20-year projections with inflation assumptions
-  - Battery payback calculations
-  - Malta vs Gozo pricing differences
-- `src/lib/types.ts` - TypeScript interfaces
-  - `WizardState` - Full wizard state shape
-  - `SystemPackage` - Product catalog (5-20 kWp options)
-  - `Lead` - Customer record for Supabase + Zoho
-
-**Integrations:**
-- `src/lib/supabase.ts` - Supabase client
-  - Functions: `createLead()`, `updateLead()`, `getLeadByZohoId()`
-  - Anon key for public read/write (RLS policies handle security)
-- `src/lib/zoho.ts` - Zoho CRM API client
-  - OAuth2 token refresh with 1-hour cache expiry
-  - `createOrUpdateZohoLead()` handles both new and existing leads
-  - Detects if lead was converted to Contact and updates Contact instead
-- `src/lib/google/maps-service.ts` - Google Maps + Solar API
-  - Geocoding, roof area calculation, sunlight hours
-  - Fallback calculations if Solar API unavailable
-- `src/app/api/leads/route.ts` - Lead capture endpoint
-  - POST: Dual-write to Supabase + Zoho in parallel (`Promise.allSettled`)
-  - Telegram notification fires even if one system fails
-- `src/app/api/solar/route.ts` - Google Solar API proxy
-  - Called from Step 2 to get roof analysis (area, sunlight hours, panel count)
-
-## Data Flow
-
-### Primary Path: Real-time Lead Capture
-```
-Customer submits form (Step 6)
-    ↓
-POST /api/leads (route.ts)
-    ├─ Supabase: createLead() or updateLead()
-    ├─ Zoho CRM: createOrUpdateZohoLead() [OAuth2]
-    ├─ Telegram: Send admin notification
-    └─ GA4: Track "lead_generated" event
-```
-
-### Backup Path: Nightly Backoffice Sync
-```
-Backoffice cron job (01:00 UTC daily)
-    ↓
-Reads Sales Portal Supabase (service role key)
-    ├─ Transforms field names
-    ├─ Deduplicates by zoho_lead_id, email, or portal_id
-    └─ Inserts/updates into Backoffice Supabase
-```
-
-**Note:** Backoffice also syncs directly from Zoho CRM via hourly cron (separate sync)
+**State Management:** Central `WizardContext` with `useReducer` (13 action types)
 
 ## Key Features
 
-### 1. Dual-Write Lead Capture
-- **Supabase** - Primary database for lead storage
-- **Zoho CRM** - Sales team's CRM (direct API with OAuth2)
-- **Telegram** - Instant admin notifications for every lead
-- **Parallel writes:** `Promise.allSettled` ensures one failure doesn't block the other
-- **Resilient notifications:** Telegram fires even if Supabase or Zoho fails (uses fallback data)
+| Feature | Description |
+|---------|-------------|
+| **Dual-Write** | Supabase + Zoho CRM in parallel (`Promise.allSettled`) |
+| **Zoho Pre-fill** | Links like `?name=John&email=...&zoho_id=123` skip Step 5 |
+| **Solar Analysis** | Google Solar API for roof area, panel count |
+| **Battery-Only** | Toggle for customers with existing PV |
+| **Avatar Chat** | `/avatar` - Voice consultation with AI "Anthony" |
+| **Session Recovery** | Resume paused sessions via `/avatar/resume/[token]` |
 
-### 2. Zoho CRM Pre-filled Links
-Sales team can send pre-populated wizard links to customers:
-```
-https://get.ghawdex.pro/?name=John&email=john@test.com&phone=79123456&zoho_id=12345
-```
-- Automatically skips Step 5 (Contact form)
-- Sets `isPrefilledLead=true` flag
-- Lead is UPDATED in Zoho CRM (not created new)
-- Detects if lead was converted to Contact and updates Contact instead
-- Business rule: Only convert Leads to Contacts after customer signs contract
+## Key Modules
 
-### 3. Solar Analysis
-- **Google Solar API:** Roof area, panel count, sunlight hours
-- **Fallback calculations:** If API unavailable, uses defaults based on address location
-- Returns detailed solar potential data for ROI projections
+| Module | Purpose |
+|--------|---------|
+| `src/lib/calculations.ts` | Pricing, ROI, grant calculations |
+| `src/lib/types.ts` | TypeScript interfaces, package definitions |
+| `src/lib/zoho.ts` | Zoho CRM API with OAuth2 |
+| `src/lib/supabase.ts` | Database client |
+| `src/lib/telegram/` | 3-tier notification routing |
+| `src/lib/avatar/` | HeyGen avatar conversation engine |
+| `src/lib/sms/` | SMS client (Vodacom) |
+| `src/lib/email/` | Email service with templates |
+| `src/lib/wizard-session.ts` | Session persistence for abandoned leads |
 
-### 4. Pricing & Financing Engine
-- **System packages:** 5-20 kWp (configurable in `calculations.ts`)
-- **Battery options:** 5-30 kWh with separate pricing
-- **Grant comparison:** REWS 2025 scheme vs no-grant tariffs
-- **BOV loan calculator:** Monthly payment estimates with interest rates
-- **20-year ROI projections:** Net present value calculations with inflation
+## Cron Jobs
 
-### 5. Battery-Only Purchase Option
-Customers can purchase battery storage without PV panels:
-- Toggle in Step 3 enables battery-only mode (`grant_type: 'battery_only'`)
-- Savings calculated using Enemalta tiered tariffs (charge off-peak €0.11, use at peak €0.18)
-- Separate financing calculations in Step 4
-- Full summary display in Step 6
+| Route | Purpose |
+|-------|---------|
+| `/api/cron/avatar-auto-save` | Auto-save avatar sessions |
+| `/api/cron/avatar-session-recovery` | Recover abandoned sessions |
+| `/api/cron/customer-follow-ups` | Follow-up email automation |
+| `/api/cron/email-sequences` | Automated email sequences |
+| `/api/cron/follow-up-reminders` | Reminder system |
+| `/api/cron/wizard-session-cleanup` | Clean old sessions |
 
-### 6. HeyGen Avatar Chat (`/avatar`)
-Voice-based solar consultation with AI avatar "Anthony":
+## API Routes
 
-**Architecture:**
-```
-/avatar page (React)
-    ↓
-HeyGen Streaming Avatar (WebRTC)
-    ↓
-POST /api/avatar/message
-    ├─ Gemini 2.0 Flash (conversation AI)
-    ├─ Function calling (tools.ts)
-    └─ Session persistence (avatar_sessions table)
-```
+| Route | Methods | Purpose |
+|-------|---------|---------|
+| `/api/leads` | POST | Create lead (Supabase + Zoho + Telegram) |
+| `/api/solar` | GET | Google Solar API proxy |
+| `/api/avatar/message` | POST | Avatar conversation handler |
+| `/api/telegram-event` | POST | Event tracking |
+| `/api/partial-leads` | POST | Capture abandoned wizard data |
+| `/api/upload/bill` | POST | Customer bill uploads |
+| `/api/unsubscribe` | GET | Email unsubscribe |
 
-**Key Files:**
-- `src/app/avatar/page.tsx` - Main chat interface with HeyGen streaming
-- `src/app/avatar/resume/[token]/page.tsx` - Resume paused sessions via unique link
-- `src/lib/avatar/conversation-engine.ts` - Dialogue state machine with phases
-- `src/lib/avatar/tools.ts` - Function calling implementations (send_location_link, calculate_system, etc.)
-- `src/lib/avatar/session-manager.ts` - Session CRUD operations
-- `src/lib/avatar/config.ts` - HeyGen + Gemini configuration, system prompt with product knowledge
-- `src/lib/avatar/AVATAR_KNOWLEDGE_BASE.md` - Comprehensive product/pricing/grant reference for AI
+## Telegram 3-Tier System
 
-**Conversation Phases:**
-`greeting` → `location` → `bill` → `consumption` → `system_recommendation` → `selection` → `financing` → `contact` → `summary` → `completed`
+| Tier | Env Var | Purpose |
+|------|---------|---------|
+| `admin` | `TELEGRAM_ADMIN_CHAT_ID` | Critical events (CEO/CTO) |
+| `team` | `TELEGRAM_TEAM_CHAT_ID` | Actionable items (Operations) |
+| `everything` | `TELEGRAM_EVERYTHING_CHAT_ID` | Full audit log (Developers) |
 
-**Session Persistence:**
-- Sessions stored in `avatar_sessions` table with full conversation history
-- Resume via unique token: `https://get.ghawdex.pro/avatar/resume/[token]`
-- Supports pausing ("I need to go") and human handoff requests
-
-### 7. Analytics & Tracking
-- **GA4 events:** Step transitions, lead generation, system selection
-- **Facebook Pixel:** Lead conversion tracking
-- **Session duration:** TimeTracker component monitors engagement
-
-### 8. 3-Tier Telegram Notification System
-
-Real-time notifications routed to different audiences based on event type.
-
-**Tiers:**
-| Tier | Audience | Chat ID Env Var | Purpose |
-|------|----------|-----------------|---------|
-| `admin` | CEO/CTO | `TELEGRAM_ADMIN_CHAT_ID` | Critical business events only |
-| `team` | Operations | `TELEGRAM_TEAM_CHAT_ID` | Actionable items, client progress |
-| `everything` | Developers | `TELEGRAM_EVERYTHING_CHAT_ID` | Complete audit log (every event) |
-
-**Event Routing:**
-| Event | Everything | Team | Admin |
-|-------|:----------:|:----:|:-----:|
-| Page view / visitor | ✅ | | |
-| Wizard step progress | ✅ | | |
-| Time milestone (1m, 3m, 5m) | ✅ | | |
-| Phone/WhatsApp/Email click | ✅ | ✅ | |
-| CTA button click | ✅ | ✅ | |
-| New lead submitted | ✅ | ✅ | |
-| Wizard completed | ✅ | ✅ | |
-| Hot lead (Facebook/ad conversion) | ✅ | ✅ | ✅ |
-| Quote completion from CRM | ✅ | ✅ | ✅ |
-| Error | ✅ | | ✅ |
-
-**Key Files:**
-- `src/lib/telegram/` - Unified notification module
-  - `index.ts` - Main exports
-  - `types.ts` - TypeScript types and `EVENT_TIER_ROUTING` map
-  - `client.ts` - Low-level Telegram API calls
-  - `router.ts` - 3-tier routing logic and convenience functions
-  - `formatters.ts` - Message formatting utilities
-  - `README.md` - Module documentation
-- `src/app/api/leads/route.ts` - Uses `notifyNewLead()`, `notifyAll()` for leads
-- `src/app/api/telegram-event/route.ts` - Uses module for event tracking
-- `src/lib/telegram-events.ts` - Client-side event tracking (sends to API route)
-
-**Usage:**
-```typescript
-import { notifyNewLead, notifyAll, notifyEvent, notifyHotLead } from '@/lib/telegram';
-
-// New lead (auto-routes to everything + team)
-await notifyNewLead({ customerName: 'John', phone: '+356...', source: 'sales-portal' });
-
-// Hot lead or critical event (all 3 tiers)
-await notifyAll('🔥 Hot lead message here');
-
-// Specific event type (uses EVENT_TIER_ROUTING)
-await notifyEvent('wizard_complete', 'Customer completed wizard');
-
-// Hot action (phone/whatsapp click - everything + team)
-await notifyHotLead('phone', { source: 'sales-portal', customerName: 'John' });
-```
-
-## Database Schema (Supabase)
-
-### leads table
-```sql
-CREATE TABLE leads (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Contact
-  name TEXT,
-  email TEXT,
-  phone TEXT,
-
-  -- Location
-  address TEXT,
-  coordinates JSONB,
-
-  -- Consumption
-  household_size INTEGER,
-  monthly_bill NUMERIC,
-  consumption_kwh NUMERIC,
-  roof_area NUMERIC,
-
-  -- System Selection
-  selected_system TEXT,
-  system_size_kw NUMERIC,
-  with_battery BOOLEAN DEFAULT false,
-  battery_size_kwh NUMERIC,
-  grant_path BOOLEAN DEFAULT true,
-
-  -- Financing
-  payment_method TEXT,
-  loan_term INTEGER,
-
-  -- Calculated Values
-  total_price NUMERIC,
-  monthly_payment NUMERIC,
-  annual_savings NUMERIC,
-
-  -- Metadata
-  notes TEXT,
-  zoho_lead_id VARCHAR(50),
-  status TEXT DEFAULT 'new',
-  source TEXT DEFAULT 'sales-portal'
-);
-```
-
-### avatar_sessions table
-```sql
-CREATE TABLE avatar_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Customer identification
-  customer_phone VARCHAR(20),
-  customer_email VARCHAR(255),
-  customer_name VARCHAR(255),
-  zoho_lead_id VARCHAR(50),
-
-  -- Session state
-  status TEXT DEFAULT 'active',  -- active, paused, completed, abandoned
-  current_phase TEXT DEFAULT 'greeting',
-  resume_token UUID UNIQUE,      -- For resume links
-
-  -- Conversation data
-  conversation_history JSONB DEFAULT '[]',
-  collected_data JSONB,          -- All customer/system selection data
-  documents JSONB DEFAULT '[]',
-
-  -- Metadata
-  source TEXT DEFAULT 'website',
-  total_duration_seconds INTEGER DEFAULT 0,
-  heygen_session_id VARCHAR(100)
-);
-```
-
-## Common Development Tasks
-
-### Adding a New Wizard Step
-1. Create `src/components/wizard/steps/StepN*.tsx`
-2. Add new state fields to `WizardState` in `src/lib/types.ts`
-3. Add new action type to `WizardAction` in `WizardContext.tsx`
-4. Add reducer case in `wizardReducer()` function
-5. Render step in `page.tsx` based on `state.step` value
-
-### Testing Zoho CRM Integration
-1. Fill out wizard form and submit
-2. Check Telegram notification in admin chat (confirms lead was captured)
-3. Log into Zoho CRM and search for the customer's email to verify lead was created
-4. For pre-filled links: Verify lead was UPDATED (not duplicated)
-5. Browser DevTools > Network tab: Check `POST /api/leads` response for errors
-
-### Debugging Google Solar API
-- Solar API called in Step 2 when address is entered
-- `solarDataIsFallback` flag indicates fallback was used
-- Check `solarPotential` object in state: maxArrayPanelsCount, maxArrayAreaMeters2, yearlyEnergyDcKwh
-- If API fails, fallback calculations use fixed assumptions (check `maps-service.ts`)
-
-### Modifying Pricing or Solar Constants
-1. All constants in `src/lib/calculations.ts`
-2. Edit values (tariffs, grant amounts, production factors)
-3. Run `npm run build` to validate
-4. Test with different inputs in dev server
-5. Deploy with `railway up`
-
-### Adding Analytics Events
-1. Import `trackEvent()` from `src/lib/analytics.ts`
-2. Call: `trackEvent('event_name', { param1: value1 })`
-3. View in Google Analytics dashboard (24-hour delay)
-4. Parameters should match GA4 event schema
+See [TRACKING_AND_NOTIFICATIONS.md](../ghawdex%20overlord/TRACKING_AND_NOTIFICATIONS.md) for routing matrix.
 
 ## Environment Variables
 
-See `.env.local` for all required variables.
-
-**Supabase:**
-- `NEXT_PUBLIC_SUPABASE_URL` - Database URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Anon key for public access
-
-**Zoho CRM (OAuth2):**
-- `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_REFRESH_TOKEN`
-- `ZOHO_API_DOMAIN=https://www.zohoapis.eu` (EU region)
-- `ZOHO_ACCOUNTS_URL=https://accounts.zoho.eu` (token refresh)
-
-**Google APIs:**
-- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Maps + Solar API
-- `GOOGLE_SOLAR_API_KEY` - (may be same as above)
-
-**Telegram (3-tier notification system):**
-- `TELEGRAM_BOT_TOKEN` - Bot API token
-- `TELEGRAM_ADMIN_CHAT_ID` - Chat ID for CEO/CTO (critical events)
-- `TELEGRAM_TEAM_CHAT_ID` - Chat ID for operations team (actionable items)
-- `TELEGRAM_EVERYTHING_CHAT_ID` - Chat ID for audit log (all events)
-
-**OpenRouter (optional - AI assistant):**
-- `OPENROUTER_API_KEY` - API key for Gemini 2.0 Flash
-
-**HeyGen Avatar Chat:**
-- `HEYGEN_API_KEY` - HeyGen API key for streaming avatar
-
-**Analytics:**
-- `NEXT_PUBLIC_GA4_ID` - Google Analytics property ID
-- `NEXT_PUBLIC_FB_PIXEL_ID` - Facebook Pixel ID
-
-## Deployment
-
-**Railway (manual push required):**
 ```bash
-git push origin main
-/opt/homebrew/bin/railway up    # Use full path or: railway up
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Zoho CRM (EU)
+ZOHO_CLIENT_ID
+ZOHO_CLIENT_SECRET
+ZOHO_REFRESH_TOKEN
+ZOHO_API_DOMAIN=https://www.zohoapis.eu
+
+# Google APIs
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+GOOGLE_SOLAR_API_KEY
+
+# Telegram (3-tier)
+TELEGRAM_BOT_TOKEN
+TELEGRAM_ADMIN_CHAT_ID
+TELEGRAM_TEAM_CHAT_ID
+TELEGRAM_EVERYTHING_CHAT_ID
+
+# HeyGen Avatar
+HEYGEN_API_KEY
+
+# Analytics
+NEXT_PUBLIC_GA4_ID
+NEXT_PUBLIC_FB_PIXEL_ID
 ```
 
-**Set Railway environment variables:**
-```bash
-railway variables --set "KEY=value" --set "KEY2=value2"
-railway variables --kv          # View all variables
-```
+## Pricing Model
+
+**Source of Truth:** `src/lib/types.ts`
+
+See [PRICING_AND_GRANTS.md](docs/PRICING_AND_GRANTS.md) for complete pricing rules.
+
+### Key Rules
+1. All prices are **GROSS** (VAT 18% included)
+2. Inverter cost **ALWAYS** included in package or battery price
+3. Bundle discount via `priceWithBattery` when buying PV + Battery
+4. Grant = `min(actualPrice × percentage, maxCap)` - NOT per-kWh cap
+
+### Grant Scheme (REWS 2025)
+
+| Type | Malta | Gozo | Max |
+|------|-------|------|-----|
+| PV (hybrid) | 50% | 50% | €3,000 |
+| Battery | 80% | 95% | €7,200 / €8,550 |
+| Inverter (retrofit) | 80% | 80% | €1,800 |
 
 ## Troubleshooting
 
-### Leads not appearing in Zoho CRM
-- Check Telegram notification first (if it succeeded, lead was captured)
-- Verify `ZOHO_REFRESH_TOKEN` is valid (expires after 365 days)
-- Check `POST /api/leads` response in DevTools for error
-- Zoho API might be temporarily down (check https://status.zoho.com)
+| Issue | Solution |
+|-------|----------|
+| Leads not in Zoho | Check Telegram first, verify `ZOHO_REFRESH_TOKEN` |
+| Solar API fallback | Check Google Cloud quotas, geocoding must succeed |
+| Supabase 403 | Check RLS policies allow anonymous INSERT |
+| Pre-fill not updating | Verify `zoho_id` param, check if converted to Contact |
+| Telegram not sending | Check all 3 chat ID env vars |
 
-### Google Solar API returning fallback data
-- Fallback is used if API times out (usually < 1 second timeout)
-- Address must be successfully geocoded first in Step 1
-- Check Google Cloud project quotas and billing in GCP console
-- Solar API might have hitting daily quota (unlikely - we have very low usage)
-
-### Supabase RLS Policy errors
-- If getting 403 on insert/update, check RLS in Supabase dashboard
-- Portal uses anon key - RLS must allow anonymous INSERT/UPDATE
-- Settings > Authentication > Policies should allow public access for leads table
-
-### Pre-filled lead not updating in Zoho
-- Verify `zoho_id` parameter is passed correctly in URL
-- Check if lead was converted to Contact in Zoho (system auto-detects and updates Contact)
-- Verify `isPrefilledLead` flag is set to `true` in state
-- Check API response for "converted to contact" message
-
-### Telegram notifications not being sent
-- Verify `TELEGRAM_BOT_TOKEN` is set
-- Check which tiers are configured: `TELEGRAM_ADMIN_CHAT_ID`, `TELEGRAM_TEAM_CHAT_ID`, `TELEGRAM_EVERYTHING_CHAT_ID`
-- Module gracefully handles missing chat IDs (only sends to configured tiers)
-- Check Railway logs: `railway logs` for errors
-- Telegram API might be blocked in deployment region
-- Notifications are non-blocking - system continues even if Telegram fails
-- To test: submit a lead and check all 3 chat groups
-
-## Pricing Rules (SOURCE OF TRUTH - All Projects Must Follow)
-
-**⚠️ CRITICAL: This project (sales-portal) is the SOURCE OF TRUTH for all GhawdeX pricing.**
-
-### Core Pricing Principles
-
-1. **ALL prices are GROSS** (VAT included) - Never add VAT to displayed prices
-2. **VAT Rate**: 18% Malta standard - NO reduced rates apply to solar installations
-3. **Inverter cost**: ALWAYS included in package OR battery price - NEVER separate
-4. **Bundle discount**: When buying PV + Battery, use `priceWithBattery` field
-
-### Package Pricing (GROSS - VAT Included)
-
-| Package | System | PV Only | With Battery |
-|---------|--------|---------|--------------|
-| 3 kWp | 3.08 kWp | €4,250 | €4,000 |
-| 4 kWp | 4.00 kWp | €4,800 | €4,500 |
-| 5 kWp | 5.00 kWp | €5,700 | €5,400 |
-| 6 kWp | 6.00 kWp | €6,600 | €6,250 |
-| 8 kWp | 8.00 kWp | €8,400 | €8,000 |
-| 10 kWp | 10.00 kWp | €10,200 | €9,700 |
-
-### Battery Pricing (GROSS - VAT Included)
-
-| Size | Price | Notes |
-|------|-------|-------|
-| 5 kWh | €4,000 | Includes hybrid inverter |
-| 10 kWh | €7,500 | Includes hybrid inverter |
-| 15 kWh | €10,500 | Includes hybrid inverter |
-
-### Battery-Only Pricing (GROSS - VAT Included)
-
-When customer already has PV system and wants only battery:
-
-| Size | Price | Notes |
-|------|-------|-------|
-| 5 kWh | €4,500 | Includes hybrid inverter upgrade |
-| 10 kWh | €8,000 | Includes hybrid inverter upgrade |
-| 15 kWh | €11,000 | Includes hybrid inverter upgrade |
-
-### Grant Calculations (REWS 2025)
-
-**⚠️ CRITICAL: Grant Formula Fix Applied**
-
-The €720/kWh and €450/kWp rates are REFERENCE RATES for estimation, NOT hard per-unit caps!
-
-**CORRECT Grant Formula:**
-```typescript
-batteryGrant = min(
-  actualPrice × percentage,  // 80% Malta, 95% Gozo
-  maxCap                     // €7,200 Malta, €8,550 Gozo
-)
-```
-
-**WRONG Formula (previously used):**
-```typescript
-// ❌ DON'T DO THIS - per-kWh rate is NOT a hard cap!
-batteryGrant = min(
-  kWh × €720,                // This was incorrectly limiting grants
-  actualPrice × percentage,
-  maxCap
-)
-```
-
-**PV Grant (New Installations):**
-- Option A (Standard Inverter): €625/kWp, 50%, max €2,500
-- Option B (Hybrid Inverter): €750/kWp, 50%, max €3,000
-
-**Battery Grant:**
-- Malta: 80% of actual cost, max €7,200
-- Gozo: 95% of actual cost, max €8,550
-- Reference rate: €720/kWh (for estimation only)
-
-**Hybrid Inverter Grant (Retrofit Only - Option C):**
-- 80% of actual cost, max €1,800
-- Reference rate: €450/kWp (for estimation only)
-
-**Example: 10 kWh Battery Retrofit in Gozo**
-```
-Battery: €9,000 × 95% = €8,550 (hits cap) ✅
-Inverter: €2,250 × 80% = €1,800 (hits cap) ✅
-Total Grant: €10,350
-Customer Pays: €900 + €350 (backup) = €1,250
-```
-
-**Customer Pays** = Gross Price - Total Grant
-
-### Key Files (Source of Truth)
-
-- `src/lib/types.ts` - `SYSTEM_PACKAGES`, `BATTERY_OPTIONS`, `GRANT_SCHEME_2025`
-- `src/lib/calculations.ts` - `calculateGrantAmount()`, ROI calculations
-
----
-
-## Malta Solar Constants
-
-Reference values in `src/lib/calculations.ts`:
-
-```typescript
-// Feed-in tariffs (20-year guaranteed)
-const GRANT_TARIFF = 0.105;         // €/kWh with REWS 2025 grant
-const NO_GRANT_TARIFF = 0.15;       // €/kWh without grant
-
-// Solar production estimates
-const MALTA_IRRADIANCE = 5.2;       // kWh/m²/day average annual
-const PRODUCTION_FACTOR = 1.8;      // MWh/kWp/year
-const PANEL_DEGRADATION = 0.005;    // 0.5% per year
-
-// Equipment pricing (per unit)
-const PV_PRICE_PER_KWP = 750;       // € (average)
-const BATTERY_PRICE_PER_KWH = 1000; // €
-
-// Grant amounts (REWS 2025)
-const GRANT_PV_ONLY = 2400;         // Max €2,400 for PV
-const GRANT_WITH_BATTERY = 1200;    // Reduced for battery bundles
-
-// Enemy alta tariffs (residential)
-const MONTHLY_FIXED = 3.50;         // €/month
-const PEAK_TARIFF = 0.18;           // €/kWh (08:00-23:00)
-const OFFPEAK_TARIFF = 0.11;        // €/kWh (23:00-08:00)
-```
-
-## Related Projects
-
-- **Backoffice:** `/Users/maciejpopiel/ghawdex-backoffice` - Receives leads, processes quotes
-- **www.ghawdex.pro** - Main landing page (separate repo)
-- **app.ghawdex.pro** - Solar scanner tool (separate repo)
-
-## Business Documentation
-
-All business docs in `/docs/`:
+## Key Files
 
 | File | Purpose |
 |------|---------|
-| `REWS_GRANT_RULES_REFERENCE.md` | **CRITICAL: All grant caps, eligibility, calculations** |
-| `BATTERY_ONLY_GRANT_COMPLETE_GUIDE.md` | Complete battery-only grant documentation |
-| `GHAWDEX_PRODUCTS.md` | Product catalog & pricing |
-| `GHAWDEX_FINANCING.md` | BOV loan calculator specs |
-| `GRANT_OPTIMIZATION_STRATEGY.md` | REWS 2025 grant optimization |
-| `MALTA_ELECTRICITY_TARIFFS.md` | Enemalta tariff reference |
-| `MALTA_SOLAR_KNOWLEDGE_BASE_COMPLETE.md` | Market knowledge |
-| `QUICK_SALES_REFERENCE.md` | Sales talking points |
-| `COMPANY_OVERVIEW.md` | Company profile |
-| `SALES_INFOGRAPHIC_PROMPTS.md` | Prompts for generating sales infographics |
-| `infographics/` | **17 visual cheat sheets for sales team** |
+| `src/app/page.tsx` | Main wizard entry |
+| `src/components/wizard/WizardContext.tsx` | State management |
+| `src/components/wizard/steps/Step*.tsx` | Wizard steps |
+| `src/app/avatar/page.tsx` | Avatar chat interface |
+| `src/lib/avatar/conversation-engine.ts` | Dialogue state machine |
+| `src/app/api/leads/route.ts` | Lead capture endpoint |
 
-### Grant Calculation Quick Reference
+## Business Docs
 
-**ALWAYS check `/docs/REWS_GRANT_RULES_REFERENCE.md` for:**
-- Previous grant eligibility (PV grant since 2010 = permanently excluded)
-- Three-way cap system (per-unit, percentage, maximum)
-- Malta vs Gozo rates (95% battery grant in Gozo!)
-- Option C vs Option D differences
-- Calculation examples
+Key docs in `/docs/`:
+- `REWS_GRANT_RULES_REFERENCE.md` - Grant calculations
+- `BATTERY_ONLY_GRANT_COMPLETE_GUIDE.md` - Battery retrofit rules
+- `GHAWDEX_PRODUCTS.md` - Product catalog
+- `infographics/` - 17 visual sales cheat sheets
+
+## Integration with Backoffice
+
+After wizard completion:
+1. Lead created in Supabase + Zoho CRM
+2. Backoffice AI Agent (Max) takes over via WhatsApp/SMS
+3. Max can request DB (fusebox) photo for upsell analysis
+4. Extras (Salva Vita, OVR, DB upgrade) added to quote
+5. Quote + contract generation with extras in backoffice
+
+See `ghawdex-backoffice/docs/DB_PHOTO_UPSELL_MASTER_PLAN.md` for extras system.
+
+## Related Projects
+
+- **Backoffice:** `ghawdex-backoffice` - Lead processing, quotes, contracts, extras
+- **Landings:** `ghawdex landings` - www.ghawdex.pro landing page
+- **Overlord:** `ghawdex overlord` - Coordination hub
