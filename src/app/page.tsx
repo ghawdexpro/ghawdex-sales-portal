@@ -489,7 +489,7 @@ function HomeContent() {
 
       {/* Sticky CTA Bar */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0a0a0a]/95 to-[#1a1a2e]/95 backdrop-blur-md border-t border-white/10 p-4 transition-all duration-300 ${
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0a0a0a]/95 to-[#1a1a2e]/95 backdrop-blur-md border-t border-white/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-all duration-300 ${
           showStickyBtn ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
         }`}
       >

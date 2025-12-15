@@ -21,6 +21,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GhawdeX Solar | Get Your Free Quote | Malta's #1 Solar Installer",
   description: "Get your personalized solar quote in minutes. AI-powered analysis, instant pricing, and financing options. Professional installation in 14 days. Malta & Gozo.",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover', // Enable safe-area on iOS
+  },
   keywords: [
     "solar panels Malta",
     "solar quote Malta",

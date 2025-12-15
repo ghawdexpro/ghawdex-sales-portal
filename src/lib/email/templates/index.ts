@@ -6,6 +6,7 @@
 
 import type { EmailTemplate, LeadConfirmationData, FollowUpData, ContractReminderData, SessionRecoveryData } from '../types';
 import { generateLeadConfirmationEmail } from './lead-confirmation';
+import { generatePortalUpgradeEmail, PortalUpgradeData } from './portal-upgrade';
 
 // =============================================================================
 // TEMPLATE GENERATORS
@@ -45,6 +46,9 @@ export function generateEmailFromTemplate<T>(
 
     case 'session-recovery':
       return generateSessionRecoveryEmail(data as SessionRecoveryData);
+
+    case 'portal-upgrade':
+      return generatePortalUpgradeEmail(data as PortalUpgradeData);
 
     default:
       throw new Error(`Unknown email template: ${template}`);
@@ -880,5 +884,6 @@ The GhawdeX Team
   return { subject, html, text };
 }
 
-// Re-export individual template generator
+// Re-export individual template generators
 export { generateLeadConfirmationEmail } from './lead-confirmation';
+export { generatePortalUpgradeEmail, type PortalUpgradeData } from './portal-upgrade';

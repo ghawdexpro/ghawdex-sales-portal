@@ -14,7 +14,8 @@ export type EmailTemplate =
   | 'follow-up-48h'
   | 'follow-up-72h'
   | 'follow-up-7d'
-  | 'session-recovery';
+  | 'session-recovery'
+  | 'portal-upgrade';
 
 export type EmailStatus = 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'failed';
 

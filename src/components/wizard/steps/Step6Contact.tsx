@@ -410,7 +410,7 @@ export default function Step5Contact() {
       </div>
 
       {/* Navigation - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a] border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a] border-t border-white/10 pb-[max(0px,env(safe-area-inset-bottom))]">
         <div className="max-w-xl mx-auto flex gap-4 p-4">
           <button
             onClick={handleBack}

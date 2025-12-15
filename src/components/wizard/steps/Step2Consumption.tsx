@@ -229,7 +229,7 @@ export default function Step2Consumption() {
       )}
 
       {/* Navigation - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a] pb-[max(0px,env(safe-area-inset-bottom))]">
         {/* Amber glow divider */}
         <div className="h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent shadow-[0_0_15px_rgba(245,158,11,0.6)]" />
         <div className="max-w-xl mx-auto flex gap-4 p-4">

@@ -136,13 +136,17 @@ export default function TestimonialCarouselDark({
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
-            className={`w-2 h-2 rounded-full transition-colors ${
+            className={`p-2 rounded-full transition-colors ${
               idx === currentIndex
-                ? 'bg-amber-400'
-                : 'bg-white/20 hover:bg-white/40'
+                ? 'bg-amber-400/20'
+                : 'bg-transparent hover:bg-white/10'
             }`}
             aria-label={`Go to testimonial ${idx + 1}`}
-          />
+          >
+            <div className={`w-2 h-2 rounded-full ${
+              idx === currentIndex ? 'bg-amber-400' : 'bg-white/20'
+            }`} />
+          </button>
         ))}
       </div>
     </div>

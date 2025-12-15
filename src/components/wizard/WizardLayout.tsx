@@ -55,7 +55,7 @@ export default function WizardLayout({ children, onClose }: WizardLayoutProps) {
                       <button
                         onClick={() => handleStepClick(step.num)}
                         disabled={state.step <= step.num}
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all ${
+                        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-sm sm:text-base font-semibold transition-all ${
                           state.step > step.num
                             ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600 hover:scale-110'
                             : state.step === step.num
@@ -72,7 +72,7 @@ export default function WizardLayout({ children, onClose }: WizardLayoutProps) {
                           step.num
                         )}
                       </button>
-                      <span className={`text-[10px] sm:text-xs mt-1 hidden sm:block ${
+                      <span className={`text-xs sm:text-sm mt-1 hidden sm:block ${
                         state.step >= step.num ? 'text-white' : 'text-gray-500'
                       }`}>
                         {step.label}
