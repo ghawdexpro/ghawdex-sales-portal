@@ -111,7 +111,7 @@ export default function Step1Region() {
           </button>
         </div>
 
-        {/* Grant Summary */}
+        {/* Grant Summary - Updates based on battery-only toggle */}
         <div className={`bg-gradient-to-r ${
           selectedLocation === 'gozo'
             ? 'from-green-500/10 to-emerald-500/10 border-green-500/20'
@@ -119,15 +119,22 @@ export default function Step1Region() {
         } border rounded-xl p-4 mb-6 transition-all duration-300 ${isAnimating ? 'scale-[0.98]' : ''}`}>
           <div className="flex justify-between items-center">
             <div>
-              <div className="text-gray-400 text-sm">Max Available Grant</div>
+              <div className="text-gray-400 text-sm">
+                {isBatteryOnly ? 'Battery Grant' : 'Max Available Grant'}
+              </div>
               <div className={`text-2xl font-bold ${
                 selectedLocation === 'gozo' ? 'text-green-400' : 'text-amber-400'
               }`}>
-                €{grantInfo.totalGrant.toLocaleString()}
+                €{isBatteryOnly
+                  ? grantInfo.batteryGrant.toLocaleString()
+                  : grantInfo.totalGrant.toLocaleString()
+                }
               </div>
             </div>
             <div className="text-right">
-              <div className="text-gray-400 text-sm">Battery Grant</div>
+              <div className="text-gray-400 text-sm">
+                {isBatteryOnly ? 'Coverage' : 'Battery Grant'}
+              </div>
               <div className={`text-xl font-semibold ${
                 selectedLocation === 'gozo' ? 'text-green-400' : 'text-amber-400'
               }`}>
@@ -135,9 +142,17 @@ export default function Step1Region() {
               </div>
             </div>
           </div>
-          {selectedLocation === 'gozo' && (
+          {selectedLocation === 'gozo' && !isBatteryOnly && (
             <div className="mt-2 text-green-400 text-sm">
               Gozo residents save €1,350 more on battery!
+            </div>
+          )}
+          {isBatteryOnly && (
+            <div className={`mt-2 text-sm ${selectedLocation === 'gozo' ? 'text-green-400' : 'text-amber-400'}`}>
+              {selectedLocation === 'gozo'
+                ? 'Gozo: 95% of battery cost covered!'
+                : 'Malta: 80% of battery cost covered!'
+              }
             </div>
           )}
         </div>
